@@ -222,19 +222,22 @@ const EXPERIENCE = [
 
 const SERVICES = [
   {
-    title: "Visual Identity",
-    description: "Crafting unique brand languages that command attention and define industry standards.",
-    icon: <Palette size={24} />
+    title: "Product Launch Visual Design",
+    description: "Responsible for end-to-end visual design for product launches, including pre-launch assets, key visuals, product pages, and advertising materials, delivering consistent visuals that build product awareness, increase exposure, and drive conversions.",
+    icon: <Palette size={24} />,
+    iconUrl: "" // You can put your image URL here, e.g., "https://example.com/icon.png"
   },
   {
-    title: "Digital Architecture",
-    description: "Building robust, scalable UI systems that bridge the gap between form and function.",
-    icon: <Layout size={24} />
+    title: "E-commerce & Campaign Design",
+    description: "Providing visual support for campaigns across independent websites and platforms like Amazon, covering promotional pages, key visuals, and ad creatives, ensuring platform compliance while improving click-through rates and conversion performance.",
+    icon: <Layout size={24} />,
+    iconUrl: ""
   },
   {
-    title: "Motion Narratives",
-    description: "Bringing brands to life through cinematic motion graphics and storytelling animations.",
-    icon: <Zap size={24} />
+    title: "B2B Branding & Event Materials",
+    description: "Designing digital and print materials for B2B communication, including brand assets, product catalogs, and event visuals for trade shows and product launches, helping brands present professionally across touchpoints and support business conversions.",
+    icon: <Zap size={24} />,
+    iconUrl: ""
   }
 ];
 
@@ -615,7 +618,7 @@ const ExperienceAndServices = () => (
             <div className="w-12 h-[1px] bg-brand-red" />
           </div>
           
-          <div className="flex-grow space-y-12 relative before:absolute before:left-[23px] before:top-2 before:bottom-2 before:w-[1px] before:bg-white/10">
+          <div className="flex-grow space-y-20 md:space-y-24 relative before:absolute before:left-[23px] before:top-2 before:bottom-2 before:w-[1px] before:bg-white/10">
             {EXPERIENCE.map((exp, i) => (
               <motion.div 
                 key={i}
@@ -663,10 +666,43 @@ const ExperienceAndServices = () => (
                 transition={{ delay: i * 0.1 }}
                 className="glass-card p-8 group hover:border-brand-red transition-colors flex flex-col h-full"
               >
-                <div className="text-brand-red mb-6 group-hover:scale-110 transition-transform duration-300 inline-block">
-                  {service.icon}
+                <div className="flex items-center gap-4 mb-3">
+                  <div className="text-brand-red shrink-0 w-8 h-8 flex items-center justify-center">
+                    {service.iconUrl ? (
+                      <motion.img 
+                        src={getOptimizedUrl(service.iconUrl)} 
+                        alt={service.title}
+                        className="w-full h-full object-contain"
+                        animate={{ 
+                          y: [0, -5, 0],
+                          rotate: [0, 5, -5, 0]
+                        }}
+                        whileHover={{ rotate: 360 }}
+                        transition={{ 
+                          y: { duration: 4, repeat: Infinity, ease: "easeInOut" },
+                          rotate: { duration: 0.6, ease: "easeInOut" }
+                        }}
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <motion.div
+                        animate={{ 
+                          y: [0, -4, 0],
+                          scale: [1, 1.1, 1]
+                        }}
+                        whileHover={{ rotate: 360 }}
+                        transition={{ 
+                          y: { duration: 3, repeat: Infinity, ease: "easeInOut", delay: i * 0.4 },
+                          scale: { duration: 3, repeat: Infinity, ease: "easeInOut" },
+                          rotate: { duration: 0.6, ease: "easeInOut" }
+                        }}
+                      >
+                        {service.icon}
+                      </motion.div>
+                    )}
+                  </div>
+                  <h3 className="text-xl font-display font-bold tracking-tight text-white">{service.title}</h3>
                 </div>
-                <h3 className="text-xl font-display font-bold mb-4 tracking-tight">{service.title}</h3>
                 <p className="text-sm text-white/40 leading-relaxed flex-grow">
                   {service.description}
                 </p>
@@ -700,9 +736,10 @@ const Spotlight = () => {
           <div className="w-24 h-[1px] bg-brand-red mx-auto" />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-12">
-          <div className="lg:col-span-4">
-            <div className="grid grid-cols-6 gap-2">
+        <div className="flex flex-col lg:flex-row gap-8 lg:gap-[8%] items-start">
+          {/* Left Thumbnails - 20% width (Smaller to ensure height is within preview) */}
+          <div className="w-full lg:w-[20%] shrink-0">
+            <div className="grid grid-cols-4 lg:grid-cols-2 gap-1.5">
               {PROJECTS.map((p, i) => {
                 return (
                   <div 
@@ -721,7 +758,8 @@ const Spotlight = () => {
             </div>
           </div>
           
-          <div className="lg:col-span-8 flex flex-col justify-center items-center lg:items-end text-center lg:text-right min-h-[400px] mt-0 md:mt-16 lg:mt-0">
+          {/* Right Preview - 72% width (Larger to provide vertical containment) */}
+          <div className="w-full lg:w-[72%] flex flex-col justify-start items-center lg:items-end text-center lg:text-right mt-0 lg:mt-0">
           <AnimatePresence mode="wait">
             <motion.div
               key={selectedIndex}
@@ -730,18 +768,20 @@ const Spotlight = () => {
               exit={{ opacity: 0, x: -20 }}
               className="flex flex-col items-center lg:items-end w-full"
             >
-              <div className="relative w-full max-w-2xl group">
-                {/* Desktop Navigation Arrows */}
+              <div className="relative w-full group">
+                {/* Desktop Navigation Arrows - Centered in the 8% gap */}
                 <button 
                   onClick={handlePrev}
-                  className="hidden lg:flex absolute -left-16 top-1/2 -translate-y-1/2 w-10 h-10 items-center justify-center rounded-full bg-white/5 border border-white/10 text-white/40 hover:text-white hover:border-white/40 hover:bg-white/10 transition-all duration-300 z-20"
+                  className="hidden lg:flex absolute top-1/2 -translate-y-1/2 w-10 h-10 items-center justify-center rounded-full bg-black/40 backdrop-blur-md border border-white/10 text-white/40 hover:text-white hover:border-white/40 hover:bg-white/10 transition-all duration-300 z-20"
+                  style={{ left: '-6.5%' }}
                   aria-label="Previous Project"
                 >
                   <ChevronLeft size={24} />
                 </button>
                 <button 
                   onClick={handleNext}
-                  className="hidden lg:flex absolute -right-16 top-1/2 -translate-y-1/2 w-10 h-10 items-center justify-center rounded-full bg-white/5 border border-white/10 text-white/40 hover:text-white hover:border-white/40 hover:bg-white/10 transition-all duration-300 z-20"
+                  className="hidden lg:flex absolute top-1/2 -translate-y-1/2 w-10 h-10 items-center justify-center rounded-full bg-black/40 backdrop-blur-md border border-white/10 text-white/40 hover:text-white hover:border-white/40 hover:bg-white/10 transition-all duration-300 z-20"
+                  style={{ right: '-6.5%' }}
                   aria-label="Next Project"
                 >
                   <ChevronRight size={24} />
@@ -763,7 +803,7 @@ const Spotlight = () => {
                   <ChevronDown size={18} />
                 </button>
 
-                <div className="w-full aspect-video mt-14 mb-14 lg:mt-0 lg:mb-8 border border-white/10 p-1 bg-white/5 backdrop-blur-sm">
+                <div className="w-full aspect-video mt-14 mb-14 lg:mt-0 lg:mb-0 border border-white/10 p-1 bg-white/5 backdrop-blur-sm">
                   <img 
                     src={getOptimizedUrl(currentImage)} 
                     className="w-full h-full object-cover" 
@@ -773,10 +813,12 @@ const Spotlight = () => {
                 </div>
               </div>
               
-              <h4 className="text-sm font-bold text-white/90 mb-1 lg:mb-3">{project.title}</h4>
-              <p className="max-w-md text-sm text-white/60 leading-relaxed italic">
-                {project.description}
-              </p>
+              <div className="w-full mt-4 text-center lg:text-right">
+                <h4 className="text-sm font-bold text-white/90 mb-1">{project.title}</h4>
+                <p className="text-sm text-white/60 leading-relaxed italic">
+                  {project.description}
+                </p>
+              </div>
             </motion.div>
           </AnimatePresence>
         </div>

@@ -33,7 +33,7 @@ const SPECIAL_DATA: Record<number, { image: string; title: string; description: 
   }
 };
 
-export const PROJECTS: Project[] = Array.from({ length: 60 }).map((_, i) => {
+export const PROJECTS: Project[] = Array.from({ length: 12 }).map((_, i) => {
   const categories = ["Design", "Photography", "Retouching", "Ai", "Video", "Direction"];
   const category = categories[i % categories.length];
   
