@@ -32,32 +32,26 @@ import { PROJECTS } from './data/projects';
 const getOptimizedUrl = (url: string) => {
   if (!url) return url;
   
-  // Convert GitHub blob URLs to jsDelivr CDN URLs for faster loading
-  if (url.includes('github.com') && url.includes('/blob/')) {
-    try {
-      const parts = url.replace('https://github.com/', '').split('/');
-      const user = parts[0];
-      const repo = parts[1];
-      const branch = parts[3];
-      const path = parts.slice(4).join('/').split('?')[0];
-      return `https://cdn.jsdelivr.net/gh/${user}/${repo}@${branch}/${path}`;
-    } catch (e) {
-      return url;
+  // Use wsrv.nl for GitHub images to optimize and serve via CDN
+  // This is generally faster than raw GitHub or even jsDelivr for images as it provides on-the-fly optimization
+  if (url.includes('github.com') || url.includes('raw.githubusercontent.com')) {
+    let rawUrl = url;
+    
+    // Convert GitHub blob URLs to raw URLs
+    if (url.includes('github.com') && url.includes('/blob/')) {
+      rawUrl = url.replace('github.com', 'raw.githubusercontent.com').replace('/blob/', '/');
     }
-  }
+    
+    // Convert GitHub "refs/heads" style URLs
+    if (url.includes('github.com') && url.includes('/refs/heads/')) {
+      rawUrl = url.replace('github.com', 'raw.githubusercontent.com').replace('/refs/heads/', '/');
+    }
 
-  // Convert raw.githubusercontent.com to jsDelivr CDN URLs
-  if (url.includes('raw.githubusercontent.com')) {
-    try {
-      const parts = url.replace('https://raw.githubusercontent.com/', '').split('/');
-      const user = parts[0];
-      const repo = parts[1];
-      const branch = parts[2];
-      const path = parts.slice(3).join('/').split('?')[0];
-      return `https://cdn.jsdelivr.net/gh/${user}/${repo}@${branch}/${path}`;
-    } catch (e) {
-      return url;
-    }
+    // Remove query params like ?raw=true
+    rawUrl = rawUrl.split('?')[0];
+    
+    // Use wsrv.nl proxy with some basic optimization
+    return `https://wsrv.nl/?url=${encodeURIComponent(rawUrl)}&af&il`;
   }
 
   return url;
@@ -195,7 +189,7 @@ const ARCHIVE_PROJECTS: Project[] = [
       },
        { 
         url: "https://www.bilibili.com/video/BV1oNkTBnErQ?t=79.5", 
-        cover: "https://github.com/David007-CN/DW/blob/main/Cover/06_DSC06844.jpg?raw=true",
+        cover: "https://github.com/David007-CN/DW/blob/main/Cover/03_DSC06797.jpg?raw=true",
         title: "Pending refinement - Video 3"
       },
     ]
@@ -463,22 +457,24 @@ const Hero = () => {
   }, [currentSlide, slides.length]);
 
   return (
-    <section id="home" className="relative h-screen flex items-center justify-center overflow-hidden bg-brand-dark pt-[56px] md:pt-[64px] touch-none">
-      <AnimatePresence mode="wait">
+    <section id="home" className="relative h-screen flex items-center justify-center overflow-hidden bg-brand-dark pt-[56px] md:pt-[64px]">
+      <AnimatePresence initial={false}>
         <motion.div
           key={currentSlide}
-          initial={{ opacity: 0, x: 20 }}
+          initial={{ opacity: 0, x: 100 }}
           animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -20 }}
-          transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
+          exit={{ opacity: 0, x: -100 }}
+          transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
           drag="x"
+          dragDirectionLock
           dragConstraints={{ left: 0, right: 0 }}
-          dragElastic={0.2}
+          dragElastic={0.7}
           onDragEnd={(_, info) => {
-            if (info.offset.x > 100) handlePrev();
-            else if (info.offset.x < -100) handleNext();
+            const threshold = 30;
+            if (info.offset.x > threshold) handlePrev();
+            else if (info.offset.x < -threshold) handleNext();
           }}
-          className="absolute inset-0 flex items-center justify-center cursor-grab active:cursor-grabbing"
+          className="absolute inset-0 flex items-center justify-center cursor-grab active:cursor-grabbing touch-pan-y"
         >
           {slides[currentSlide].type === 'content' ? (
             <>
@@ -772,6 +768,7 @@ const Spotlight = () => {
                     src={getOptimizedUrl(currentImage)} 
                     className="w-full h-full object-cover" 
                     referrerPolicy="no-referrer" 
+                    loading="lazy"
                   />
                 </div>
               </div>
@@ -816,6 +813,7 @@ const Archive = () => {
                 src={getOptimizedUrl(project.image)} 
                 className="w-full h-full object-cover grayscale group-hover:grayscale-0 brightness-50 group-hover:brightness-100 transition-all duration-700" 
                 referrerPolicy="no-referrer"
+                loading="lazy"
               />
               <div className="absolute inset-0 flex flex-col justify-center items-center text-center p-12 bg-black/20 group-hover:bg-transparent transition-colors duration-500">
                 <p className="text-[11px] font-bold tracking-[0.1em] opacity-60 mb-2">{project.subtitle}</p>
@@ -863,6 +861,7 @@ const Featured = () => {
                     src={getOptimizedUrl(item.image)} 
                     className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110" 
                     referrerPolicy="no-referrer" 
+                    loading="lazy"
                   />
                 </div>
                 <div className="text-center flex-grow flex flex-col justify-center">
