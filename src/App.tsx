@@ -1041,7 +1041,11 @@ const Newsletter = () => {
             <input 
               type="tel" 
               value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              onChange={(e) => {
+                const value = e.target.value.replace(/[^0-9+\-() ]/g, '');
+                setFormData({ ...formData, phone: value });
+              }}
+              pattern="[0-9+\-() ]*"
               placeholder="Phone (Optional)" 
               className="w-full bg-transparent border-b border-white/20 py-4 px-2 outline-none focus:border-brand-red transition-colors text-sm placeholder:text-white/20"
             />
