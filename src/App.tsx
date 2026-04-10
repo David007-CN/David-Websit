@@ -156,6 +156,19 @@ const ARCHIVE_PROJECTS: Project[] = [
   },
   {
     id: 4,
+    title: "Rendering",
+    subtitle: "Visualized in detail.",
+    category: "Rendering",
+    image: "https://picsum.photos/seed/render/1280/720",
+    galleryImages: [
+      { url: "https://picsum.photos/seed/render-1/1920/1080", cover: "https://picsum.photos/seed/render-1/1920/1080", title: "Rendering Project 1" },
+      { url: "https://picsum.photos/seed/render-2/1920/1080", cover: "https://picsum.photos/seed/render-2/1920/1080", title: "Rendering Project 2" },
+      { url: "https://picsum.photos/seed/render-3/1920/1080", cover: "https://picsum.photos/seed/render-3/1920/1080", title: "Rendering Project 3" },
+      { url: "https://picsum.photos/seed/render-4/1920/1080", cover: "https://picsum.photos/seed/render-4/1920/1080", title: "Rendering Project 4" },
+    ]
+  },
+  {
+    id: 5,
     title: "AI Studio",
     subtitle: "Where ideas take form.",
     category: "AI Studio",
@@ -170,19 +183,6 @@ const ARCHIVE_PROJECTS: Project[] = [
       { url: "https://picsum.photos/seed/ai-7/1920/1080", cover: "https://picsum.photos/seed/ai-7/1920/1080", title: "AI Studio Project 7" },
       { url: "https://picsum.photos/seed/ai-8/1920/1080", cover: "https://picsum.photos/seed/ai-8/1920/1080", title: "AI Studio Project 8" },
       { url: "https://picsum.photos/seed/ai-9/1920/1080", cover: "https://picsum.photos/seed/ai-9/1920/1080", title: "AI Studio Project 9" },
-    ]
-  },
-  {
-    id: 5,
-    title: "Rendering",
-    subtitle: "Visualized in detail.",
-    category: "Rendering",
-    image: "https://picsum.photos/seed/render/1280/720",
-    galleryImages: [
-      { url: "https://picsum.photos/seed/render-1/1920/1080", cover: "https://picsum.photos/seed/render-1/1920/1080", title: "Rendering Project 1" },
-      { url: "https://picsum.photos/seed/render-2/1920/1080", cover: "https://picsum.photos/seed/render-2/1920/1080", title: "Rendering Project 2" },
-      { url: "https://picsum.photos/seed/render-3/1920/1080", cover: "https://picsum.photos/seed/render-3/1920/1080", title: "Rendering Project 3" },
-      { url: "https://picsum.photos/seed/render-4/1920/1080", cover: "https://picsum.photos/seed/render-4/1920/1080", title: "Rendering Project 4" },
     ]
   },
   {
