@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { BrowserRouter, Routes, Route, Link, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -174,6 +174,19 @@ const ARCHIVE_PROJECTS: Project[] = [
   },
   {
     id: 5,
+    title: "Rendering",
+    subtitle: "Visualized in detail.",
+    category: "Rendering",
+    image: "https://picsum.photos/seed/render/1280/720",
+    galleryImages: [
+      { url: "https://picsum.photos/seed/render-1/1920/1080", cover: "https://picsum.photos/seed/render-1/1920/1080", title: "Rendering Project 1" },
+      { url: "https://picsum.photos/seed/render-2/1920/1080", cover: "https://picsum.photos/seed/render-2/1920/1080", title: "Rendering Project 2" },
+      { url: "https://picsum.photos/seed/render-3/1920/1080", cover: "https://picsum.photos/seed/render-3/1920/1080", title: "Rendering Project 3" },
+      { url: "https://picsum.photos/seed/render-4/1920/1080", cover: "https://picsum.photos/seed/render-4/1920/1080", title: "Rendering Project 4" },
+    ]
+  },
+  {
+    id: 6,
     title: "Video",
     subtitle: "Primarily 3rd-party production, with our concept guidance.",
     category: "Video",
@@ -875,8 +888,40 @@ const Archive = () => {
 };
 
 const Featured = () => {
+  const [isPaused, setIsPaused] = useState(false);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
   const shuffledItems = useMemo(() => {
     return [...FEATURED_ITEMS].sort(() => Math.random() - 0.5);
+  }, []);
+
+  const togglePause = () => {
+    setIsPaused(prev => {
+      const next = !prev;
+      
+      // Clear existing timer
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+
+      // If we just paused, set a timer to resume after 2 seconds
+      if (next) {
+        timerRef.current = setTimeout(() => {
+          setIsPaused(false);
+          timerRef.current = null;
+        }, 2000);
+      }
+      
+      return next;
+    });
+  };
+
+  // Clean up timer on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
   }, []);
 
   return (
@@ -888,7 +933,9 @@ const Featured = () => {
       
       <div className="relative flex overflow-hidden">
         <div 
+          onClick={togglePause}
           className="flex gap-8 whitespace-nowrap animate-infinite-scroll"
+          style={{ animationPlayState: isPaused ? 'paused' : 'running' }}
         >
           {[...shuffledItems, ...shuffledItems].map((item, index) => (
             <motion.div 

@@ -65,7 +65,3 @@
 .animate-infinite-scroll {
   animation: infinite-scroll 30s linear infinite;
 }
-
-.animate-infinite-scroll:hover {
-  animation-play-state: paused;
-}
