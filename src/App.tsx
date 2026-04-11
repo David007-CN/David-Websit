@@ -30,14 +30,13 @@ import { Project } from './types';
 import { PROJECTS } from './data/projects';
 
 // --- Utilities ---
-const getOptimizedUrl = (url: string) => {
+const getOptimizedUrl = (url: string, width?: number, height?: number) => {
   if (!url) return url;
   
-  // Use wsrv.nl for GitHub images to optimize and serve via CDN
-  // This is generally faster than raw GitHub or even jsDelivr for images as it provides on-the-fly optimization
+  let rawUrl = url;
+  
+  // Handle GitHub URLs
   if (url.includes('github.com') || url.includes('raw.githubusercontent.com')) {
-    let rawUrl = url;
-    
     // Convert GitHub blob URLs to raw URLs
     if (url.includes('github.com') && url.includes('/blob/')) {
       rawUrl = url.replace('github.com', 'raw.githubusercontent.com').replace('/blob/', '/');
@@ -50,9 +49,14 @@ const getOptimizedUrl = (url: string) => {
 
     // Remove query params like ?raw=true
     rawUrl = rawUrl.split('?')[0];
-    
-    // Use wsrv.nl proxy with some basic optimization
-    return `https://wsrv.nl/?url=${encodeURIComponent(rawUrl)}&af&il`;
+  }
+
+  // Use wsrv.nl proxy for all external images to benefit from CDN and WebP/AVIF optimization
+  if (rawUrl.startsWith('http')) {
+    let wsrvUrl = `https://wsrv.nl/?url=${encodeURIComponent(rawUrl)}&af&il`;
+    if (width) wsrvUrl += `&w=${width}`;
+    if (height) wsrvUrl += `&h=${height}`;
+    return wsrvUrl;
   }
 
   return url;
@@ -819,7 +823,7 @@ const Spotlight = () => {
 
                 <div className="w-full aspect-video mt-14 mb-14 lg:mt-0 lg:mb-0 border border-white/10 p-1 bg-white/5 backdrop-blur-sm">
                   <img 
-                    src={getOptimizedUrl(currentImage)} 
+                    src={getOptimizedUrl(currentImage, 1280, 720)} 
                     className="w-full h-full object-cover" 
                     referrerPolicy="no-referrer" 
                     loading="lazy"
@@ -861,12 +865,12 @@ const Archive = () => {
             <div 
               key={project.id} 
               onClick={() => navigate(`/gallery/${project.id}`)}
-              className={`relative group overflow-hidden aspect-video cursor-pointer ${
+              className={`relative group overflow-hidden aspect-video cursor-pointer bg-white/5 ${
                 index === ARCHIVE_PROJECTS.length - 1 && ARCHIVE_PROJECTS.length % 2 !== 0 ? 'md:col-span-2' : ''
               }`}
             >
               <img 
-                src={getOptimizedUrl(project.image)} 
+                src={getOptimizedUrl(project.image, 800, 450)} 
                 className="w-full h-full object-cover grayscale group-hover:grayscale-0 brightness-50 group-hover:brightness-100 transition-all duration-700" 
                 referrerPolicy="no-referrer"
                 loading="lazy"
@@ -958,9 +962,9 @@ const Featured = () => {
               className="parchment-card p-1 shadow-2xl group w-[300px] md:w-[400px] shrink-0 cursor-pointer"
             >
               <div className="bg-white p-4 h-full flex flex-col whitespace-normal">
-                <div className="aspect-[4/5] overflow-hidden mb-6 relative">
+                <div className="aspect-[4/5] overflow-hidden mb-6 relative bg-gray-100">
                   <img 
-                    src={getOptimizedUrl(item.image)} 
+                    src={getOptimizedUrl(item.image, 400, 500)} 
                     className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110" 
                     referrerPolicy="no-referrer" 
                     loading="lazy"
@@ -1003,7 +1007,7 @@ const Featured = () => {
               className="relative flex items-center justify-center w-full h-full"
             >
               <img 
-                src={getOptimizedUrl(selectedItem.image)} 
+                src={getOptimizedUrl(selectedItem.image, 1080, 1350)} 
                 className="w-auto h-auto max-w-full max-h-full md:max-h-[98vh] object-contain shadow-2xl"
                 referrerPolicy="no-referrer"
               />
@@ -1294,7 +1298,7 @@ const GalleryPage = () => {
               >
                 <div className="relative aspect-video overflow-hidden bg-white/5 border border-white/10 p-1 mb-4">
                   <img 
-                    src={getOptimizedUrl(imageUrl)} 
+                    src={getOptimizedUrl(imageUrl, 800, 450)} 
                     className="w-full h-full object-cover transition-all duration-700 group-hover:scale-105"
                     referrerPolicy="no-referrer"
                   />
@@ -1370,7 +1374,7 @@ const GalleryPage = () => {
                 />
               ) : (
                 <img 
-                  src={getOptimizedUrl(selectedImage)} 
+                  src={getOptimizedUrl(selectedImage, 1920, 1080)} 
                   className="w-full h-full object-contain"
                   referrerPolicy="no-referrer"
                 />
