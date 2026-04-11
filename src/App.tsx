@@ -690,30 +690,12 @@ const ExperienceAndServices = () => (
                       <motion.img 
                         src={getOptimizedUrl(service.iconUrl)} 
                         alt={service.title}
-                        className="w-full h-full object-contain"
-                        animate={{ 
-                          y: [0, -5, 0],
-                          rotate: [0, 5, -5, 0]
-                        }}
-                        whileHover={{ rotate: 360 }}
-                        transition={{ 
-                          y: { duration: 4, repeat: Infinity, ease: "easeInOut" },
-                          rotate: { duration: 0.6, ease: "easeInOut" }
-                        }}
+                        className="w-full h-full object-contain animate-slow-spin pause-on-hover"
                         referrerPolicy="no-referrer"
                       />
                     ) : (
                       <motion.div
-                        animate={{ 
-                          y: [0, -4, 0],
-                          scale: [1, 1.1, 1]
-                        }}
-                        whileHover={{ rotate: 360 }}
-                        transition={{ 
-                          y: { duration: 3, repeat: Infinity, ease: "easeInOut", delay: i * 0.4 },
-                          scale: { duration: 3, repeat: Infinity, ease: "easeInOut" },
-                          rotate: { duration: 0.6, ease: "easeInOut" }
-                        }}
+                        className="animate-slow-spin pause-on-hover"
                       >
                         {service.icon}
                       </motion.div>
