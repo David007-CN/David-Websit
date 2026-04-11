@@ -73,8 +73,10 @@
 
 .animate-slow-spin {
   animation: slow-spin 3s linear infinite;
+  transition: transform 0.5s ease-out;
 }
 
 .group:hover .pause-on-hover {
-  animation-play-state: paused;
+  animation: none;
+  transform: rotate(0deg) !important;
 }

@@ -243,19 +243,19 @@ const SERVICES = [
     title: "Product Launch Visual Design",
     description: "Responsible for end-to-end visual design for product launches, including pre-launch assets, key visuals, product pages, and advertising materials, delivering consistent visuals that build product awareness, increase exposure, and drive conversions.",
     icon: <Palette size={24} />,
-    iconUrl: "" // You can put your image URL here, e.g., "https://example.com/icon.png"
+    iconUrl: "https://github.com/David007-CN/DW/blob/main/Icons/1.png?raw=true" // You can put your image URL here, e.g., "https://example.com/icon.png"
   },
   {
     title: "E-commerce & Campaign Design",
     description: "Providing visual support for campaigns across independent websites and platforms like Amazon, covering promotional pages, key visuals, and ad creatives, ensuring platform compliance while improving click-through rates and conversion performance.",
     icon: <Layout size={24} />,
-    iconUrl: ""
+    iconUrl: "https://github.com/David007-CN/DW/blob/main/Icons/2.png?raw=true"
   },
   {
     title: "B2B Branding & Event Materials",
     description: "Designing digital and print materials for B2B communication, including brand assets, product catalogs, and event visuals for trade shows and product launches, helping brands present professionally across touchpoints and support business conversions.",
     icon: <Zap size={24} />,
-    iconUrl: ""
+    iconUrl: "https://github.com/David007-CN/DW/blob/main/Icons/3.png?raw=true"
   }
 ];
 
@@ -682,9 +682,9 @@ const ExperienceAndServices = () => (
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
-                className="glass-card p-8 group hover:border-brand-red transition-colors flex flex-col h-full"
+                className="glass-card p-8 hover:border-brand-red transition-colors flex flex-col h-full"
               >
-                <div className="flex items-center gap-4 mb-3">
+                <div className="flex items-center gap-4 mb-3 group">
                   <div className="text-brand-red shrink-0 w-8 h-8 flex items-center justify-center">
                     {service.iconUrl ? (
                       <motion.img 
