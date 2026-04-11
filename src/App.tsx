@@ -23,7 +23,8 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  Eye
 } from 'lucide-react';
 import { Project } from './types';
 import { PROJECTS } from './data/projects';
@@ -255,30 +256,30 @@ const SERVICES = [
 ];
 
 const FEATURED_ITEMS: Project[] = [
-  { id: 101, title: "Morning Ritual", category: "Daily Life", image: "https://picsum.photos/seed/morning/400/500", time: "2 0 2 4 . 0 3" },
-  { id: 102, title: "Urban Exploration", category: "Travel", image: "https://picsum.photos/seed/urban/400/500", time: "2 0 2 3 . 1 1" },
-  { id: 103, title: "Evening Sketch", category: "Play", image: "https://picsum.photos/seed/sketch/400/500", time: "2 0 2 3 . 0 8" },
-  { id: 104, title: "Coffee Break", category: "Relaxation", image: "https://picsum.photos/seed/coffee/400/500", time: "2 0 2 2 . 1 2" },
-  { id: 105, title: "Night Drive", category: "Atmosphere", image: "https://picsum.photos/seed/night-drive/400/500", time: "2 0 2 2 . 0 5" },
-  { id: 106, title: "Weekend Hike", category: "Nature", image: "https://picsum.photos/seed/hike/400/500", time: "2 0 2 1 . 0 9" },
-  { id: 107, title: "Golden Hour", category: "Photography", image: "https://picsum.photos/seed/golden/400/500", time: "2 0 2 4 . 0 1" },
-  { id: 108, title: "Street Food", category: "Culture", image: "https://picsum.photos/seed/food/400/500", time: "2 0 2 3 . 0 9" },
-  { id: 109, title: "Mountain Peak", category: "Adventure", image: "https://picsum.photos/seed/mountain/400/500", time: "2 0 2 3 . 0 7" },
-  { id: 110, title: "Rainy Day", category: "Mood", image: "https://picsum.photos/seed/rain/400/500", time: "2 0 2 3 . 0 5" },
-  { id: 111, title: "Summer Breeze", category: "Season", image: "https://picsum.photos/seed/summer/400/500", time: "2 0 2 3 . 0 6" },
-  { id: 112, title: "Winter Solstice", category: "Season", image: "https://picsum.photos/seed/winter/400/500", time: "2 0 2 3 . 1 2" },
-  { id: 113, title: "Ocean Waves", category: "Nature", image: "https://picsum.photos/seed/ocean/400/500", time: "2 0 2 4 . 0 2" },
-  { id: 114, title: "Forest Path", category: "Discovery", image: "https://picsum.photos/seed/forest/400/500", time: "2 0 2 3 . 1 0" },
-  { id: 115, title: "City Lights", category: "Urban", image: "https://picsum.photos/seed/city/400/500", time: "2 0 2 3 . 0 4" },
-  { id: 116, title: "Library Silence", category: "Focus", image: "https://picsum.photos/seed/library/400/500", time: "2 0 2 2 . 1 1" },
-  { id: 117, title: "Sunset Glow", category: "Beauty", image: "https://picsum.photos/seed/sunset/400/500", time: "2 0 2 2 . 1 0" },
-  { id: 118, title: "Desert Sands", category: "Vastness", image: "https://picsum.photos/seed/desert/400/500", time: "2 0 2 2 . 0 8" },
-  { id: 119, title: "Autumn Leaves", category: "Change", image: "https://picsum.photos/seed/autumn/400/500", time: "2 0 2 2 . 0 9" },
-  { id: 120, title: "Spring Bloom", category: "Growth", image: "https://picsum.photos/seed/spring/400/500", time: "2 0 2 2 . 0 4" },
-  { id: 121, title: "Starry Night", category: "Wonder", image: "https://picsum.photos/seed/stars/400/500", time: "2 0 2 2 . 0 3" },
-  { id: 122, title: "Quiet Moment", category: "Peace", image: "https://picsum.photos/seed/quiet/400/500", time: "2 0 2 2 . 0 2" },
-  { id: 123, title: "Busy Market", category: "Energy", image: "https://picsum.photos/seed/market/400/500", time: "2 0 2 2 . 0 1" },
-  { id: 124, title: "Hidden Alley", category: "Mystery", image: "https://picsum.photos/seed/alley/400/500", time: "2 0 2 1 . 1 2" },
+  { id: 101, title: "Morning Ritual", category: "Daily Life", image: "https://picsum.photos/seed/morning/1080/1350", time: "2 0 2 4 . 0 3" },
+  { id: 102, title: "Urban Exploration", category: "Travel", image: "https://picsum.photos/seed/urban/1080/1350", time: "2 0 2 3 . 1 1" },
+  { id: 103, title: "Evening Sketch", category: "Play", image: "https://picsum.photos/seed/sketch/1080/1350", time: "2 0 2 3 . 0 8" },
+  { id: 104, title: "Coffee Break", category: "Relaxation", image: "https://picsum.photos/seed/coffee/1080/1350", time: "2 0 2 2 . 1 2" },
+  { id: 105, title: "Night Drive", category: "Atmosphere", image: "https://picsum.photos/seed/night-drive/1080/1350", time: "2 0 2 2 . 0 5" },
+  { id: 106, title: "Weekend Hike", category: "Nature", image: "https://picsum.photos/seed/hike/1080/1350", time: "2 0 2 1 . 0 9" },
+  { id: 107, title: "Golden Hour", category: "Photography", image: "https://picsum.photos/seed/golden/1080/1350", time: "2 0 2 4 . 0 1" },
+  { id: 108, title: "Street Food", category: "Culture", image: "https://picsum.photos/seed/food/1080/1350", time: "2 0 2 3 . 0 9" },
+  { id: 109, title: "Mountain Peak", category: "Adventure", image: "https://picsum.photos/seed/mountain/1080/1350", time: "2 0 2 3 . 0 7" },
+  { id: 110, title: "Rainy Day", category: "Mood", image: "https://picsum.photos/seed/rain/1080/1350", time: "2 0 2 3 . 0 5" },
+  { id: 111, title: "Summer Breeze", category: "Season", image: "https://picsum.photos/seed/summer/1080/1350", time: "2 0 2 3 . 0 6" },
+  { id: 112, title: "Winter Solstice", category: "Season", image: "https://picsum.photos/seed/winter/1080/1350", time: "2 0 2 3 . 1 2" },
+  { id: 113, title: "Ocean Waves", category: "Nature", image: "https://picsum.photos/seed/ocean/1080/1350", time: "2 0 2 4 . 0 2" },
+  { id: 114, title: "Forest Path", category: "Discovery", image: "https://picsum.photos/seed/forest/1080/1350", time: "2 0 2 3 . 1 0" },
+  { id: 115, title: "City Lights", category: "Urban", image: "https://picsum.photos/seed/city/1080/1350", time: "2 0 2 3 . 0 4" },
+  { id: 116, title: "Library Silence", category: "Focus", image: "https://picsum.photos/seed/library/1080/1350", time: "2 0 2 2 . 1 1" },
+  { id: 117, title: "Sunset Glow", category: "Beauty", image: "https://picsum.photos/seed/sunset/1080/1350", time: "2 0 2 2 . 1 0" },
+  { id: 118, title: "Desert Sands", category: "Vastness", image: "https://picsum.photos/seed/desert/1080/1350", time: "2 0 2 2 . 0 8" },
+  { id: 119, title: "Autumn Leaves", category: "Change", image: "https://picsum.photos/seed/autumn/1080/1350", time: "2 0 2 2 . 0 9" },
+  { id: 120, title: "Spring Bloom", category: "Growth", image: "https://picsum.photos/seed/spring/1080/1350", time: "2 0 2 2 . 0 4" },
+  { id: 121, title: "Starry Night", category: "Wonder", image: "https://picsum.photos/seed/stars/1080/1350", time: "2 0 2 2 . 0 3" },
+  { id: 122, title: "Quiet Moment", category: "Peace", image: "https://picsum.photos/seed/quiet/1080/1350", time: "2 0 2 2 . 0 2" },
+  { id: 123, title: "Busy Market", category: "Energy", image: "https://picsum.photos/seed/market/1080/1350", time: "2 0 2 2 . 0 1" },
+  { id: 124, title: "Hidden Alley", category: "Mystery", image: "https://picsum.photos/seed/alley/1080/1350", time: "2 0 2 1 . 1 2" },
 ];
 
 // --- Components ---
@@ -888,64 +889,76 @@ const Archive = () => {
 };
 
 const Featured = () => {
-  const [isPaused, setIsPaused] = useState(false);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [showStats, setShowStats] = useState(false);
+  const [stats, setStats] = useState<Record<string, number>>({});
+
+  const [isHovered, setIsHovered] = useState(false);
 
   const shuffledItems = useMemo(() => {
     return [...FEATURED_ITEMS].sort(() => Math.random() - 0.5);
   }, []);
 
-  const togglePause = () => {
-    setIsPaused(prev => {
-      const next = !prev;
-      
-      // Clear existing timer
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-        timerRef.current = null;
-      }
-
-      // If we just paused, set a timer to resume after 2 seconds
-      if (next) {
-        timerRef.current = setTimeout(() => {
-          setIsPaused(false);
-          timerRef.current = null;
-        }, 2000);
-      }
-      
-      return next;
-    });
+  const trackClick = async (item: any) => {
+    try {
+      await fetch('/api/track-click', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ itemId: item.id, title: item.title }),
+      });
+    } catch (err) {
+      console.error('Failed to track click:', err);
+    }
   };
 
-  // Clean up timer on unmount
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, []);
+  const fetchStats = async () => {
+    try {
+      const res = await fetch('/api/click-stats');
+      const data = await res.json();
+      setStats(data);
+      setShowStats(true);
+    } catch (err) {
+      console.error('Failed to fetch stats:', err);
+    }
+  };
+
+  const handleItemClick = (item: any) => {
+    setSelectedItem(item);
+    trackClick(item);
+  };
 
   return (
-    <section id="featured" className="py-16 md:py-24 lg:py-32 bg-[#0A0A0A] overflow-hidden">
-      <div className="max-w-7xl mx-auto px-6 mb-10 md:mb-16 text-center">
-        <h2 className="text-3xl md:text-5xl font-display font-bold mb-4 tracking-tighter">Work & Life</h2>
-        <div className="w-12 h-[1px] bg-brand-red mx-auto" />
+    <section id="featured" className="py-16 md:py-24 lg:py-32 bg-[#0A0A0A] overflow-hidden relative">
+      <div className="max-w-7xl mx-auto px-6 mb-10 md:mb-16 text-center relative">
+        <h2 className="text-3xl md:text-5xl font-display font-bold mb-4 tracking-tighter text-white">Work & Life</h2>
+        <div className="w-12 h-[1px] bg-brand-red mx-auto mb-6" />
+        
+        {/* Stats Trigger */}
+        <button 
+          onClick={fetchStats}
+          className="absolute right-6 top-1/2 -translate-y-1/2 text-white/20 hover:text-brand-red transition-colors flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest"
+        >
+          <Eye size={14} />
+          View Stats
+        </button>
       </div>
       
       <div className="relative flex overflow-hidden">
         <div 
-          onClick={togglePause}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
           className="flex gap-8 whitespace-nowrap animate-infinite-scroll"
-          style={{ animationPlayState: isPaused ? 'paused' : 'running' }}
+          style={{ animationPlayState: selectedItem || showStats || isHovered ? 'paused' : 'running' }}
         >
           {[...shuffledItems, ...shuffledItems].map((item, index) => (
             <motion.div 
               key={`${item.id}-${index}`} 
-              whileHover={{ scale: 1.05 }}
-              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              whileHover={{ scale: 1.02 }}
+              onClick={() => handleItemClick(item)}
               className="parchment-card p-1 shadow-2xl group w-[300px] md:w-[400px] shrink-0 cursor-pointer"
             >
               <div className="bg-white p-4 h-full flex flex-col whitespace-normal">
-                <div className="aspect-[4/5] overflow-hidden mb-6">
+                <div className="aspect-[4/5] overflow-hidden mb-6 relative">
                   <img 
                     src={getOptimizedUrl(item.image)} 
                     className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110" 
@@ -954,8 +967,8 @@ const Featured = () => {
                   />
                 </div>
                 <div className="text-center flex-grow flex flex-col justify-center">
-                  <h4 className="text-xl font-display font-bold mb-1 tracking-tight">{item.title}</h4>
-                  <div className="text-[10px] font-bold tracking-[0.4em] opacity-40 mt-4">
+                  <h4 className="text-xl font-display font-bold mb-1 tracking-tight text-brand-dark">{item.title}</h4>
+                  <div className="text-[10px] font-bold tracking-[0.4em] opacity-40 mt-4 text-brand-dark">
                     {item.time}
                   </div>
                 </div>
@@ -964,6 +977,90 @@ const Featured = () => {
           ))}
         </div>
       </div>
+
+      {/* Lightbox Modal */}
+      <AnimatePresence>
+        {selectedItem && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setSelectedItem(null)}
+            className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex items-center justify-center p-0"
+          >
+            <button 
+              className="absolute top-6 right-6 text-white/60 hover:text-white transition-colors z-[110]"
+              onClick={() => setSelectedItem(null)}
+            >
+              <X size={32} />
+            </button>
+            
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative flex items-center justify-center w-full h-full"
+            >
+              <img 
+                src={getOptimizedUrl(selectedItem.image)} 
+                className="w-auto h-auto max-w-full max-h-full md:max-h-[98vh] object-contain shadow-2xl"
+                referrerPolicy="no-referrer"
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Stats Modal */}
+      <AnimatePresence>
+        {showStats && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowStats(false)}
+            className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-6"
+          >
+            <motion.div 
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 20, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="max-w-lg w-full bg-brand-dark border border-white/10 p-8 rounded-sm shadow-2xl"
+            >
+              <div className="flex justify-between items-center mb-8">
+                <h3 className="text-xl font-display font-bold text-white">Click Analytics</h3>
+                <button onClick={() => setShowStats(false)} className="text-white/40 hover:text-white">
+                  <X size={20} />
+                </button>
+              </div>
+              
+              <div className="space-y-4 max-h-[60vh] overflow-y-auto custom-scrollbar pr-4">
+                {Object.entries(stats).length > 0 ? (
+                  Object.entries(stats)
+                    .sort((a, b) => (b[1] as number) - (a[1] as number))
+                    .map(([key, count]) => (
+                      <div key={key} className="flex justify-between items-center py-2 border-b border-white/5">
+                        <span className="text-sm text-white/60">{key}</span>
+                        <span className="text-sm font-mono text-brand-red font-bold">{count} clicks</span>
+                      </div>
+                    ))
+                ) : (
+                  <p className="text-center text-white/20 py-10 italic">No clicks tracked yet.</p>
+                )}
+              </div>
+              
+              <button 
+                onClick={() => setShowStats(false)}
+                className="w-full mt-8 py-3 bg-white text-brand-dark text-[10px] font-bold uppercase tracking-widest hover:bg-brand-red hover:text-white transition-all"
+              >
+                Close Dashboard
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 };

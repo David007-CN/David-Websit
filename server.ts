@@ -16,6 +16,20 @@ async function startServer() {
 
   app.use(express.json());
 
+  // Click tracking storage (In-memory for demo)
+  const clickStats: Record<string, number> = {};
+
+  app.post('/api/track-click', (req, res) => {
+    const { itemId, title } = req.body;
+    const key = `${itemId} - ${title}`;
+    clickStats[key] = (clickStats[key] || 0) + 1;
+    res.status(200).json({ success: true, count: clickStats[key] });
+  });
+
+  app.get('/api/click-stats', (req, res) => {
+    res.json(clickStats);
+  });
+
   // API Route for Contact Form
   app.post('/api/contact', async (req, res) => {
     const { name, email, phone, message } = req.body;
