@@ -733,6 +733,7 @@ const Spotlight = () => {
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         <div className="text-center mb-10 md:mb-16 lg:mb-20">
           <h2 className="text-3xl md:text-5xl font-display font-bold mb-4 max-w-md md:max-w-none mx-auto leading-tight">Selected Work</h2>
+          <p className="text-white/40 text-xs md:text-sm font-medium tracking-wide mb-6">Only a selection is shown here. Browse full projects by category below.</p>
           <div className="w-24 h-[1px] bg-brand-red mx-auto" />
         </div>
 
