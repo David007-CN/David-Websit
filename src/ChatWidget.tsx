@@ -15,7 +15,15 @@ import {
   increment,
   Timestamp
 } from 'firebase/firestore';
-import { signInAnonymously, onAuthStateChanged, User as FirebaseUser, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { 
+  signInAnonymously, 
+  onAuthStateChanged, 
+  User as FirebaseUser, 
+  signInWithPopup, 
+  GoogleAuthProvider,
+  setPersistence,
+  browserLocalPersistence
+} from 'firebase/auth';
 import { db, auth } from './firebase';
 
 interface Message {
@@ -153,27 +161,31 @@ export const ChatWidget: React.FC = () => {
     console.log("Button clicked: Attempting Google Login...");
     
     if (!auth) {
-      alert("Firebase Auth is not initialized. Please check your configuration.");
+      alert("Firebase Auth is not initialized.");
       return;
     }
 
-    const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({ prompt: 'select_account' });
-    
     try {
+      // Set persistence to LOCAL to help with mobile state issues
+      await setPersistence(auth, browserLocalPersistence);
+      
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+      
       const result = await signInWithPopup(auth, provider);
       console.log("Login successful:", result.user.email);
       alert("Login successful! Welcome " + result.user.email);
     } catch (error: any) {
       console.error("Login Error Details:", error);
-      if (error.code === 'auth/popup-blocked') {
-        alert("Popup blocked! Please allow popups for this site in your browser settings (usually in the address bar).");
+      
+      if (error.message?.includes('missing initial state') || error.code === 'auth/internal-error') {
+        alert("Mobile Login Issue: Your browser is blocking the login state. \n\nSolutions:\n1. Disable 'Prevent Cross-Site Tracking' in Safari settings.\n2. Don't use Private/Incognito mode.\n3. Try opening in a standard browser (Chrome/Safari) instead of inside an app like WeChat.");
+      } else if (error.code === 'auth/popup-blocked') {
+        alert("Popup blocked! Please allow popups for this site.");
       } else if (error.code === 'auth/unauthorized-domain') {
-        alert("Domain unauthorized. Please ensure '" + window.location.hostname + "' is added to Authorized Domains in Firebase Console.");
-      } else if (error.code === 'auth/operation-not-allowed') {
-        alert("Google Sign-in is not enabled. Please enable it in Firebase Console > Authentication > Sign-in method.");
+        alert("Domain unauthorized: " + window.location.hostname);
       } else {
-        alert("Login failed: " + error.message + " (Code: " + error.code + ")");
+        alert("Login failed: " + error.message);
       }
     }
   };
