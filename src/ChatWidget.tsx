@@ -142,11 +142,33 @@ export const ChatWidget: React.FC = () => {
   };
 
   const handleGoogleLogin = async () => {
+    console.log("Attempting Google Login...");
     const provider = new GoogleAuthProvider();
+    // Force account selection to make it obvious
+    provider.setCustomParameters({ prompt: 'select_account' });
+    
     try {
-      await signInWithPopup(auth, provider);
-    } catch (error) {
+      const result = await signInWithPopup(auth, provider);
+      console.log("Login successful:", result.user.email);
+    } catch (error: any) {
       console.error("Login failed:", error);
+      if (error.code === 'auth/popup-blocked') {
+        alert("Popup blocked! Please allow popups for this site.");
+      } else if (error.code === 'auth/unauthorized-domain') {
+        alert("This domain is not authorized in Firebase Console. Please add it to Authentication > Settings > Authorized domains.");
+      } else {
+        alert("Login error: " + error.message);
+      }
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await auth.signOut();
+      localStorage.removeItem('chat_guest_id'); // Clear guest ID on logout to reset
+      console.log("Logged out");
+    } catch (error) {
+      console.error("Logout failed:", error);
     }
   };
 
@@ -265,16 +287,23 @@ export const ChatWidget: React.FC = () => {
             </div>
 
             {/* Footer / Auth */}
-            {!user?.email && !isAdmin && (
-              <div className="p-2 bg-black/40 border-t border-white/5 text-center">
+            <div className="p-2 bg-black/40 border-t border-white/5 text-center flex justify-center gap-4">
+              {user?.email ? (
+                <button 
+                  onClick={handleLogout}
+                  className="text-[10px] text-white/40 hover:text-white transition-colors"
+                >
+                  Logout ({user.email})
+                </button>
+              ) : (
                 <button 
                   onClick={handleGoogleLogin}
                   className="text-[10px] text-white/40 hover:text-white transition-colors"
                 >
                   Admin? Login to reply
                 </button>
-              </div>
-            )}
+              )}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
