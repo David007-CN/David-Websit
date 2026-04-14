@@ -1,0 +1,41 @@
+{
+  "entities": {
+    "ChatSession": {
+      "title": "Chat Session",
+      "description": "Represents a chat conversation between a user and the site owner.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "The session ID (usually the user's anonymous ID or UID)" },
+        "lastMessage": { "type": "string", "description": "The content of the last message sent" },
+        "lastTimestamp": { "type": "string", "format": "date-time", "description": "Timestamp of the last message" },
+        "userName": { "type": "string", "description": "Optional name of the user" },
+        "unreadCount": { "type": "number", "description": "Number of unread messages for the admin" },
+        "status": { "type": "string", "enum": ["active", "archived"], "description": "Current status of the session" }
+      },
+      "required": ["id", "lastTimestamp"]
+    },
+    "ChatMessage": {
+      "title": "Chat Message",
+      "description": "A single message within a chat session.",
+      "type": "object",
+      "properties": {
+        "sessionId": { "type": "string", "description": "The ID of the parent chat session" },
+        "text": { "type": "string", "description": "The message content" },
+        "timestamp": { "type": "string", "format": "date-time", "description": "When the message was sent" },
+        "isAdmin": { "type": "boolean", "description": "Whether the message was sent by the admin" },
+        "senderId": { "type": "string", "description": "The UID of the sender" }
+      },
+      "required": ["sessionId", "text", "timestamp", "isAdmin", "senderId"]
+    }
+  },
+  "firestore": {
+    "/chat_sessions/{sessionId}": {
+      "schema": "ChatSession",
+      "description": "Collection of active chat sessions."
+    },
+    "/chat_sessions/{sessionId}/messages/{messageId}": {
+      "schema": "ChatMessage",
+      "description": "Sub-collection of messages for a specific session."
+    }
+  }
+}
