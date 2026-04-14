@@ -141,23 +141,33 @@ export const ChatWidget: React.FC = () => {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    console.log("Attempting Google Login...");
+  const handleGoogleLogin = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log("Button clicked: Attempting Google Login...");
+    
+    if (!auth) {
+      alert("Firebase Auth is not initialized. Please check your configuration.");
+      return;
+    }
+
     const provider = new GoogleAuthProvider();
-    // Force account selection to make it obvious
     provider.setCustomParameters({ prompt: 'select_account' });
     
     try {
       const result = await signInWithPopup(auth, provider);
       console.log("Login successful:", result.user.email);
+      alert("Login successful! Welcome " + result.user.email);
     } catch (error: any) {
-      console.error("Login failed:", error);
+      console.error("Login Error Details:", error);
       if (error.code === 'auth/popup-blocked') {
-        alert("Popup blocked! Please allow popups for this site.");
+        alert("Popup blocked! Please allow popups for this site in your browser settings (usually in the address bar).");
       } else if (error.code === 'auth/unauthorized-domain') {
-        alert("This domain is not authorized in Firebase Console. Please add it to Authentication > Settings > Authorized domains.");
+        alert("Domain unauthorized. Please ensure '" + window.location.hostname + "' is added to Authorized Domains in Firebase Console.");
+      } else if (error.code === 'auth/operation-not-allowed') {
+        alert("Google Sign-in is not enabled. Please enable it in Firebase Console > Authentication > Sign-in method.");
       } else {
-        alert("Login error: " + error.message);
+        alert("Login failed: " + error.message + " (Code: " + error.code + ")");
       }
     }
   };
