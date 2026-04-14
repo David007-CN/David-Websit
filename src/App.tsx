@@ -28,7 +28,6 @@ import {
 } from 'lucide-react';
 import { Project } from './types';
 import { PROJECTS } from './data/projects';
-import { ChatWidget } from './ChatWidget';
 
 // --- Utilities ---
 const getOptimizedUrl = (url: string, width?: number, height?: number) => {
@@ -1393,7 +1392,6 @@ export default function App() {
           <Route path="/gallery/:id" element={<GalleryPage />} />
         </Routes>
         <Footer />
-        <ChatWidget />
       </div>
     </BrowserRouter>
   );
