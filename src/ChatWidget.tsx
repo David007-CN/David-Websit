@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircle, X, Send, User, ShieldCheck } from 'lucide-react';
+import { MessageCircle, X, Send, User, ShieldCheck, ChevronLeft } from 'lucide-react';
 import { 
   collection, 
   query, 
@@ -43,8 +43,14 @@ export const ChatWidget: React.FC = () => {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
       if (u) {
         setUser(u);
-        setIsAdmin(u.email === ADMIN_EMAIL);
-        setActiveSessionId(u.uid);
+        const isAdm = u.email === ADMIN_EMAIL;
+        setIsAdmin(isAdm);
+        if (isAdm) {
+          setShowAdminPanel(true);
+          setActiveSessionId(null); // Admin starts with list
+        } else {
+          setActiveSessionId(u.uid);
+        }
       } else {
         setUser(null);
         setIsAdmin(false);
@@ -195,11 +201,23 @@ export const ChatWidget: React.FC = () => {
             {/* Header */}
             <div className="p-4 bg-brand-red flex items-center justify-between text-white">
               <div className="flex items-center gap-3">
+                {isAdmin && activeSessionId && !showAdminPanel && (
+                  <button 
+                    onClick={() => setShowAdminPanel(true)}
+                    className="p-1 hover:bg-white/10 rounded transition-colors mr-1"
+                  >
+                    <ChevronLeft size={20} />
+                  </button>
+                )}
                 <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
                   <MessageCircle size={18} />
                 </div>
                 <div>
-                  <h3 className="font-bold text-sm">Live Support</h3>
+                  <h3 className="font-bold text-sm">
+                    {isAdmin && activeSessionId && !showAdminPanel 
+                      ? (sessions.find(s => s.id === activeSessionId)?.userName || 'Chatting...') 
+                      : 'Live Support'}
+                  </h3>
                   <p className="text-[10px] opacity-80">Typically replies in a few hours</p>
                 </div>
               </div>
@@ -207,7 +225,7 @@ export const ChatWidget: React.FC = () => {
                 {isAdmin && (
                   <button 
                     onClick={() => setShowAdminPanel(!showAdminPanel)}
-                    className="p-1 hover:bg-white/10 rounded transition-colors"
+                    className={`p-1 rounded transition-colors ${showAdminPanel ? 'bg-white/20' : 'hover:bg-white/10'}`}
                     title="Toggle Admin Panel"
                   >
                     <ShieldCheck size={18} />
