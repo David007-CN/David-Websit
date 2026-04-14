@@ -40,7 +40,7 @@ service cloud.firestore {
     }
 
     function isSessionOwner(sessionId) {
-      return isAuthenticated() && request.auth.uid == sessionId;
+      return (isAuthenticated() && request.auth.uid == sessionId) || (sessionId.matches("^guest_.*"));
     }
 
     function isValidSession(data) {
@@ -60,7 +60,7 @@ service cloud.firestore {
              data.timestamp is timestamp &&
              data.isAdmin is bool &&
              data.senderId is string &&
-             data.senderId == request.auth.uid;
+             (data.senderId == request.auth.uid || data.senderId.matches("^guest_.*"));
     }
 
     // ===============================================================
@@ -69,12 +69,12 @@ service cloud.firestore {
 
     match /chat_sessions/{sessionId} {
       allow read: if isAdmin() || isSessionOwner(sessionId);
-      allow create: if isAuthenticated() && isValidSession(request.resource.data) && (isSessionOwner(sessionId) || isAdmin());
-      allow update: if isAuthenticated() && isValidSession(request.resource.data) && (isSessionOwner(sessionId) || isAdmin());
+      allow create: if isValidSession(request.resource.data) && (isSessionOwner(sessionId) || isAdmin());
+      allow update: if isValidSession(request.resource.data) && (isSessionOwner(sessionId) || isAdmin());
       
       match /messages/{messageId} {
         allow read: if isAdmin() || isSessionOwner(sessionId);
-        allow create: if isAuthenticated() && isValidMessage(request.resource.data) && (isSessionOwner(sessionId) || isAdmin());
+        allow create: if isValidMessage(request.resource.data) && (isSessionOwner(sessionId) || isAdmin());
       }
     }
 

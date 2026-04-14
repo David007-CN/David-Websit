@@ -44,11 +44,17 @@ export const ChatWidget: React.FC = () => {
       if (u) {
         setUser(u);
         setIsAdmin(u.email === ADMIN_EMAIL);
-        if (u.email !== ADMIN_EMAIL) {
-          setActiveSessionId(u.uid);
-        }
+        setActiveSessionId(u.uid);
       } else {
-        signInAnonymously(auth).catch(console.error);
+        setUser(null);
+        setIsAdmin(false);
+        // Use localStorage for guest ID if not logged in
+        let guestId = localStorage.getItem('chat_guest_id');
+        if (!guestId) {
+          guestId = 'guest_' + Math.random().toString(36).substring(2, 15);
+          localStorage.setItem('chat_guest_id', guestId);
+        }
+        setActiveSessionId(guestId);
       }
     });
     return () => unsubscribe();
@@ -93,19 +99,21 @@ export const ChatWidget: React.FC = () => {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!message.trim() || !user || !activeSessionId) return;
+    if (!message.trim() || !activeSessionId) return;
 
     const msgText = message.trim();
     setMessage('');
 
     try {
+      const senderId = user ? user.uid : (localStorage.getItem('chat_guest_id') || activeSessionId);
+      
       // 1. Add message to subcollection
       await addDoc(collection(db, 'chat_sessions', activeSessionId, 'messages'), {
         sessionId: activeSessionId,
         text: msgText,
         timestamp: serverTimestamp(),
         isAdmin: isAdmin,
-        senderId: user.uid
+        senderId: senderId
       });
 
       // 2. Update session metadata
@@ -117,7 +125,7 @@ export const ChatWidget: React.FC = () => {
           id: activeSessionId,
           lastMessage: msgText,
           lastTimestamp: serverTimestamp(),
-          userName: user.displayName || 'Guest',
+          userName: user?.displayName || 'Guest',
           unreadCount: isAdmin ? 0 : 1,
           status: 'active'
         });
