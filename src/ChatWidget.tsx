@@ -135,11 +135,15 @@ export const ChatWidget: React.FC = () => {
       const sessionSnap = await getDoc(sessionRef);
       
       if (!sessionSnap.exists()) {
+        const now = new Date();
+        const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        const guestName = `Guest (${dateStr})`;
+        
         await setDoc(sessionRef, {
           id: activeSessionId,
           lastMessage: msgText,
           lastTimestamp: serverTimestamp(),
-          userName: user?.displayName || 'Guest',
+          userName: user?.displayName || guestName,
           unreadCount: isAdmin ? 0 : 1,
           status: 'active'
         });
