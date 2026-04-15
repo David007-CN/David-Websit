@@ -503,7 +503,7 @@ const Hero = () => {
                 <img 
                   src={getOptimizedUrl(slides[currentSlide].bg!)} 
                   alt="Background" 
-                  className="w-full h-full object-cover brightness-[0.38] contrast-110"
+                  className="w-full h-full object-cover brightness-[0.3] contrast-110"
                   referrerPolicy="no-referrer"
                 />
                 <div className="absolute inset-0 bg-gradient-to-b from-brand-dark/50 via-transparent to-brand-dark/75" />
