@@ -876,7 +876,7 @@ const Archive = () => {
 };
 
 const Featured = () => {
-  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [showStats, setShowStats] = useState(false);
   const [stats, setStats] = useState<Record<string, number>>({});
 
@@ -909,10 +909,32 @@ const Featured = () => {
     }
   };
 
-  const handleItemClick = (item: any) => {
-    setSelectedItem(item);
-    trackClick(item);
+  const handleNext = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (selectedIndex !== null) {
+      setSelectedIndex((selectedIndex + 1) % shuffledItems.length);
+    }
   };
+
+  const handlePrev = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (selectedIndex !== null) {
+      setSelectedIndex((selectedIndex - 1 + shuffledItems.length) % shuffledItems.length);
+    }
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (selectedIndex === null) return;
+      if (e.key === 'ArrowRight') handleNext();
+      if (e.key === 'ArrowLeft') handlePrev();
+      if (e.key === 'Escape') setSelectedIndex(null);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedIndex]);
+
+  const selectedItem = selectedIndex !== null ? shuffledItems[selectedIndex] : null;
 
   return (
     <section id="featured" className="py-16 md:py-24 lg:py-32 bg-[#0A0A0A] overflow-hidden relative">
@@ -941,7 +963,11 @@ const Featured = () => {
             <motion.div 
               key={`${item.id}-${index}`} 
               whileHover={{ scale: 1.02 }}
-              onClick={() => handleItemClick(item)}
+              onClick={() => {
+                const realIndex = index % shuffledItems.length;
+                setSelectedIndex(realIndex);
+                trackClick(item);
+              }}
               className="parchment-card p-1 shadow-2xl group w-[300px] md:w-[400px] shrink-0 cursor-pointer"
             >
               <div className="bg-white p-4 h-full flex flex-col whitespace-normal">
@@ -967,22 +993,37 @@ const Featured = () => {
 
       {/* Lightbox Modal */}
       <AnimatePresence>
-        {selectedItem && (
+        {selectedIndex !== null && selectedItem && (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={() => setSelectedItem(null)}
+            onClick={() => setSelectedIndex(null)}
             className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex items-center justify-center p-0"
           >
             <button 
               className="absolute top-6 right-6 text-white/60 hover:text-white transition-colors z-[110]"
-              onClick={() => setSelectedItem(null)}
+              onClick={() => setSelectedIndex(null)}
             >
               <X size={32} />
             </button>
+
+            {/* Navigation Arrows */}
+            <button 
+              className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-full bg-white/5 border border-white/10 text-white/40 hover:text-white hover:bg-white/10 transition-all z-[110]"
+              onClick={handlePrev}
+            >
+              <ChevronLeft size={32} />
+            </button>
+            <button 
+              className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-full bg-white/5 border border-white/10 text-white/40 hover:text-white hover:bg-white/10 transition-all z-[110]"
+              onClick={handleNext}
+            >
+              <ChevronRight size={32} />
+            </button>
             
             <motion.div 
+              key={selectedIndex}
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
@@ -1229,11 +1270,41 @@ const Footer = () => {
 const GalleryPage = () => {
   const { id } = useParams<{ id: string }>();
   const project = ARCHIVE_PROJECTS.find(p => p.id === Number(id)) || ARCHIVE_PROJECTS[0];
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+
+  const galleryItems = project.galleryImages || [];
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [id]);
+
+  const handleNext = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (selectedIndex !== null) {
+      setSelectedIndex((selectedIndex + 1) % galleryItems.length);
+    }
+  };
+
+  const handlePrev = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (selectedIndex !== null) {
+      setSelectedIndex((selectedIndex - 1 + galleryItems.length) % galleryItems.length);
+    }
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (selectedIndex === null) return;
+      if (e.key === 'ArrowRight') handleNext();
+      if (e.key === 'ArrowLeft') handlePrev();
+      if (e.key === 'Escape') setSelectedIndex(null);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedIndex]);
+
+  const selectedItem = selectedIndex !== null ? galleryItems[selectedIndex] : null;
+  const selectedUrl = selectedItem ? (typeof selectedItem === 'object' ? selectedItem.url : selectedItem) : null;
 
   return (
     <div className="min-h-screen bg-brand-dark pt-32 pb-24">
@@ -1277,7 +1348,7 @@ const GalleryPage = () => {
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.05 }}
                 className="group cursor-pointer"
-                onClick={() => setSelectedImage(videoUrl)}
+                onClick={() => setSelectedIndex(i)}
               >
                 <div className="relative aspect-video overflow-hidden bg-white/5 border border-white/10 p-1 mb-4">
                   <img 
@@ -1309,47 +1380,63 @@ const GalleryPage = () => {
 
       {/* Lightbox */}
       <AnimatePresence>
-        {selectedImage && (
+        {selectedIndex !== null && selectedUrl && (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 md:p-12"
-            onClick={() => setSelectedImage(null)}
+            onClick={() => setSelectedIndex(null)}
           >
             <button 
               className="absolute top-8 right-8 text-white/40 hover:text-white transition-colors z-[110]"
               onClick={(e) => {
                 e.stopPropagation();
-                setSelectedImage(null);
+                setSelectedIndex(null);
               }}
             >
               <X size={32} />
             </button>
+
+            {/* Navigation Arrows */}
+            <button 
+              className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-full bg-white/5 border border-white/10 text-white/40 hover:text-white hover:bg-white/10 transition-all z-[110]"
+              onClick={handlePrev}
+            >
+              <ChevronLeft size={32} />
+            </button>
+            <button 
+              className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-full bg-white/5 border border-white/10 text-white/40 hover:text-white hover:bg-white/10 transition-all z-[110]"
+              onClick={handleNext}
+            >
+              <ChevronRight size={32} />
+            </button>
+
             <motion.div 
+              key={selectedIndex}
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               className="relative max-w-7xl w-full aspect-video shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
-              {selectedImage.includes('bilibili.com') || selectedImage.includes('player.bilibili.com') ? (
+              {selectedUrl.includes('bilibili.com') || selectedUrl.includes('player.bilibili.com') ? (
                 <iframe 
                   src={
-                    selectedImage.includes('player.bilibili.com') 
-                      ? selectedImage 
-                      : `//player.bilibili.com/player.html?bvid=${selectedImage.match(/BV[a-zA-Z0-9]+/)?.[0]}&page=1&high_quality=1&autoplay=0`
+                    selectedUrl.includes('player.bilibili.com') 
+                      ? selectedUrl 
+                      : `//player.bilibili.com/player.html?bvid=${selectedUrl.match(/BV[a-zA-Z0-9]+/)?.[0]}&page=1&high_quality=1&autoplay=0`
                   }
                   className="w-full h-full border-none"
                   allowFullScreen
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 />
-              ) : selectedImage.includes('youtube.com') || selectedImage.includes('youtu.be') ? (
+              ) : selectedUrl.includes('youtube.com') || selectedUrl.includes('youtu.be') ? (
                 <iframe 
                   src={`https://www.youtube.com/embed/${
-                    selectedImage.includes('youtu.be') 
-                      ? selectedImage.split('/').pop()?.split('?')[0] 
-                      : selectedImage.match(/[?&]v=([^&#]+)/)?.[1]
+                    selectedUrl.includes('youtu.be') 
+                      ? selectedUrl.split('/').pop()?.split('?')[0] 
+                      : selectedUrl.match(/[?&]v=([^&#]+)/)?.[1]
                   }`}
                   className="w-full h-full border-none"
                   allowFullScreen
@@ -1357,7 +1444,7 @@ const GalleryPage = () => {
                 />
               ) : (
                 <img 
-                  src={getOptimizedUrl(selectedImage, 1920, 1080)} 
+                  src={getOptimizedUrl(selectedUrl, 1920, 1080)} 
                   className="w-full h-full object-contain"
                   referrerPolicy="no-referrer"
                 />
