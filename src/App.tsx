@@ -1027,8 +1027,19 @@ const Featured = () => {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
+              drag
+              dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
+              dragElastic={0.2}
+              onDragEnd={(_, info) => {
+                const threshold = 50;
+                if (info.offset.x < -threshold || info.offset.y < -threshold) {
+                  handleNext();
+                } else if (info.offset.x > threshold || info.offset.y > threshold) {
+                  handlePrev();
+                }
+              }}
               onClick={(e) => e.stopPropagation()}
-              className="relative flex items-center justify-center w-full h-full"
+              className="relative flex items-center justify-center w-full h-full cursor-grab active:cursor-grabbing"
             >
               <img 
                 src={getOptimizedUrl(selectedItem.image, 1080, 1350)} 
@@ -1223,10 +1234,18 @@ const Footer = () => {
                 referrerPolicy="no-referrer"
               />
               <div className="flex gap-6 pl-1">
-                <Twitter size={20} className="opacity-40 hover:opacity-100 cursor-pointer transition-opacity" />
-                <Facebook size={20} className="opacity-40 hover:opacity-100 cursor-pointer transition-opacity" />
-                <Instagram size={20} className="opacity-40 hover:opacity-100 cursor-pointer transition-opacity" />
-                <Youtube size={20} className="opacity-40 hover:opacity-100 cursor-pointer transition-opacity" />
+                <a href="https://www.instagram.com/osight_david/" target="_blank" rel="noopener noreferrer">
+                  <Twitter size={20} className="opacity-40 hover:opacity-100 cursor-pointer transition-opacity" />
+                </a>
+                <a href="https://www.instagram.com/osight_david/" target="_blank" rel="noopener noreferrer">
+                  <Facebook size={20} className="opacity-40 hover:opacity-100 cursor-pointer transition-opacity" />
+                </a>
+                <a href="https://www.instagram.com/osight_david/" target="_blank" rel="noopener noreferrer">
+                  <Instagram size={20} className="opacity-40 hover:opacity-100 cursor-pointer transition-opacity" />
+                </a>
+                <a href="https://www.instagram.com/osight_david/" target="_blank" rel="noopener noreferrer">
+                  <Youtube size={20} className="opacity-40 hover:opacity-100 cursor-pointer transition-opacity" />
+                </a>
               </div>
             </div>
           </div>
@@ -1259,7 +1278,7 @@ const Footer = () => {
         
         <div className="text-center pt-12 border-t border-white/5">
           <p className="text-[10px] opacity-30 tracking-[0.3em]">
-            © 2026 Vanguard design gmbh. All rights reserved.
+            © {new Date().getFullYear()} David Design. All rights reserved.
           </p>
         </div>
       </div>
@@ -1417,7 +1436,18 @@ const GalleryPage = () => {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="relative max-w-7xl w-full aspect-video shadow-2xl"
+              drag
+              dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
+              dragElastic={0.2}
+              onDragEnd={(_, info) => {
+                const threshold = 50;
+                if (info.offset.x < -threshold || info.offset.y < -threshold) {
+                  handleNext();
+                } else if (info.offset.x > threshold || info.offset.y > threshold) {
+                  handlePrev();
+                }
+              }}
+              className="relative max-w-7xl w-full aspect-video shadow-2xl cursor-grab active:cursor-grabbing"
               onClick={(e) => e.stopPropagation()}
             >
               {selectedUrl.includes('bilibili.com') || selectedUrl.includes('player.bilibili.com') ? (
