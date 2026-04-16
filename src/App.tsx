@@ -47,8 +47,19 @@ const getOptimizedUrl = (url: string, width?: number, height?: number) => {
       rawUrl = url.replace('github.com', 'raw.githubusercontent.com').replace('/refs/heads/', '/');
     }
 
-    // Remove query params like ?raw=true
-    rawUrl = rawUrl.split('?')[0];
+    // Clean up query params: remove raw=true but keep others for cache busting
+    try {
+      const urlParts = rawUrl.split('?');
+      if (urlParts.length > 1) {
+        const params = new URLSearchParams(urlParts[1]);
+        params.delete('raw');
+        const newParams = params.toString();
+        rawUrl = urlParts[0] + (newParams ? '?' + newParams : '');
+      }
+    } catch (e) {
+      // Fallback if URL parsing fails
+      rawUrl = rawUrl.split('?raw=true').join('').split('&raw=true').join('');
+    }
   }
 
   // Use wsrv.nl proxy for all external images to benefit from CDN and WebP/AVIF optimization
@@ -195,6 +206,7 @@ const ARCHIVE_PROJECTS: Project[] = [
     title: "Video",
     subtitle: "Primarily 3rd-party production, with our concept guidance.",
     category: "Video",
+    backgroundVideoId: "Ix7uaO1QJA4",
     image: "https://github.com/David007-CN/DW/blob/main/Cover/06_DSC06844.jpg?raw=true",
     galleryImages: [
       { 
@@ -255,7 +267,7 @@ const SERVICES = [
     title: "B2B Branding & Event Materials",
     description: "Designing digital and print materials for B2B communication, including brand assets, product catalogs, and event visuals for trade shows and product launches, helping brands present professionally across touchpoints and support business conversions.",
     icon: <Zap size={24} />,
-    iconUrl: "https://github.com/David007-CN/DW/blob/main/Icons/3.png?raw=true"
+    iconUrl: "https://github.com/David007-CN/DW/blob/main/Icons/3.png?raw=true&v=4"
   }
 ];
 
@@ -831,6 +843,15 @@ const Spotlight = () => {
 
 const Archive = () => {
   const navigate = useNavigate();
+  const [videoKey, setVideoKey] = useState(0);
+
+  // 每 4 秒强制重置一次视频，实现精准的 4 秒循环并防止加载后续内容
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setVideoKey(prev => prev + 1);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, []);
   
   return (
     <section id="works" className="py-16 md:py-24 lg:py-32 bg-brand-dark">
@@ -847,17 +868,39 @@ const Archive = () => {
           {ARCHIVE_PROJECTS.map((project, index) => (
             <div 
               key={project.id} 
-              onClick={() => navigate(`/gallery/${project.id}`)}
+              onClick={() => navigate('/gallery/' + project.id)}
               className={`relative group overflow-hidden aspect-video cursor-pointer bg-white/5 ${
                 index === ARCHIVE_PROJECTS.length - 1 && ARCHIVE_PROJECTS.length % 2 !== 0 ? 'md:col-span-2' : ''
               }`}
             >
-              <img 
-                src={getOptimizedUrl(project.image, 800, 450)} 
-                className="w-full h-full object-cover grayscale group-hover:grayscale-0 brightness-50 group-hover:brightness-100 transition-all duration-700" 
-                referrerPolicy="no-referrer"
-                loading="lazy"
-              />
+              {project.category === 'Video' && project.backgroundVideoId ? (
+                <div 
+                  className="absolute inset-0 w-full h-full grayscale group-hover:grayscale-0 brightness-[0.8] group-hover:brightness-100 transition-all duration-700 overflow-hidden pointer-events-none bg-black"
+                >
+                  {/* 垫底图：防止视频重置时闪烁 */}
+                  <img 
+                    src={getOptimizedUrl(project.image, 800, 450)} 
+                    className="absolute inset-0 w-full h-full object-cover opacity-50"
+                    alt=""
+                  />
+                  <iframe 
+                    key={videoKey}
+                    src={`https://www.youtube.com/embed/${project.backgroundVideoId}?autoplay=1&mute=1&controls=0&showinfo=0&rel=0&modestbranding=1&iv_load_policy=3&disablekb=1&start=0&end=4`}
+                    className="absolute inset-0 w-full h-full"
+                    allow="autoplay; encrypted-media"
+                    frameBorder="0"
+                  />
+                  {/* 黑色半透明遮罩层 */}
+                  <div className="absolute inset-0 bg-black/50 group-hover:bg-black/10 transition-colors duration-700" />
+                </div>
+              ) : (
+                <img 
+                  src={getOptimizedUrl(project.image, 800, 450)} 
+                  className="w-full h-full object-cover grayscale group-hover:grayscale-0 brightness-50 group-hover:brightness-100 transition-all duration-700" 
+                  referrerPolicy="no-referrer"
+                  loading="lazy"
+                />
+              )}
               <div className="absolute inset-0 flex flex-col justify-center items-center text-center p-12 bg-black/20 group-hover:bg-transparent transition-colors duration-500">
                 <p className="text-[11px] font-bold tracking-[0.1em] opacity-60 mb-2">{project.subtitle}</p>
                 <h3 className="text-2xl md:text-4xl font-display font-bold mb-4 group-hover:scale-110 transition-transform duration-500">{project.title}</h3>
@@ -875,16 +918,96 @@ const Archive = () => {
   );
 };
 
+
 const Featured = () => {
+  const [featuredItems, setFeaturedItems] = useState<Project[]>(FEATURED_ITEMS);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [showStats, setShowStats] = useState(false);
   const [stats, setStats] = useState<Record<string, number>>({});
+  const [isLoading, setIsLoading] = useState(false);
 
   const [isHovered, setIsHovered] = useState(false);
 
-  const shuffledItems = useMemo(() => {
-    return [...FEATURED_ITEMS].sort(() => Math.random() - 0.5);
+  // GitHub Folder Configuration
+  const GITHUB_REPO = "David007-CN/DW";
+  const GITHUB_FOLDER = "Life"; 
+
+  useEffect(() => {
+    const fetchGitHubImages = async () => {
+      if (!GITHUB_REPO || !GITHUB_FOLDER) return;
+      
+      setIsLoading(true);
+      try {
+        const response = await fetch("https://api.github.com/repos/" + GITHUB_REPO + "/contents/" + GITHUB_FOLDER);
+        
+        if (response.status === 404) {
+          setFeaturedItems(FEATURED_ITEMS);
+          return;
+        }
+
+        if (!response.ok) throw new Error('Failed to fetch folder content');
+        
+        const data = await response.json();
+        
+        if (!Array.isArray(data)) {
+          setFeaturedItems(FEATURED_ITEMS);
+          return;
+        }
+
+        const githubItems: Project[] = data
+          .filter((file: any) => 
+            file.type === 'file' && 
+            ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif'].some(ext => file.name.toLowerCase().endsWith('.' + ext))
+          )
+          .map((file: any, index: number) => {
+            const fileName = file.name.split('.')[0];
+            const parts = fileName.split('_');
+            
+            let title = fileName;
+            let time = "2 0 2 5";
+
+            if (parts.length >= 2) {
+              const rawTime = parts.pop() || "";
+              title = parts.join(' ').split('-').join(' ');
+              
+              if (rawTime.length === 6 && rawTime.split('').every(char => char >= '0' && char <= '9')) {
+                time = rawTime.split('').map((char, i) => i === 3 ? char + ' . ' : char).join(' ');
+              } else {
+                time = rawTime.split('-').join(' ').split('_').join(' ').toUpperCase();
+              }
+            } else {
+              title = fileName.split('-').join(' ');
+            }
+
+            return {
+              id: 2000 + index,
+              title: title,
+              category: "Life",
+              image: file.download_url,
+              time: time
+            };
+          });
+
+        if (githubItems.length > 0) {
+          const shuffled = [...githubItems].sort(() => Math.random() - 0.5);
+          setFeaturedItems(shuffled);
+        } else {
+          setFeaturedItems(FEATURED_ITEMS);
+        }
+      } catch (err) {
+        console.error("GitHub Fetch Error:", err);
+        setFeaturedItems(FEATURED_ITEMS);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchGitHubImages();
   }, []);
+
+  const shuffledItems = useMemo(() => {
+    return featuredItems;
+  }, [featuredItems]);
 
   const trackClick = async (item: any) => {
     try {
@@ -932,7 +1055,7 @@ const Featured = () => {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedIndex]);
+  }, [selectedIndex, shuffledItems.length]);
 
   const selectedItem = selectedIndex !== null ? shuffledItems[selectedIndex] : null;
 
@@ -942,7 +1065,6 @@ const Featured = () => {
         <h2 className="text-3xl md:text-5xl font-display font-bold mb-4 tracking-tighter text-white">Work & Life</h2>
         <div className="w-12 h-[1px] bg-brand-red mx-auto mb-6" />
         
-        {/* Stats Trigger */}
         <button 
           onClick={fetchStats}
           className="absolute right-6 top-1/2 -translate-y-1/2 text-white/20 hover:text-brand-red transition-colors flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest"
@@ -953,45 +1075,52 @@ const Featured = () => {
       </div>
       
       <div className="relative flex overflow-hidden">
-        <div 
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
-          className="flex gap-8 whitespace-nowrap animate-infinite-scroll"
-          style={{ animationPlayState: selectedItem || showStats || isHovered ? 'paused' : 'running' }}
-        >
-          {[...shuffledItems, ...shuffledItems].map((item, index) => (
-            <motion.div 
-              key={`${item.id}-${index}`} 
-              whileHover={{ scale: 1.02 }}
-              onClick={() => {
-                const realIndex = index % shuffledItems.length;
-                setSelectedIndex(realIndex);
-                trackClick(item);
-              }}
-              className="parchment-card p-1 shadow-2xl group w-[300px] md:w-[400px] shrink-0 cursor-pointer"
-            >
-              <div className="bg-white p-4 h-full flex flex-col whitespace-normal">
-                <div className="aspect-[4/5] overflow-hidden mb-6 relative bg-gray-100">
-                  <img 
-                    src={getOptimizedUrl(item.image, 400, 500)} 
-                    className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110" 
-                    referrerPolicy="no-referrer" 
-                    loading="lazy"
-                  />
-                </div>
-                <div className="text-center flex-grow flex flex-col justify-center">
-                  <h4 className="text-xl font-display font-bold mb-1 tracking-tight text-brand-dark">{item.title}</h4>
-                  <div className="text-[10px] font-bold tracking-[0.4em] opacity-40 mt-4 text-brand-dark">
-                    {item.time}
+        {isLoading ? (
+          <div className="flex gap-8 px-6 py-10">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="w-[300px] md:w-[400px] aspect-square bg-white/5 animate-pulse rounded-sm" />
+            ))}
+          </div>
+        ) : (
+          <div 
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+            className="flex gap-8 whitespace-nowrap animate-infinite-scroll"
+            style={{ animationPlayState: (selectedItem || showStats || isHovered) ? 'paused' : 'running' }}
+          >
+            {[...shuffledItems, ...shuffledItems].map((item, index) => (
+              <motion.div 
+                key={item.id + "-" + index} 
+                whileHover={{ scale: 1.02 }}
+                onClick={() => {
+                  const realIndex = index % shuffledItems.length;
+                  setSelectedIndex(realIndex);
+                  trackClick(item);
+                }}
+                className="parchment-card p-1 shadow-2xl group w-[300px] md:w-[400px] shrink-0 cursor-pointer"
+              >
+                <div className="bg-white p-4 h-full flex flex-col whitespace-normal">
+                  <div className="aspect-square overflow-hidden mb-6 relative bg-gray-100">
+                    <img 
+                      src={getOptimizedUrl(item.image, 400, 500)} 
+                      className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110" 
+                      referrerPolicy="no-referrer" 
+                      loading="lazy"
+                    />
+                  </div>
+                  <div className="text-center flex-grow flex flex-col justify-center">
+                    <h4 className="text-xl font-display font-bold mb-1 tracking-tight text-brand-dark">{item.title}</h4>
+                    <div className="text-[10px] font-bold tracking-[0.4em] opacity-40 mt-4 text-brand-dark">
+                      {item.time}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Lightbox Modal */}
       <AnimatePresence>
         {selectedIndex !== null && selectedItem && (
           <motion.div 
@@ -1008,7 +1137,6 @@ const Featured = () => {
               <X size={32} />
             </button>
 
-            {/* Navigation Arrows */}
             <button 
               className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-full bg-white/5 border border-white/10 text-white/40 hover:text-white hover:bg-white/10 transition-all z-[110]"
               onClick={handlePrev}
@@ -1051,7 +1179,6 @@ const Featured = () => {
         )}
       </AnimatePresence>
 
-      {/* Stats Modal */}
       <AnimatePresence>
         {showStats && (
           <motion.div 
@@ -1178,10 +1305,10 @@ const Newsletter = () => {
               type="tel" 
               value={formData.phone}
               onChange={(e) => {
-                const value = e.target.value.replace(/[^0-9+\-() ]/g, '');
+                const value = e.target.value.split(/[^0-9+\-() ]/).join('');
                 setFormData({ ...formData, phone: value });
               }}
-              pattern="[0-9+\-() ]*"
+              pattern="[0-9+\\\\-() ]*"
               placeholder="Phone (Optional)" 
               className="w-full bg-transparent border-b border-white/20 py-4 px-2 outline-none focus:border-brand-red transition-colors text-sm placeholder:text-white/20"
             />
@@ -1342,7 +1469,7 @@ const GalleryPage = () => {
             {ARCHIVE_PROJECTS.filter(p => p.id !== project.id).map((otherProject) => (
               <Link 
                 key={otherProject.id}
-                to={`/gallery/${otherProject.id}`}
+                to={'/gallery/' + otherProject.id}
                 className="px-4 py-2 border border-white/10 bg-white/5 text-[10px] font-bold tracking-widest hover:border-brand-red hover:text-brand-red transition-all duration-300"
               >
                 {otherProject.title}
@@ -1455,7 +1582,7 @@ const GalleryPage = () => {
                   src={
                     selectedUrl.includes('player.bilibili.com') 
                       ? selectedUrl 
-                      : `//player.bilibili.com/player.html?bvid=${selectedUrl.match(/BV[a-zA-Z0-9]+/)?.[0]}&page=1&high_quality=1&autoplay=0`
+                      : 'https://player.bilibili.com/player.html?bvid=' + (selectedUrl.includes('BV') ? 'BV' + selectedUrl.split('BV')[1].split(/[?&/]/)[0] : '') + '&page=1&high_quality=1&autoplay=0'
                   }
                   className="w-full h-full border-none"
                   allowFullScreen
@@ -1463,11 +1590,11 @@ const GalleryPage = () => {
                 />
               ) : selectedUrl.includes('youtube.com') || selectedUrl.includes('youtu.be') ? (
                 <iframe 
-                  src={`https://www.youtube.com/embed/${
+                  src={'https://www.youtube.com/embed/' + (
                     selectedUrl.includes('youtu.be') 
                       ? selectedUrl.split('/').pop()?.split('?')[0] 
-                      : selectedUrl.match(/[?&]v=([^&#]+)/)?.[1]
-                  }`}
+                      : (selectedUrl.includes('v=') ? selectedUrl.split('v=')[1].split('&')[0] : '')
+                  )}
                   className="w-full h-full border-none"
                   allowFullScreen
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
