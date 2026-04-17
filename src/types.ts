@@ -6,6 +6,7 @@ export interface Project {
   description?: string;
   image: string;
   backgroundVideoId?: string;
+  videoUrl?: string;
   price?: string;
   time?: string;
   galleryImages?: (string | { url: string; cover?: string; title?: string; subtitle?: string })[];

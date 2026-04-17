@@ -33,44 +33,44 @@ import { PROJECTS } from './data/projects';
 const getOptimizedUrl = (url: string, width?: number, height?: number) => {
   if (!url) return url;
   
+  const cleanUrl = url.split('?')[0].split('#')[0];
+  const isVideo = cleanUrl.toLowerCase().match(/\.(mp4|webm|ogg|mov|m4v)$/);
+  
   let rawUrl = url;
   
   // Handle GitHub URLs
   if (url.includes('github.com') || url.includes('raw.githubusercontent.com')) {
-    // Convert GitHub blob URLs to raw URLs
-    if (url.includes('github.com') && url.includes('/blob/')) {
-      rawUrl = url.replace('github.com', 'raw.githubusercontent.com').replace('/blob/', '/');
-    }
+    // Basic conversion to raw format
+    rawUrl = url.replace('github.com', 'raw.githubusercontent.com')
+                .replace('/blob/', '/')
+                .replace('/refs/heads/', '/');
     
-    // Convert GitHub "refs/heads" style URLs
-    if (url.includes('github.com') && url.includes('/refs/heads/')) {
-      rawUrl = url.replace('github.com', 'raw.githubusercontent.com').replace('/refs/heads/', '/');
-    }
-
-    // Clean up query params: remove raw=true but keep others for cache busting
-    try {
-      const urlParts = rawUrl.split('?');
-      if (urlParts.length > 1) {
-        const params = new URLSearchParams(urlParts[1]);
-        params.delete('raw');
-        const newParams = params.toString();
-        rawUrl = urlParts[0] + (newParams ? '?' + newParams : '');
+    // Clean up raw query params for the base URL
+    rawUrl = rawUrl.split('?').shift() || rawUrl;
+    
+    // Convert to Statically CDN for performance or use raw for video
+    const githubMatch = rawUrl.match(/raw\.githubusercontent\.com\/([^/]+)\/([^/]+)\/([^/]+)\/(.+)/);
+    if (githubMatch) {
+      const [_, user, repo, hash, path] = githubMatch;
+      if (isVideo) {
+        // Use jsDelivr for video files - very stable and fast in China
+        rawUrl = `https://cdn.jsdelivr.net/gh/${user}/${repo}@${hash}/${path}`;
+      } else {
+        // Images benefit from Statically's resizing and formatting
+        rawUrl = `https://cdn.statically.io/gh/${user}/${repo}/${hash}/${path}`;
       }
-    } catch (e) {
-      // Fallback if URL parsing fails
-      rawUrl = rawUrl.split('?raw=true').join('').split('&raw=true').join('');
     }
   }
 
-  // Use wsrv.nl proxy for all external images to benefit from CDN and WebP/AVIF optimization
-  if (rawUrl.startsWith('http')) {
+  // Use wsrv.nl proxy ONLY for images, skip for videos
+  if (rawUrl.startsWith('http') && !isVideo && !rawUrl.includes('statically.io') && !rawUrl.includes('youtube.com') && !rawUrl.includes('youtu.be')) {
     let wsrvUrl = `https://wsrv.nl/?url=${encodeURIComponent(rawUrl)}&af&il`;
     if (width) wsrvUrl += `&w=${width}`;
     if (height) wsrvUrl += `&h=${height}`;
     return wsrvUrl;
   }
 
-  return url;
+  return rawUrl;
 };
 
 const getVideoThumbnail = (url: string, manualCover?: string) => {
@@ -88,6 +88,70 @@ const getVideoThumbnail = (url: string, manualCover?: string) => {
   
   // Bilibili - Fallback to manual or a themed placeholder
   return manualCover || "https://picsum.photos/seed/video/1920/1080";
+};
+
+// --- Video Player ---
+const VideoPlayer = ({ url, fallbackImage }: { url: string, fallbackImage: string }) => {
+  const [isReady, setIsReady] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const handleReady = () => {
+    if (!isReady) {
+      console.log("Video is ready to play");
+      setIsReady(true);
+    }
+  };
+
+  useEffect(() => {
+    // 强制显示补丁：如果 5 秒后还没准备好，尝试强行显示视频元素
+    const timer = setTimeout(() => {
+      if (!isReady) {
+        console.warn("Video load timeout, forcing displayState to ready");
+        setIsReady(true);
+      }
+    }, 5000);
+
+    // 如果视频已经准备好了（比如从缓存中读取）
+    if (videoRef.current && videoRef.current.readyState >= 2) {
+      handleReady();
+    }
+
+    return () => clearTimeout(timer);
+  }, [isReady]);
+  
+  return (
+    <div className="absolute inset-0 w-full h-full pointer-events-none bg-black overflow-hidden">
+      {/* 视频层：始终在底部播放 */}
+      <video
+        key={url}
+        ref={videoRef}
+        src={url}
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="auto"
+        crossOrigin="anonymous"
+        onLoadedData={handleReady}
+        onCanPlay={handleReady}
+        onPlaying={handleReady}
+        onLoadStart={() => console.log("Video loading started:", url)}
+        onError={(e) => {
+          console.error("Video Playback Error:", e);
+          // If video fails, we might as well show the fallback forever
+          setIsReady(false);
+        }}
+        className="absolute inset-0 w-full h-full object-cover"
+      />
+      {/* 封面图层：覆盖在视频上方，用于加载时占位，加载完成后淡出 */}
+      <img 
+        src={fallbackImage} 
+        alt="Fallback" 
+        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 z-10 ${isReady ? 'opacity-0' : 'opacity-100'}`}
+        referrerPolicy="no-referrer"
+      />
+    </div>
+  );
 };
 
 // --- Mock Data ---
@@ -207,7 +271,8 @@ const ARCHIVE_PROJECTS: Project[] = [
     subtitle: "Primarily 3rd-party production, with our concept guidance.",
     category: "Video",
     backgroundVideoId: "Ix7uaO1QJA4",
-    image: "https://github.com/David007-CN/DW/blob/main/Cover/06_DSC06844.jpg?raw=true",
+    videoUrl: "https://github.com/David007-CN/DW/blob/560162b86408fbde325757658adc0082962ac679/Cover/bg-video-4s.mp4",
+    image: "https://github.com/David007-CN/DW/blob/560162b86408fbde325757658adc0082962ac679/Cover/bg-video-4s.jpg",
     galleryImages: [
       { 
         url: "https://youtu.be/bLBBiNbUMQ4", 
@@ -272,30 +337,16 @@ const SERVICES = [
 ];
 
 const FEATURED_ITEMS: Project[] = [
-  { id: 101, title: "Morning Ritual", category: "Daily Life", image: "https://picsum.photos/seed/morning/1080/1350", time: "2 0 2 4 . 0 3" },
-  { id: 102, title: "Urban Exploration", category: "Travel", image: "https://picsum.photos/seed/urban/1080/1350", time: "2 0 2 3 . 1 1" },
-  { id: 103, title: "Evening Sketch", category: "Play", image: "https://picsum.photos/seed/sketch/1080/1350", time: "2 0 2 3 . 0 8" },
-  { id: 104, title: "Coffee Break", category: "Relaxation", image: "https://picsum.photos/seed/coffee/1080/1350", time: "2 0 2 2 . 1 2" },
-  { id: 105, title: "Night Drive", category: "Atmosphere", image: "https://picsum.photos/seed/night-drive/1080/1350", time: "2 0 2 2 . 0 5" },
+  { id: 101, title: "Osight SE Adjust Brightness", category: "Life", image: "https://raw.githubusercontent.com/David007-CN/DW/main/Life/Osight%20SE%20Adjust%20Brightness_202601.jpg", time: "2 0 2 6 . 0 1" },
+  { id: 102, title: "Osight SE Carry", category: "Life", image: "https://raw.githubusercontent.com/David007-CN/DW/main/Life/Osight%20SE%20Carry_202601.jpg", time: "2 0 2 6 . 0 1" },
+  { id: 103, title: "Osight SE Concealed Carry", category: "Life", image: "https://raw.githubusercontent.com/David007-CN/DW/main/Life/Osight%20SE%20Concealed%20Carry_202601.jpg", time: "2 0 2 6 . 0 1" },
+  { id: 104, title: "Osight SE", category: "Life", image: "https://raw.githubusercontent.com/David007-CN/DW/main/Life/Osight%20SE_202604.jpg", time: "2 0 2 6 . 0 4" },
+  { id: 105, title: "Osight XR", category: "Life", image: "https://raw.githubusercontent.com/David007-CN/DW/main/Life/Osight%20XR_202601.jpg", time: "2 0 2 6 . 0 1" },
   { id: 106, title: "Weekend Hike", category: "Nature", image: "https://picsum.photos/seed/hike/1080/1350", time: "2 0 2 1 . 0 9" },
   { id: 107, title: "Golden Hour", category: "Photography", image: "https://picsum.photos/seed/golden/1080/1350", time: "2 0 2 4 . 0 1" },
   { id: 108, title: "Street Food", category: "Culture", image: "https://picsum.photos/seed/food/1080/1350", time: "2 0 2 3 . 0 9" },
   { id: 109, title: "Mountain Peak", category: "Adventure", image: "https://picsum.photos/seed/mountain/1080/1350", time: "2 0 2 3 . 0 7" },
   { id: 110, title: "Rainy Day", category: "Mood", image: "https://picsum.photos/seed/rain/1080/1350", time: "2 0 2 3 . 0 5" },
-  { id: 111, title: "Summer Breeze", category: "Season", image: "https://picsum.photos/seed/summer/1080/1350", time: "2 0 2 3 . 0 6" },
-  { id: 112, title: "Winter Solstice", category: "Season", image: "https://picsum.photos/seed/winter/1080/1350", time: "2 0 2 3 . 1 2" },
-  { id: 113, title: "Ocean Waves", category: "Nature", image: "https://picsum.photos/seed/ocean/1080/1350", time: "2 0 2 4 . 0 2" },
-  { id: 114, title: "Forest Path", category: "Discovery", image: "https://picsum.photos/seed/forest/1080/1350", time: "2 0 2 3 . 1 0" },
-  { id: 115, title: "City Lights", category: "Urban", image: "https://picsum.photos/seed/city/1080/1350", time: "2 0 2 3 . 0 4" },
-  { id: 116, title: "Library Silence", category: "Focus", image: "https://picsum.photos/seed/library/1080/1350", time: "2 0 2 2 . 1 1" },
-  { id: 117, title: "Sunset Glow", category: "Beauty", image: "https://picsum.photos/seed/sunset/1080/1350", time: "2 0 2 2 . 1 0" },
-  { id: 118, title: "Desert Sands", category: "Vastness", image: "https://picsum.photos/seed/desert/1080/1350", time: "2 0 2 2 . 0 8" },
-  { id: 119, title: "Autumn Leaves", category: "Change", image: "https://picsum.photos/seed/autumn/1080/1350", time: "2 0 2 2 . 0 9" },
-  { id: 120, title: "Spring Bloom", category: "Growth", image: "https://picsum.photos/seed/spring/1080/1350", time: "2 0 2 2 . 0 4" },
-  { id: 121, title: "Starry Night", category: "Wonder", image: "https://picsum.photos/seed/stars/1080/1350", time: "2 0 2 2 . 0 3" },
-  { id: 122, title: "Quiet Moment", category: "Peace", image: "https://picsum.photos/seed/quiet/1080/1350", time: "2 0 2 2 . 0 2" },
-  { id: 123, title: "Busy Market", category: "Energy", image: "https://picsum.photos/seed/market/1080/1350", time: "2 0 2 2 . 0 1" },
-  { id: 124, title: "Hidden Alley", category: "Mystery", image: "https://picsum.photos/seed/alley/1080/1350", time: "2 0 2 1 . 1 2" },
 ];
 
 // --- Components ---
@@ -843,15 +894,6 @@ const Spotlight = () => {
 
 const Archive = () => {
   const navigate = useNavigate();
-  const [videoKey, setVideoKey] = useState(0);
-
-  // 每 4 秒强制重置一次视频，实现精准的 4 秒循环并防止加载后续内容
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setVideoKey(prev => prev + 1);
-    }, 4000);
-    return () => clearInterval(interval);
-  }, []);
   
   return (
     <section id="works" className="py-16 md:py-24 lg:py-32 bg-brand-dark">
@@ -873,25 +915,16 @@ const Archive = () => {
                 index === ARCHIVE_PROJECTS.length - 1 && ARCHIVE_PROJECTS.length % 2 !== 0 ? 'md:col-span-2' : ''
               }`}
             >
-              {project.category === 'Video' && project.backgroundVideoId ? (
+              {project.category === 'Video' ? (
                 <div 
-                  className="absolute inset-0 w-full h-full grayscale group-hover:grayscale-0 brightness-[0.8] group-hover:brightness-100 transition-all duration-700 overflow-hidden pointer-events-none bg-black"
+                  className="absolute inset-0 w-full h-full grayscale group-hover:grayscale-0 brightness-[0.7] group-hover:brightness-100 transition-all duration-1000 overflow-hidden pointer-events-none bg-black"
                 >
-                  {/* 垫底图：防止视频重置时闪烁 */}
-                  <img 
-                    src={getOptimizedUrl(project.image, 800, 450)} 
-                    className="absolute inset-0 w-full h-full object-cover opacity-50"
-                    alt=""
+                  <VideoPlayer 
+                    url={getOptimizedUrl(project.videoUrl || `https://www.youtube.com/watch?v=${project.backgroundVideoId}`)}
+                    fallbackImage={getOptimizedUrl(project.image, 800, 450)}
                   />
-                  <iframe 
-                    key={videoKey}
-                    src={`https://www.youtube.com/embed/${project.backgroundVideoId}?autoplay=1&mute=1&controls=0&showinfo=0&rel=0&modestbranding=1&iv_load_policy=3&disablekb=1&start=0&end=4`}
-                    className="absolute inset-0 w-full h-full"
-                    allow="autoplay; encrypted-media"
-                    frameBorder="0"
-                  />
-                  {/* 黑色半透明遮罩层 */}
-                  <div className="absolute inset-0 bg-black/50 group-hover:bg-black/10 transition-colors duration-700" />
+                  {/* 叠加遮罩层，默认较暗以突出文字，滑过时变透明 */}
+                  <div className="absolute inset-0 bg-black/50 group-hover:bg-black/10 transition-colors duration-1000" />
                 </div>
               ) : (
                 <img 
@@ -940,12 +973,23 @@ const Featured = () => {
       try {
         const response = await fetch("https://api.github.com/repos/" + GITHUB_REPO + "/contents/" + GITHUB_FOLDER);
         
+        // Handle non-existent folder
         if (response.status === 404) {
+          console.warn("GitHub folder not found, using static fallback.");
           setFeaturedItems(FEATURED_ITEMS);
           return;
         }
 
-        if (!response.ok) throw new Error('Failed to fetch folder content');
+        // Handle rate limiting (403) gracefully
+        if (response.status === 403) {
+          console.warn("GitHub API rate limited, using static fallback.");
+          setFeaturedItems(FEATURED_ITEMS);
+          return;
+        }
+
+        if (!response.ok) {
+          throw new Error(`GitHub API returned ${response.status}: ${response.statusText}`);
+        }
         
         const data = await response.json();
         
