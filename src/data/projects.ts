@@ -8,7 +8,7 @@ const SPECIAL_DATA: Record<number, { image: string; title: string; description: 
   },
   1: {
     image: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/01_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg?raw=true",
-    title: "Launch banner",
+    title: "Osight SE 6 MOA GNLaunch banner",
     description: "Product launch banner for a new release, used across all channels for maximum reach."
   },
   2: {
@@ -30,6 +30,36 @@ const SPECIAL_DATA: Record<number, { image: string; title: string; description: 
     image: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/05_Osight%20C%20launch%20banner_1920x1080.jpg?raw=true",
     title: "Osight C Launch banner without gun",
     description: "Some platforms restrict firearm or sensitive imagery, so a non-firearm version was created for promotion."
+  },
+  6: {
+    image: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/07_Osight%20C%20GN%20launch%20banner_1920x1080.jpg?raw=true",
+    title: "Osight C GN Launch banner",
+    description: "A banner for the Osight C new product featuring a firearm-in-hand version, for platforms where firearms can be displayed."
+  },
+  7: {
+    image: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/08_XR%20banner10_1200x628_AZ.jpg?raw=true",
+    title: "Osight XR Ads Banner",
+    description: "A banner showcasing the new XR product during the promotional campaign."
+  },
+  8: {
+    image: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/09_C%20GN%20banner2_1200x628_SN.jpg?raw=true",
+    title: "Osight C GN Ads Banner",
+    description: "A banner showcasing the new C GN product during the promotional campaign."
+  },
+  9: {
+    image: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/10_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg?raw=true",
+    title: "Osight SE 6MOA GN Banner",
+    description: "Draft banner concepts for the Osight SE 6 MOA GN launch."
+  },
+  10: {
+    image: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/11_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg?raw=true",
+    title: "Osight SE 6MOA GN Banner",
+    description: "Osight SE 6 MOA GN launch banner without gun."
+  },
+  11: {
+    image: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/12_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg?raw=true",
+    title: "Osight SE 6MOA GN Banner",
+    description: "Alternative launch banner for Osight SE 6 MOA GN without gun."
   }
 };
 

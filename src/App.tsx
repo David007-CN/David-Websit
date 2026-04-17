@@ -169,12 +169,12 @@ const ARCHIVE_PROJECTS: Project[] = [
       { url: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/03_C%20and%20K%20Teaser_1920x1080.jpg?raw=true", cover: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/03_C%20and%20K%20Teaser_1920x1080.jpg?raw=true", title: "C and K Teaser" },
       { url: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/02_SE%20GN%206%20MOA%20Trial%20sales_1920x1080.jpg?raw=true", cover: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/02_SE%20GN%206%20MOA%20Trial%20sales_1920x1080.jpg?raw=true", title: "SE GN Trial Sales" },
       { url: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/05_Osight%20C%20launch%20banner_1920x1080.jpg?raw=true", cover: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/05_Osight%20C%20launch%20banner_1920x1080.jpg?raw=true", title: "Osight C Banner Without Gun" },
-      { url: "https://picsum.photos/seed/design-7/1920/1080", cover: "https://picsum.photos/seed/design-7/1920/1080", title: "Design Project 7" },
-      { url: "https://picsum.photos/seed/design-8/1920/1080", cover: "https://picsum.photos/seed/design-8/1920/1080", title: "Design Project 8" },
-      { url: "https://picsum.photos/seed/design-9/1920/1080", cover: "https://picsum.photos/seed/design-9/1920/1080", title: "Design Project 9" },
-      { url: "https://picsum.photos/seed/design-10/1920/1080", cover: "https://picsum.photos/seed/design-10/1920/1080", title: "Design Project 10" },
-      { url: "https://picsum.photos/seed/design-11/1920/1080", cover: "https://picsum.photos/seed/design-11/1920/1080", title: "Design Project 11" },
-      { url: "https://picsum.photos/seed/design-12/1920/1080", cover: "https://picsum.photos/seed/design-12/1920/1080", title: "Design Project 12" },
+      { url: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/07_Osight%20C%20GN%20launch%20banner_1920x1080.jpg?raw=true", cover: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/07_Osight%20C%20GN%20launch%20banner_1920x1080.jpg?raw=true", title: "Osight C GN Launch Banner" },
+      { url: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/08_XR%20banner10_1200x628_AZ.jpg?raw=true", cover: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/08_XR%20banner10_1200x628_AZ.jpg?raw=true", title: "XR Ads Banner" },
+      { url: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/09_C%20GN%20banner2_1200x628_SN.jpg?raw=true", cover: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/09_C%20GN%20banner2_1200x628_SN.jpg?raw=true", title: "C GN Ads Banner" },
+      { url: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/10_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg?raw=true", cover: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/10_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg?raw=true", title: "Osight SE 6MOA GN alternative banner" },
+      { url: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/11_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg?raw=true", cover: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/11_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg?raw=true", title: "Osight SE 6MOA GN banner without gun" },
+      { url: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/12_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg?raw=true", cover: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/12_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg?raw=true", title: "Osight SE 6MOA GN alternative banner without gun" },
       { url: "https://picsum.photos/seed/design-13/1920/1080", cover: "https://picsum.photos/seed/design-13/1920/1080", title: "Design Project 13" },
       { url: "https://picsum.photos/seed/design-14/1920/1080", cover: "https://picsum.photos/seed/design-14/1920/1080", title: "Design Project 14" },
       { url: "https://picsum.photos/seed/design-15/1920/1080", cover: "https://picsum.photos/seed/design-15/1920/1080", title: "Design Project 15" },
@@ -342,11 +342,6 @@ const FEATURED_ITEMS: Project[] = [
   { id: 103, title: "Osight SE Concealed Carry", category: "Life", image: "https://raw.githubusercontent.com/David007-CN/DW/main/Life/Osight%20SE%20Concealed%20Carry_202601.jpg", time: "2 0 2 6 . 0 1" },
   { id: 104, title: "Osight SE", category: "Life", image: "https://raw.githubusercontent.com/David007-CN/DW/main/Life/Osight%20SE_202604.jpg", time: "2 0 2 6 . 0 4" },
   { id: 105, title: "Osight XR", category: "Life", image: "https://raw.githubusercontent.com/David007-CN/DW/main/Life/Osight%20XR_202601.jpg", time: "2 0 2 6 . 0 1" },
-  { id: 106, title: "Weekend Hike", category: "Nature", image: "https://picsum.photos/seed/hike/1080/1350", time: "2 0 2 1 . 0 9" },
-  { id: 107, title: "Golden Hour", category: "Photography", image: "https://picsum.photos/seed/golden/1080/1350", time: "2 0 2 4 . 0 1" },
-  { id: 108, title: "Street Food", category: "Culture", image: "https://picsum.photos/seed/food/1080/1350", time: "2 0 2 3 . 0 9" },
-  { id: 109, title: "Mountain Peak", category: "Adventure", image: "https://picsum.photos/seed/mountain/1080/1350", time: "2 0 2 3 . 0 7" },
-  { id: 110, title: "Rainy Day", category: "Mood", image: "https://picsum.photos/seed/rain/1080/1350", time: "2 0 2 3 . 0 5" },
 ];
 
 // --- Components ---
@@ -1033,13 +1028,23 @@ const Featured = () => {
           });
 
         if (githubItems.length > 0) {
-          const shuffled = [...githubItems].sort(() => Math.random() - 0.5);
-          setFeaturedItems(shuffled);
+          // If more than 24, pick 24 randomly
+          let selected = [...githubItems];
+          if (selected.length > 24) {
+            selected = selected.sort(() => Math.random() - 0.5).slice(0, 24);
+          } else {
+            // Even if less than 24, still shuffle to keep it fresh
+            selected = selected.sort(() => Math.random() - 0.5);
+          }
+          setFeaturedItems(selected);
         } else {
+          // If folder exists but is empty, or failed to get list, 
+          // we use our safe hardcoded 5 real images (FEATURED_ITEMS) as the minimum set.
           setFeaturedItems(FEATURED_ITEMS);
         }
       } catch (err) {
         console.error("GitHub Fetch Error:", err);
+        // Fallback to our hardcoded 5 real images if API fails completely
         setFeaturedItems(FEATURED_ITEMS);
       } finally {
         setIsLoading(false);
