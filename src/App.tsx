@@ -40,31 +40,27 @@ const getOptimizedUrl = (url: string, width?: number, height?: number) => {
   
   // Handle GitHub URLs
   if (url.includes('github.com') || url.includes('raw.githubusercontent.com')) {
-    // Basic conversion to raw format
     rawUrl = url.replace('github.com', 'raw.githubusercontent.com')
                 .replace('/blob/', '/')
                 .replace('/refs/heads/', '/');
     
-    // Clean up raw query params for the base URL
     rawUrl = rawUrl.split('?').shift() || rawUrl;
     
-    // Convert to Statically CDN for performance or use raw for video
     const githubMatch = rawUrl.match(/raw\.githubusercontent\.com\/([^/]+)\/([^/]+)\/([^/]+)\/(.+)/);
     if (githubMatch) {
       const [_, user, repo, hash, path] = githubMatch;
       if (isVideo) {
-        // Use jsDelivr for video files - very stable and fast in China
         rawUrl = `https://cdn.jsdelivr.net/gh/${user}/${repo}@${hash}/${path}`;
       } else {
-        // Images benefit from Statically's resizing and formatting
-        rawUrl = `https://cdn.statically.io/gh/${user}/${repo}/${hash}/${path}`;
+        // Direct GH raw link works best for wsrv proxying
+        rawUrl = `https://raw.githubusercontent.com/${user}/${repo}/${hash}/${path}`;
       }
     }
   }
 
-  // Use wsrv.nl proxy ONLY for images, skip for videos
-  if (rawUrl.startsWith('http') && !isVideo && !rawUrl.includes('statically.io') && !rawUrl.includes('youtube.com') && !rawUrl.includes('youtu.be')) {
-    let wsrvUrl = `https://wsrv.nl/?url=${encodeURIComponent(rawUrl)}&af&il`;
+  // Use wsrv.nl proxy for images to compress (WebP) and resize
+  if (rawUrl.startsWith('http') && !isVideo && !rawUrl.includes('youtube.com') && !rawUrl.includes('youtu.be')) {
+    let wsrvUrl = `https://wsrv.nl/?url=${encodeURIComponent(rawUrl)}&af&il&q=80`;
     if (width) wsrvUrl += `&w=${width}`;
     if (height) wsrvUrl += `&h=${height}`;
     return wsrvUrl;
@@ -75,81 +71,81 @@ const getOptimizedUrl = (url: string, width?: number, height?: number) => {
 
 const getVideoThumbnail = (url: string, manualCover?: string) => {
   if (manualCover && !manualCover.includes('img.bilibili.com') && !manualCover.includes('picsum.photos/seed/video')) {
-    return manualCover;
+    return getOptimizedUrl(manualCover, 800, 450);
   }
   
-  // YouTube
   if (url.includes('youtube.com') || url.includes('youtu.be')) {
     const id = url.includes('youtu.be') 
       ? url.split('/').pop()?.split('?')[0] 
       : new URLSearchParams(new URL(url).search).get('v');
-    if (id) return `https://img.youtube.com/vi/${id}/maxresdefault.jpg`;
+    if (id) return `https://wsrv.nl/?url=https://img.youtube.com/vi/${id}/maxresdefault.jpg&af&il&w=800&h=450`;
   }
   
-  // Bilibili - Fallback to manual or a themed placeholder
-  return manualCover || "https://picsum.photos/seed/video/1920/1080";
+  const placeholder = manualCover || "https://picsum.photos/seed/video/1920/1080";
+  return `https://wsrv.nl/?url=${encodeURIComponent(placeholder)}&af&il&w=800&h=450`;
 };
 
 // --- Video Player ---
-const VideoPlayer = ({ url, fallbackImage }: { url: string, fallbackImage: string }) => {
+const VideoPlayer = ({ url, fallbackImage, autoPlay = true, loop = true, muted = true, preload = "metadata" }: { 
+  url: string, 
+  fallbackImage: string,
+  autoPlay?: boolean,
+  loop?: boolean,
+  muted?: boolean,
+  preload?: "none" | "metadata" | "auto"
+}) => {
   const [isReady, setIsReady] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const handleReady = () => {
     if (!isReady) {
-      console.log("Video is ready to play");
       setIsReady(true);
     }
   };
 
   useEffect(() => {
-    // 强制显示补丁：如果 5 秒后还没准备好，尝试强行显示视频元素
-    const timer = setTimeout(() => {
-      if (!isReady) {
-        console.warn("Video load timeout, forcing displayState to ready");
-        setIsReady(true);
-      }
-    }, 5000);
-
-    // 如果视频已经准备好了（比如从缓存中读取）
     if (videoRef.current && videoRef.current.readyState >= 2) {
       handleReady();
     }
+  }, []);
 
-    return () => clearTimeout(timer);
-  }, [isReady]);
-  
   return (
     <div className="absolute inset-0 w-full h-full pointer-events-none bg-black overflow-hidden">
-      {/* 视频层：始终在底部播放 */}
-      <video
-        key={url}
-        ref={videoRef}
-        src={url}
-        autoPlay
-        muted
-        loop
-        playsInline
-        preload="auto"
-        crossOrigin="anonymous"
-        onLoadedData={handleReady}
-        onCanPlay={handleReady}
-        onPlaying={handleReady}
-        onLoadStart={() => console.log("Video loading started:", url)}
-        onError={(e) => {
-          console.error("Video Playback Error:", e);
-          // If video fails, we might as well show the fallback forever
-          setIsReady(false);
-        }}
-        className="absolute inset-0 w-full h-full object-cover"
-      />
-      {/* 封面图层：覆盖在视频上方，用于加载时占位，加载完成后淡出 */}
-      <img 
-        src={fallbackImage} 
-        alt="Fallback" 
-        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 z-10 ${isReady ? 'opacity-0' : 'opacity-100'}`}
+      {/* 始终显示封面图作为占位，直到视频准备就绪 */}
+      <img
+        src={fallbackImage}
+        alt="Video thumbnail"
+        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 z-0 ${isReady ? 'opacity-0' : 'opacity-100'}`}
+        loading="lazy"
         referrerPolicy="no-referrer"
       />
+      
+      {!url.includes('youtube.com') && !url.includes('youtu.be') ? (
+        <video
+          key={url}
+          ref={videoRef}
+          src={url}
+          autoPlay={autoPlay}
+          muted={muted}
+          loop={loop}
+          playsInline
+          preload={preload}
+          crossOrigin="anonymous"
+          onLoadedData={handleReady}
+          onCanPlay={handleReady}
+          onPlaying={handleReady}
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 z-10 ${isReady ? 'opacity-100' : 'opacity-0'}`}
+        />
+      ) : (
+        /* YouTube Embed */
+        <iframe
+          src={`https://www.youtube.com/embed/${url.includes('youtu.be') ? url.split('/').pop() : new URLSearchParams(new URL(url).search).get('v')}?autoplay=1&mute=1&loop=1&playlist=${url.includes('youtu.be') ? url.split('/').pop() : new URLSearchParams(new URL(url).search).get('v')}&controls=0&showinfo=0&rel=0&modestbranding=1&iv_load_policy=3&enablejsapi=1`}
+          className={`absolute inset-0 w-full h-full border-none transition-opacity duration-1000 z-10 ${isReady ? 'opacity-100' : 'opacity-0'}`}
+          onLoad={handleReady}
+          allow="autoplay; encrypted-media"
+          title="Background Video"
+        ></iframe>
+      )}
     </div>
   );
 };
@@ -559,10 +555,11 @@ const Hero = () => {
             <>
               <div className="absolute inset-0 z-0 pointer-events-none">
                 <img 
-                  src={getOptimizedUrl(slides[currentSlide].bg!)} 
+                  src={getOptimizedUrl(slides[currentSlide].bg!, 1920, 1080)} 
                   alt="Background" 
                   className="w-full h-full object-cover brightness-[0.3] contrast-110"
                   referrerPolicy="no-referrer"
+                  fetchPriority={currentSlide === 0 ? "high" : "auto"}
                 />
                 <div className="absolute inset-0 bg-gradient-to-b from-brand-dark/50 via-transparent to-brand-dark/75" />
               </div>
@@ -579,16 +576,18 @@ const Hero = () => {
               }}
             >
               <img 
-                src={getOptimizedUrl(slides[currentSlide].desktop!)} 
+                src={getOptimizedUrl(slides[currentSlide].desktop!, 1920, 1080)} 
                 alt={slides[currentSlide].alt}
                 className="hidden md:block w-full h-full object-cover brightness-[0.6] hover:brightness-[0.8] transition-all duration-1000 pointer-events-none"
                 referrerPolicy="no-referrer"
+                fetchPriority={currentSlide === 0 ? "high" : "auto"}
               />
               <img 
-                src={getOptimizedUrl(slides[currentSlide].mobile!)} 
+                src={getOptimizedUrl(slides[currentSlide].mobile!, 800, 1200)} 
                 alt={slides[currentSlide].alt}
                 className="block md:hidden w-full h-full object-cover brightness-[0.6] pointer-events-none"
                 referrerPolicy="no-referrer"
+                fetchPriority={currentSlide === 0 ? "high" : "auto"}
               />
               <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-brand-dark/40 pointer-events-none" />
             </div>
@@ -917,6 +916,7 @@ const Archive = () => {
                   <VideoPlayer 
                     url={getOptimizedUrl(project.videoUrl || `https://www.youtube.com/watch?v=${project.backgroundVideoId}`)}
                     fallbackImage={getOptimizedUrl(project.image, 800, 450)}
+                    preload="none"
                   />
                   {/* 叠加遮罩层，默认较暗以突出文字，滑过时变透明 */}
                   <div className="absolute inset-0 bg-black/50 group-hover:bg-black/10 transition-colors duration-1000" />
@@ -1151,7 +1151,7 @@ const Featured = () => {
                 <div className="bg-white p-4 h-full flex flex-col whitespace-normal">
                   <div className="aspect-square overflow-hidden mb-6 relative bg-gray-100">
                     <img 
-                      src={getOptimizedUrl(item.image, 400, 500)} 
+                      src={getOptimizedUrl(item.image, 300, 400)} 
                       className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110" 
                       referrerPolicy="no-referrer" 
                       loading="lazy"
@@ -1550,6 +1550,7 @@ const GalleryPage = () => {
                     src={getOptimizedUrl(imageUrl, 800, 450)} 
                     className="w-full h-full object-cover transition-all duration-700 group-hover:scale-105"
                     referrerPolicy="no-referrer"
+                    loading="lazy"
                   />
                   {(project.title === "Video" || videoUrl.includes('bilibili.com') || videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be')) && (
                     <div className="absolute inset-0 flex items-center justify-center">
