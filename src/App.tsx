@@ -794,9 +794,9 @@ const Spotlight = () => {
     setRotation(0); // Reset rotation on slide change
   };
 
-  const toggleRotation = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setRotation((prev) => (prev + 90) % 360);
+  const toggleRotation = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setRotation((prev) => (prev === 0 ? 90 : 0));
   };
   
   return (
@@ -956,21 +956,25 @@ const Spotlight = () => {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="relative w-full h-full flex items-center justify-center px-4"
+              className="relative w-full h-full flex items-center justify-center p-4"
+              onClick={toggleRotation}
             >
               <div 
-                className="relative transition-transform duration-500 ease-out flex items-center justify-center"
+                className="relative transition-all duration-500 ease-in-out flex items-center justify-center pointer-events-auto shadow-2xl overflow-hidden"
                 style={{ 
                   transform: `rotate(${rotation}deg)`,
-                  width: (rotation % 180 !== 0) ? '100vh' : '100%',
-                  height: (rotation % 180 !== 0) ? '100vw' : '100%',
+                  width: (rotation !== 0) ? '90vh' : 'auto',
+                  height: (rotation !== 0) ? '90vw' : 'auto',
+                  maxWidth: (rotation !== 0) ? 'none' : '90vw',
+                  maxHeight: (rotation !== 0) ? 'none' : '85vh',
                 }}
               >
                 <img 
                   src={getOptimizedUrl(currentImage, undefined, undefined, true)} 
-                  className="max-w-full max-h-full object-contain shadow-2xl transition-all duration-300"
+                  className="w-full h-full object-contain"
                   referrerPolicy="no-referrer"
                   crossOrigin="anonymous"
+                  draggable={false}
                 />
               </div>
             </motion.div>
