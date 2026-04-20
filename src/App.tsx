@@ -50,10 +50,10 @@ const getOptimizedUrl = (url: string, width?: number, height?: number, avoidProx
   // Use wsrv.nl proxy for images to compress (WebP) and resize
   // We re-enable this for speed, but ensures the URL is cleanly encoded
   if (rawUrl.startsWith('http') && !isVideo && !avoidProxy && !rawUrl.includes('youtube.com') && !rawUrl.includes('youtu.be')) {
-    // Ultra-aggressive optimization for mobile: q=50 for small thumbnails, q=80 for large
+    // Balanced optimization: higher quality for visual excellence
     const isSmall = width && width < 600;
     const isHighRes = width && width >= 1080;
-    const quality = isSmall ? 50 : (isHighRes ? 85 : 75);
+    const quality = isSmall ? 80 : (isHighRes ? 92 : 85);
     let wsrvUrl = `https://wsrv.nl/?url=${encodeURIComponent(rawUrl)}&af&il&q=${quality}`;
     if (width) wsrvUrl += `&w=${width}`;
     if (height) wsrvUrl += `&h=${height}`;
@@ -811,7 +811,7 @@ const Spotlight = () => {
                     className={`aspect-video border cursor-pointer transition-all duration-300 ${selectedIndex === i ? 'border-brand-red ring-1 ring-brand-red' : 'border-white/10 hover:border-white/40'} bg-white/5`}
                   >
                     <img 
-                      src={getOptimizedUrl(p.image, window.innerWidth > 768 ? 400 : 200, window.innerWidth > 768 ? 225 : 112)} 
+                      src={getOptimizedUrl(p.image, window.innerWidth > 768 ? 600 : 400, window.innerWidth > 768 ? 338 : 225)} 
                       className="w-full h-full object-cover transition-all duration-500" 
                       referrerPolicy="no-referrer" 
                       loading={i < 4 ? "eager" : "lazy"}
@@ -939,8 +939,8 @@ const Spotlight = () => {
               className="relative w-full h-full flex items-center justify-center px-4"
             >
               <img 
-                src={getOptimizedUrl(currentImage, window.innerWidth > 1024 ? 2000 : 1080, window.innerWidth > 1024 ? undefined : 1350)} 
-                className="max-w-full max-h-full object-contain shadow-2xl transition-all duration-300 pointer-events-none"
+                src={getOptimizedUrl(currentImage, undefined, undefined, true)} 
+                className="max-w-full max-h-full object-contain shadow-2xl transition-all duration-300"
                 referrerPolicy="no-referrer"
                 crossOrigin="anonymous"
               />
@@ -995,7 +995,7 @@ const Archive = () => {
                 </div>
               ) : (
                 <img 
-                  src={getOptimizedUrl(project.image, window.innerWidth > 768 ? 800 : 500, window.innerWidth > 768 ? 450 : 280)} 
+                  src={getOptimizedUrl(project.image, window.innerWidth > 768 ? 1200 : 800, window.innerWidth > 768 ? 675 : 450)} 
                   className="w-full h-full object-cover grayscale group-hover:grayscale-0 brightness-50 group-hover:brightness-100 transition-all duration-700" 
                   referrerPolicy="no-referrer"
                   loading={index < 2 ? "eager" : "lazy"}
@@ -1254,7 +1254,7 @@ const Featured = () => {
                 <div className="bg-white p-4 h-full flex flex-col whitespace-normal">
                   <div className="aspect-square overflow-hidden mb-6 relative bg-gray-100">
                     <img 
-                      src={getOptimizedUrl(item.image, window.innerWidth > 768 ? 500 : 300, window.innerWidth > 768 ? 500 : 300)} 
+                      src={getOptimizedUrl(item.image, window.innerWidth > 768 ? 800 : 600, window.innerWidth > 768 ? 800 : 600)} 
                       draggable={false}
                       className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110" 
                       referrerPolicy="no-referrer" 
@@ -1324,7 +1324,7 @@ const Featured = () => {
               className="relative flex items-center justify-center cursor-grab active:cursor-grabbing"
             >
               <img 
-                src={getOptimizedUrl(selectedItem.image, window.innerWidth > 1024 ? 2000 : 1080, window.innerWidth > 1024 ? undefined : 1350)} 
+                src={getOptimizedUrl(selectedItem.image, undefined, undefined, true)} 
                 className="w-auto h-auto max-w-[95vw] max-h-[95vh] object-contain shadow-2xl"
                 referrerPolicy="no-referrer"
                 crossOrigin="anonymous"
