@@ -24,7 +24,8 @@ import {
   ChevronRight,
   ChevronUp,
   ChevronDown,
-  Eye
+  Eye,
+  Maximize
 } from 'lucide-react';
 import { Project } from './types';
 import { PROJECTS } from './data/projects';
@@ -49,9 +50,10 @@ const getOptimizedUrl = (url: string, width?: number, height?: number, avoidProx
   // Use wsrv.nl proxy for images to compress (WebP) and resize
   // We re-enable this for speed, but ensures the URL is cleanly encoded
   if (rawUrl.startsWith('http') && !isVideo && !avoidProxy && !rawUrl.includes('youtube.com') && !rawUrl.includes('youtu.be')) {
-    // Ultra-aggressive optimization for mobile: q=50 for small thumbnails, q=75 for medium
+    // Ultra-aggressive optimization for mobile: q=50 for small thumbnails, q=80 for large
     const isSmall = width && width < 600;
-    const quality = isSmall ? 50 : 75;
+    const isHighRes = width && width >= 1080;
+    const quality = isSmall ? 50 : (isHighRes ? 85 : 75);
     let wsrvUrl = `https://wsrv.nl/?url=${encodeURIComponent(rawUrl)}&af&il&q=${quality}`;
     if (width) wsrvUrl += `&w=${width}`;
     if (height) wsrvUrl += `&h=${height}`;
@@ -550,7 +552,7 @@ const Hero = () => {
             <>
               <div className="absolute inset-0 z-0 pointer-events-none">
                 <img 
-                  src={getOptimizedUrl(slides[currentSlide].bg!, window.innerWidth > 768 ? 1600 : 800, window.innerWidth > 768 ? 900 : 1200)} 
+                  src={getOptimizedUrl(slides[currentSlide].bg!, window.innerWidth > 768 ? 1600 : 1080, window.innerWidth > 768 ? 900 : 1350)} 
                   alt="Background" 
                   className="w-full h-full object-cover brightness-[0.4] contrast-110"
                   referrerPolicy="no-referrer"
@@ -774,14 +776,17 @@ const ExperienceAndServices = () => (
 
 const Spotlight = () => {
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [isZoomed, setIsZoomed] = useState(false);
   const project = PROJECTS[selectedIndex % PROJECTS.length];
   const currentImage = project.image;
 
-  const handlePrev = () => {
+  const handlePrev = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     setSelectedIndex((prev) => (prev - 1 + PROJECTS.length) % PROJECTS.length);
   };
 
-  const handleNext = () => {
+  const handleNext = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     setSelectedIndex((prev) => (prev + 1) % PROJECTS.length);
   };
   
@@ -863,14 +868,24 @@ const Spotlight = () => {
                   <ChevronDown size={18} />
                 </button>
 
-                <div className="w-full aspect-video mt-14 mb-14 lg:mt-0 lg:mb-0 border border-white/10 p-1 bg-white/5 backdrop-blur-sm">
+                <div 
+                  className="w-full aspect-video mt-14 mb-14 lg:mt-0 lg:mb-0 border border-white/10 p-1 bg-white/5 backdrop-blur-sm cursor-zoom-in group-hover:border-white/30 transition-colors overflow-hidden"
+                  onClick={() => setIsZoomed(true)}
+                >
                   <img 
                     src={getOptimizedUrl(currentImage, window.innerWidth > 768 ? 1280 : 800, window.innerWidth > 768 ? 720 : 450)} 
-                    className="w-full h-full object-cover" 
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
                     referrerPolicy="no-referrer" 
                     loading={selectedIndex === 0 ? "eager" : "lazy"}
                     fetchPriority={selectedIndex === 0 ? "high" : "auto"}
                   />
+                  
+                  {/* Zoom Icon Hint */}
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 pointer-events-none">
+                    <div className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white border border-white/20">
+                      <Maximize size={20} />
+                    </div>
+                  </div>
                 </div>
               </div>
               
@@ -885,7 +900,61 @@ const Spotlight = () => {
         </div>
       </div>
     </div>
-  </section>
+
+      {/* Spotlight Lightbox */}
+      <AnimatePresence>
+        {isZoomed && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsZoomed(false)}
+            className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-2xl flex items-center justify-center p-0 cursor-zoom-out"
+          >
+            <button 
+              className="absolute top-6 right-6 text-white/60 hover:text-white transition-colors z-[210] p-4"
+              onClick={(e) => { e.stopPropagation(); setIsZoomed(false); }}
+            >
+              <X size={32} />
+            </button>
+
+            <button 
+              className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-full bg-white/5 border border-white/10 text-white/40 hover:text-white hover:bg-white/10 transition-all z-[210]"
+              onClick={handlePrev}
+            >
+              <ChevronLeft size={32} />
+            </button>
+            <button 
+              className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-full bg-white/5 border border-white/10 text-white/40 hover:text-white hover:bg-white/10 transition-all z-[210]"
+              onClick={handleNext}
+            >
+              <ChevronRight size={32} />
+            </button>
+            
+            <motion.div 
+              key={selectedIndex}
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative w-full h-full flex items-center justify-center px-4"
+            >
+              <img 
+                src={getOptimizedUrl(currentImage, window.innerWidth > 1024 ? 2000 : 1080, window.innerWidth > 1024 ? undefined : 1350)} 
+                className="max-w-full max-h-full object-contain shadow-2xl transition-all duration-300 pointer-events-none"
+                referrerPolicy="no-referrer"
+                crossOrigin="anonymous"
+              />
+            </motion.div>
+
+            {/* Title Overlay in Lightbox */}
+            <div className="absolute bottom-10 left-0 w-full text-center px-6 pointer-events-none">
+              <h4 className="text-xl font-bold text-white mb-2">{project.title}</h4>
+              <p className="text-sm text-white/40">{project.description}</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </section>
   );
 };
 
@@ -1255,7 +1324,7 @@ const Featured = () => {
               className="relative flex items-center justify-center cursor-grab active:cursor-grabbing"
             >
               <img 
-                src={getOptimizedUrl(selectedItem.image, window.innerWidth > 1024 ? 2000 : 1200)} 
+                src={getOptimizedUrl(selectedItem.image, window.innerWidth > 1024 ? 2000 : 1080, window.innerWidth > 1024 ? undefined : 1350)} 
                 className="w-auto h-auto max-w-[95vw] max-h-[95vh] object-contain shadow-2xl"
                 referrerPolicy="no-referrer"
                 crossOrigin="anonymous"
