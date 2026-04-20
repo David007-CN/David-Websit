@@ -30,7 +30,7 @@ import { Project } from './types';
 import { PROJECTS } from './data/projects';
 
 // --- Utilities ---
-const getOptimizedUrl = (url: string, width?: number, height?: number) => {
+const getOptimizedUrl = (url: string, width?: number, height?: number, avoidProxy?: boolean) => {
   if (!url) return url;
   
   const cleanUrl = url.split('?')[0].split('#')[0];
@@ -52,15 +52,22 @@ const getOptimizedUrl = (url: string, width?: number, height?: number) => {
       if (isVideo) {
         rawUrl = `https://cdn.jsdelivr.net/gh/${user}/${repo}@${hash}/${path}`;
       } else {
-        // Direct GH raw link works best for wsrv proxying
-        rawUrl = `https://raw.githubusercontent.com/${user}/${repo}/${hash}/${path}`;
+        // Use jsDelivr for large images to preserve filename in path and maintain high speed
+        if (avoidProxy) {
+          rawUrl = `https://cdn.jsdelivr.net/gh/${user}/${repo}@${hash}/${path}`;
+        } else {
+          rawUrl = `https://raw.githubusercontent.com/${user}/${repo}/${hash}/${path}`;
+        }
       }
     }
   }
 
-  // Use wsrv.nl proxy for images to compress (WebP) and resize
-  if (rawUrl.startsWith('http') && !isVideo && !rawUrl.includes('youtube.com') && !rawUrl.includes('youtu.be')) {
-    let wsrvUrl = `https://wsrv.nl/?url=${encodeURIComponent(rawUrl)}&af&il&q=80`;
+  // Use wsrv.nl proxy for images to compress (WebP) and resize, unless avoidProxy is true
+  if (rawUrl.startsWith('http') && !isVideo && !avoidProxy && !rawUrl.includes('youtube.com') && !rawUrl.includes('youtu.be')) {
+    // af: auto-format (webp/avif)
+    // il: interlaced
+    // q: 85 (high quality compression balance)
+    let wsrvUrl = `https://wsrv.nl/?url=${encodeURIComponent(rawUrl)}&af&il&q=85`;
     if (width) wsrvUrl += `&w=${width}`;
     if (height) wsrvUrl += `&h=${height}`;
     return wsrvUrl;
@@ -1005,17 +1012,25 @@ const Featured = () => {
             let title = fileName;
             let time = "2 0 2 5";
 
-            if (parts.length >= 2) {
-              const rawTime = parts.pop() || "";
-              title = parts.join(' ').split('-').join(' ');
-              
-              if (rawTime.length === 6 && rawTime.split('').every(char => char >= '0' && char <= '9')) {
-                time = rawTime.split('').map((char, i) => i === 3 ? char + ' . ' : char).join(' ');
-              } else {
-                time = rawTime.split('-').join(' ').split('_').join(' ').toUpperCase();
+            if (parts.length >= 1) {
+              // Rule: First part is always the title base
+              let baseName = parts[0];
+              // Remove trailing dash and numbers (e.g., -1, -10)
+              baseName = baseName.replace(/-[0-9]+$/, '');
+              // Replace remaining dashes with spaces for the final title
+              title = baseName.split('-').join(' ');
+
+              // Rule: Second part is treated as the time information
+              if (parts.length >= 2) {
+                const rawTime = parts[1];
+                // Format if it's a 6-digit numeric date (YYYYMM)
+                if (rawTime.length === 6 && /^\d+$/.test(rawTime)) {
+                  time = rawTime.split('').map((char, i) => i === 3 ? char + ' . ' : char).join(' ');
+                } else {
+                  // Fallback for non-standard time formats
+                  time = rawTime.split('-').join(' ').toUpperCase();
+                }
               }
-            } else {
-              title = fileName.split('-').join(' ');
             }
 
             return {
@@ -1028,15 +1043,37 @@ const Featured = () => {
           });
 
         if (githubItems.length > 0) {
-          // If more than 24, pick 24 randomly
-          let selected = [...githubItems];
-          if (selected.length > 24) {
-            selected = selected.sort(() => Math.random() - 0.5).slice(0, 24);
-          } else {
-            // Even if less than 24, still shuffle to keep it fresh
-            selected = selected.sort(() => Math.random() - 0.5);
+          // Shuffle all first
+          let shuffled = [...githubItems].sort(() => Math.random() - 0.5);
+          
+          // Interleave to prevent more than 2 consecutive items with same first 4 letters
+          const interleaved: Project[] = [];
+          const pool = [...shuffled];
+          
+          while (pool.length > 0) {
+            let foundIndex = -1;
+            const len = interleaved.length;
+            
+            // Check last two items' prefix
+            if (len >= 2) {
+              const p1 = interleaved[len - 1].title.substring(0, 4).toLowerCase();
+              const p2 = interleaved[len - 2].title.substring(0, 4).toLowerCase();
+              
+              if (p1 === p2 && p1.length >= 4) {
+                // Find next item in pool with a DIFFERENT prefix
+                foundIndex = pool.findIndex(item => 
+                  item.title.substring(0, 4).toLowerCase() !== p1
+                );
+              }
+            }
+            
+            // If no match needed or no different prefix found, just take the first from pool
+            if (foundIndex === -1) foundIndex = 0;
+            interleaved.push(pool.splice(foundIndex, 1)[0]);
           }
-          setFeaturedItems(selected);
+
+          // Finally, limit to 24 if needed
+          setFeaturedItems(interleaved.slice(0, 24));
         } else {
           // If folder exists but is empty, or failed to get list, 
           // we use our safe hardcoded 5 real images (FEATURED_ITEMS) as the minimum set.
@@ -1219,7 +1256,7 @@ const Featured = () => {
               className="relative flex items-center justify-center w-full h-full cursor-grab active:cursor-grabbing"
             >
               <img 
-                src={getOptimizedUrl(selectedItem.image, 1080, 1350)} 
+                src={getOptimizedUrl(selectedItem.image, 1920, 1080, true)} 
                 className="w-auto h-auto max-w-full max-h-full md:max-h-[98vh] object-contain shadow-2xl"
                 referrerPolicy="no-referrer"
               />
@@ -1651,7 +1688,7 @@ const GalleryPage = () => {
                 />
               ) : (
                 <img 
-                  src={getOptimizedUrl(selectedUrl, 1920, 1080)} 
+                  src={getOptimizedUrl(selectedUrl, 1920, 1080, true)} 
                   className="w-full h-full object-contain"
                   referrerPolicy="no-referrer"
                 />
