@@ -25,7 +25,8 @@ import {
   ChevronUp,
   ChevronDown,
   Eye,
-  Maximize
+  Maximize,
+  RotateCcw
 } from 'lucide-react';
 import { Project } from './types';
 import { PROJECTS } from './data/projects';
@@ -777,17 +778,25 @@ const ExperienceAndServices = () => (
 const Spotlight = () => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isZoomed, setIsZoomed] = useState(false);
+  const [rotation, setRotation] = useState(0);
   const project = PROJECTS[selectedIndex % PROJECTS.length];
   const currentImage = project.image;
 
   const handlePrev = (e?: React.MouseEvent) => {
     e?.stopPropagation();
     setSelectedIndex((prev) => (prev - 1 + PROJECTS.length) % PROJECTS.length);
+    setRotation(0); // Reset rotation on slide change
   };
 
   const handleNext = (e?: React.MouseEvent) => {
     e?.stopPropagation();
     setSelectedIndex((prev) => (prev + 1) % PROJECTS.length);
+    setRotation(0); // Reset rotation on slide change
+  };
+
+  const toggleRotation = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setRotation((prev) => (prev + 90) % 360);
   };
   
   return (
@@ -914,8 +923,19 @@ const Spotlight = () => {
             <button 
               className="absolute top-6 right-6 text-white/60 hover:text-white transition-colors z-[210] p-4"
               onClick={(e) => { e.stopPropagation(); setIsZoomed(false); }}
+              aria-label="Close"
             >
               <X size={32} />
+            </button>
+
+            {/* Rotation Button */}
+            <button 
+              className="absolute top-6 left-6 text-white/60 hover:text-white transition-colors z-[210] p-4 flex flex-col items-center gap-1"
+              onClick={toggleRotation}
+              aria-label="Rotate"
+            >
+              <RotateCcw size={28} />
+              <span className="text-[10px] font-bold uppercase tracking-widest opacity-60">Rotate</span>
             </button>
 
             <button 
@@ -932,18 +952,27 @@ const Spotlight = () => {
             </button>
             
             <motion.div 
-              key={selectedIndex}
+              key={`${selectedIndex}-${rotation}`}
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               className="relative w-full h-full flex items-center justify-center px-4"
             >
-              <img 
-                src={getOptimizedUrl(currentImage, undefined, undefined, true)} 
-                className="max-w-full max-h-full object-contain shadow-2xl transition-all duration-300"
-                referrerPolicy="no-referrer"
-                crossOrigin="anonymous"
-              />
+              <div 
+                className="relative transition-transform duration-500 ease-out flex items-center justify-center"
+                style={{ 
+                  transform: `rotate(${rotation}deg)`,
+                  width: (rotation % 180 !== 0) ? '100vh' : '100%',
+                  height: (rotation % 180 !== 0) ? '100vw' : '100%',
+                }}
+              >
+                <img 
+                  src={getOptimizedUrl(currentImage, undefined, undefined, true)} 
+                  className="max-w-full max-h-full object-contain shadow-2xl transition-all duration-300"
+                  referrerPolicy="no-referrer"
+                  crossOrigin="anonymous"
+                />
+              </div>
             </motion.div>
 
             {/* Title Overlay in Lightbox */}
