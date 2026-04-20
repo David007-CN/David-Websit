@@ -38,35 +38,18 @@ const getOptimizedUrl = (url: string, width?: number, height?: number, avoidProx
   
   let rawUrl = url;
   
-  // Handle GitHub URLs
+  // Handle GitHub URLs - direct link is most reliable
   if (url.includes('github.com') || url.includes('raw.githubusercontent.com')) {
     rawUrl = url.replace('github.com', 'raw.githubusercontent.com')
                 .replace('/blob/', '/')
                 .replace('/refs/heads/', '/');
     
-    rawUrl = rawUrl.split('?').shift() || rawUrl;
-    
-    const githubMatch = rawUrl.match(/raw\.githubusercontent\.com\/([^/]+)\/([^/]+)\/([^/]+)\/(.+)/);
-    if (githubMatch) {
-      const [_, user, repo, hash, path] = githubMatch;
-      if (isVideo) {
-        rawUrl = `https://cdn.jsdelivr.net/gh/${user}/${repo}@${hash}/${path}`;
-      } else {
-        // Use jsDelivr for large images to preserve filename in path and maintain high speed
-        if (avoidProxy) {
-          rawUrl = `https://cdn.jsdelivr.net/gh/${user}/${repo}@${hash}/${path}`;
-        } else {
-          rawUrl = `https://raw.githubusercontent.com/${user}/${repo}/${hash}/${path}`;
-        }
-      }
-    }
+    // For GitHub images, avoid proxy entirely as it often fails with raw content headers
+    return rawUrl;
   }
 
-  // Use wsrv.nl proxy for images to compress (WebP) and resize, unless avoidProxy is true
+  // Use wsrv.nl proxy for non-GitHub images
   if (rawUrl.startsWith('http') && !isVideo && !avoidProxy && !rawUrl.includes('youtube.com') && !rawUrl.includes('youtu.be')) {
-    // af: auto-format (webp/avif)
-    // il: interlaced
-    // q: 85 (high quality compression balance)
     let wsrvUrl = `https://wsrv.nl/?url=${encodeURIComponent(rawUrl)}&af&il&q=85`;
     if (width) wsrvUrl += `&w=${width}`;
     if (height) wsrvUrl += `&h=${height}`;
@@ -340,11 +323,14 @@ const SERVICES = [
 ];
 
 const FEATURED_ITEMS: Project[] = [
-  { id: 101, title: "Osight SE Adjust Brightness", category: "Life", image: "https://raw.githubusercontent.com/David007-CN/DW/main/Life/Osight%20SE%20Adjust%20Brightness_202601.jpg", time: "2 0 2 6 . 0 1" },
-  { id: 102, title: "Osight SE Carry", category: "Life", image: "https://raw.githubusercontent.com/David007-CN/DW/main/Life/Osight%20SE%20Carry_202601.jpg", time: "2 0 2 6 . 0 1" },
-  { id: 103, title: "Osight SE Concealed Carry", category: "Life", image: "https://raw.githubusercontent.com/David007-CN/DW/main/Life/Osight%20SE%20Concealed%20Carry_202601.jpg", time: "2 0 2 6 . 0 1" },
-  { id: 104, title: "Osight SE", category: "Life", image: "https://raw.githubusercontent.com/David007-CN/DW/main/Life/Osight%20SE_202604.jpg", time: "2 0 2 6 . 0 4" },
-  { id: 105, title: "Osight XR", category: "Life", image: "https://raw.githubusercontent.com/David007-CN/DW/main/Life/Osight%20XR_202601.jpg", time: "2 0 2 6 . 0 1" },
+  { id: 101, title: "Osight SE Adjust Brightness", category: "Life", image: "https://raw.githubusercontent.com/David007-CN/DW/302b80babe660745f95431389997b321af1c495b/Life/Osight%20SE%20Adjust%20Brightness_202601.jpg", time: "2 0 2 6 . 0 1" },
+  { id: 102, title: "Osight SE Carry", category: "Life", image: "https://raw.githubusercontent.com/David007-CN/DW/302b80babe660745f95431389997b321af1c495b/Life/Osight%20SE%20Carry_202601.jpg", time: "2 0 2 6 . 0 1" },
+  { id: 103, title: "Osight SE Concealed Carry", category: "Life", image: "https://raw.githubusercontent.com/David007-CN/DW/302b80babe660745f95431389997b321af1c495b/Life/Osight%20SE%20Concealed%20Carry_202601.jpg", time: "2 0 2 6 . 0 1" },
+  { id: 104, title: "NRA Show Exhibition", category: "Life", image: "https://raw.githubusercontent.com/David007-CN/DW/302b80babe660745f95431389997b321af1c495b/Life/NRA_202604_DSC_8238.jpg", time: "2 0 2 6 . 0 4" },
+  { id: 105, title: "Osight SE", category: "Life", image: "https://raw.githubusercontent.com/David007-CN/DW/302b80babe660745f95431389997b321af1c495b/Life/Osight%20SE_202604.jpg", time: "2 0 2 6 . 0 4" },
+  { id: 106, title: "Osight XR", category: "Life", image: "https://raw.githubusercontent.com/David007-CN/DW/302b80babe660745f95431389997b321af1c495b/Life/Osight%20XR_202601.jpg", time: "2 0 2 6 . 0 1" },
+  { id: 107, title: "Outdoor Shooting", category: "Life", image: "https://raw.githubusercontent.com/David007-CN/DW/302b80babe660745f95431389997b321af1c495b/Life/NRA_202604_DSC_8239.jpg", time: "2 0 2 6 . 0 4" },
+  { id: 108, title: "Product Detail", category: "Life", image: "https://raw.githubusercontent.com/David007-CN/DW/302b80babe660745f95431389997b321af1c495b/Life/NRA_202604_DSC_8240.jpg", time: "2 0 2 6 . 0 4" },
 ];
 
 // --- Components ---
@@ -489,10 +475,10 @@ const Hero = () => {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1 }}
           >
-            <h1 className="text-3xl md:text-6xl lg:text-8xl font-yahei font-bold leading-tight tracking-tight mb-16 md:mb-24 lg:mb-32 flex flex-col items-center">
+            <h1 className="text-3xl md:text-6xl lg:text-8xl font-display font-bold leading-tight tracking-tight mb-16 md:mb-24 lg:mb-32 flex flex-col items-center">
               <div className="relative inline-block max-w-full">
                 <span>Hello, welcome</span>
-                <span className="absolute left-1/2 -translate-x-1/2 top-full mt-2 md:mt-6 text-[8px] md:text-[10px] lg:text-xs font-yahei font-normal opacity-60 flex justify-center tracking-[0.1em] md:tracking-[0.35em] whitespace-nowrap w-[90vw] md:w-auto">
+                <span className="absolute left-1/2 -translate-x-1/2 top-full mt-2 md:mt-6 text-[8px] md:text-[10px] lg:text-xs font-display font-normal opacity-60 flex justify-center tracking-[0.1em] md:tracking-[0.35em] whitespace-nowrap w-[90vw] md:w-auto">
                   {"An unknown designer. More than just a designer.".split("").map((char, i) => (
                     <span key={i}>{char === " " ? "\u00A0" : char}</span>
                   ))}
@@ -957,8 +943,6 @@ const Archive = () => {
 const Featured = () => {
   const [featuredItems, setFeaturedItems] = useState<Project[]>(FEATURED_ITEMS);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const [showStats, setShowStats] = useState(false);
-  const [stats, setStats] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(false);
 
   const [isHovered, setIsHovered] = useState(false);
@@ -967,7 +951,7 @@ const Featured = () => {
   const x = useMotionValue(0);
 
   useAnimationFrame(() => {
-    if (isHovered || isDragging || selectedIndex !== null || showStats || isLoading) return;
+    if (isHovered || isDragging || selectedIndex !== null || isLoading) return;
     
     let currentX = x.get() - 1; // Animation speed
     if (containerRef.current) {
@@ -996,126 +980,114 @@ const Featured = () => {
   // GitHub Folder Configuration
   const GITHUB_REPO = "David007-CN/DW";
   const GITHUB_FOLDER = "Life"; 
+  const GITHUB_REF = "main"; // Track main branch for real-time updates
 
   useEffect(() => {
+    const processFiles = (data: any[]) => {
+      const githubItems: Project[] = data
+        .filter((file: any) => 
+          file.type === 'file' && 
+          ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif'].some(ext => file.name.toLowerCase().endsWith('.' + ext))
+        )
+        .map((file: any, index: number) => {
+          const name = decodeURIComponent(file.name);
+          const fileName = name.split('.')[0];
+          
+          // 1. Title: Everything before the FIRST underscore.
+          const firstUnderscoreIndex = fileName.indexOf('_');
+          let title = firstUnderscoreIndex !== -1 ? fileName.substring(0, firstUnderscoreIndex) : fileName;
+          
+          // 1.1 Ignore numeric suffixes like -1, -10 etc inside the title part
+          title = title.replace(/-\d+$/, '');
+
+          // 1.2 Append "Show" if title is NRA
+          if (title.toUpperCase() === 'NRA') {
+             title = title + " Show";
+          }
+          
+          // 1.3 Append "Travel" if title is Xinjiang
+          if (title.toUpperCase() === 'XINJIANG') {
+             title = title + " Travel";
+          }
+          
+          // 2. Time: Find 6-digit date starting with 20...
+          let time = "2 0 2 5";
+          const dateMatch = fileName.match(/20\d{4}/);
+          if (dateMatch) {
+             const dateStr = dateMatch[0];
+             time = dateStr.split('').map((char, i) => i === 3 ? char + ' . ' : char).join(' ');
+          }
+
+          // Generate a more robust URL for direct access from main/ref
+          const imageUrl = `https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_REF}/${GITHUB_FOLDER}/${file.name}`;
+
+          return {
+            id: 2000 + index,
+            title: title, // Exact capitalization as in filename
+            category: "Life",
+            image: imageUrl,
+            time: time
+          };
+        });
+
+      if (githubItems.length > 0) {
+        let shuffled = [...githubItems].sort(() => Math.random() - 0.5);
+        const interleaved: Project[] = [];
+        const pool = [...shuffled];
+        
+        while (pool.length > 0) {
+          let foundIndex = -1;
+          const len = interleaved.length;
+          if (len >= 2) {
+            const p1 = interleaved[len - 1].title.substring(0, 4).toLowerCase();
+            const p2 = interleaved[len - 2].title.substring(0, 4).toLowerCase();
+            if (p1 === p2 && p1.length >= 4) {
+              foundIndex = pool.findIndex(item => item.title.substring(0, 4).toLowerCase() !== p1);
+            }
+          }
+          if (foundIndex === -1) foundIndex = 0;
+          interleaved.push(pool.splice(foundIndex, 1)[0]);
+        }
+        setFeaturedItems(interleaved.slice(0, 24));
+        return true;
+      }
+      return false;
+    };
+
     const fetchGitHubImages = async () => {
-      if (!GITHUB_REPO || !GITHUB_FOLDER) return;
-      
       setIsLoading(true);
       try {
-        const response = await fetch("https://api.github.com/repos/" + GITHUB_REPO + "/contents/" + GITHUB_FOLDER);
+        const response = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_FOLDER}?ref=${GITHUB_REF}`);
         
-        // Handle non-existent folder
-        if (response.status === 404) {
-          console.warn("GitHub folder not found, using static fallback.");
-          setFeaturedItems(FEATURED_ITEMS);
-          return;
-        }
-
-        // Handle rate limiting (403) gracefully
         if (response.status === 403) {
-          console.warn("GitHub API rate limited, using static fallback.");
-          setFeaturedItems(FEATURED_ITEMS);
-          return;
+          console.warn("GitHub API rate limited.");
+          throw new Error("Rate limit");
         }
 
         if (!response.ok) {
-          throw new Error(`GitHub API returned ${response.status}: ${response.statusText}`);
+          throw new Error(`GitHub API returned ${response.status}`);
         }
         
         const data = await response.json();
-        
-        if (!Array.isArray(data)) {
-          setFeaturedItems(FEATURED_ITEMS);
-          return;
-        }
-
-        const githubItems: Project[] = data
-          .filter((file: any) => 
-            file.type === 'file' && 
-            ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif'].some(ext => file.name.toLowerCase().endsWith('.' + ext))
-          )
-          .map((file: any, index: number) => {
-            const fileName = file.name.split('.')[0];
-            const parts = fileName.split('_');
-            
-            let title = fileName;
-            let time = "2 0 2 5";
-
-            if (parts.length >= 1) {
-              // Rule: First part is always the title base
-              let baseName = parts[0];
-              // Remove trailing dash and numbers (e.g., -1, -10)
-              baseName = baseName.replace(/-[0-9]+$/, '');
-              // Replace remaining dashes with spaces for the final title
-              title = baseName.split('-').join(' ');
-
-              // Rule: Second part is treated as the time information
-              if (parts.length >= 2) {
-                const rawTime = parts[1];
-                // Format if it's a 6-digit numeric date (YYYYMM)
-                if (rawTime.length === 6 && /^\d+$/.test(rawTime)) {
-                  time = rawTime.split('').map((char, i) => i === 3 ? char + ' . ' : char).join(' ');
-                } else {
-                  // Fallback for non-standard time formats
-                  time = rawTime.split('-').join(' ').toUpperCase();
-                }
-              }
-            }
-
-            return {
-              id: 2000 + index,
-              title: title,
-              category: "Life",
-              image: file.download_url,
-              time: time
-            };
-          });
-
-        if (githubItems.length > 0) {
-          // Shuffle all first
-          let shuffled = [...githubItems].sort(() => Math.random() - 0.5);
-          
-          // Interleave to prevent more than 2 consecutive items with same first 4 letters
-          const interleaved: Project[] = [];
-          const pool = [...shuffled];
-          
-          while (pool.length > 0) {
-            let foundIndex = -1;
-            const len = interleaved.length;
-            
-            // Check last two items' prefix
-            if (len >= 2) {
-              const p1 = interleaved[len - 1].title.substring(0, 4).toLowerCase();
-              const p2 = interleaved[len - 2].title.substring(0, 4).toLowerCase();
-              
-              if (p1 === p2 && p1.length >= 4) {
-                // Find next item in pool with a DIFFERENT prefix
-                foundIndex = pool.findIndex(item => 
-                  item.title.substring(0, 4).toLowerCase() !== p1
-                );
-              }
-            }
-            
-            // If no match needed or no different prefix found, just take the first from pool
-            if (foundIndex === -1) foundIndex = 0;
-            interleaved.push(pool.splice(foundIndex, 1)[0]);
-          }
-
-          // Finally, limit to 24 if needed
-          setFeaturedItems(interleaved.slice(0, 24));
-        } else {
-          // If folder exists but is empty, or failed to get list, 
-          // we use our safe hardcoded 5 real images (FEATURED_ITEMS) as the minimum set.
-          setFeaturedItems(FEATURED_ITEMS);
+        if (Array.isArray(data)) {
+          try {
+            localStorage.setItem(`github_images_cache_${GITHUB_REF}`, JSON.stringify(data));
+          } catch (e) { /* ignore */ }
+          if (processFiles(data)) return;
         }
       } catch (err) {
-        console.error("GitHub Fetch Error:", err);
-        // Fallback to our hardcoded 5 real images if API fails completely
-        setFeaturedItems(FEATURED_ITEMS);
+        console.warn("GitHub Fetch Error, trying cache:", err);
+        const cached = localStorage.getItem(`github_images_cache_${GITHUB_REF}`);
+        if (cached) {
+          try {
+            if (processFiles(JSON.parse(cached))) return;
+          } catch (e) { /* ignore cache error */ }
+        }
       } finally {
         setIsLoading(false);
       }
+      // Ultimate fallback
+      setFeaturedItems(FEATURED_ITEMS);
     };
 
     fetchGitHubImages();
@@ -1124,29 +1096,6 @@ const Featured = () => {
   const shuffledItems = useMemo(() => {
     return featuredItems;
   }, [featuredItems]);
-
-  const trackClick = async (item: any) => {
-    try {
-      await fetch('/api/track-click', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ itemId: item.id, title: item.title }),
-      });
-    } catch (err) {
-      console.error('Failed to track click:', err);
-    }
-  };
-
-  const fetchStats = async () => {
-    try {
-      const res = await fetch('/api/click-stats');
-      const data = await res.json();
-      setStats(data);
-      setShowStats(true);
-    } catch (err) {
-      console.error('Failed to fetch stats:', err);
-    }
-  };
 
   const handleNext = (e?: React.MouseEvent) => {
     e?.stopPropagation();
@@ -1180,14 +1129,6 @@ const Featured = () => {
       <div className="max-w-7xl mx-auto px-6 mb-10 md:mb-16 text-center relative">
         <h2 className="text-3xl md:text-5xl font-display font-bold mb-4 tracking-tighter text-white">Work & Life</h2>
         <div className="w-12 h-[1px] bg-brand-red mx-auto mb-6" />
-        
-        <button 
-          onClick={fetchStats}
-          className="absolute right-6 top-1/2 -translate-y-1/2 text-white/20 hover:text-brand-red transition-colors flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest"
-        >
-          <Eye size={14} />
-          View Stats
-        </button>
       </div>
       
       <div className="relative flex overflow-hidden">
@@ -1217,17 +1158,17 @@ const Featured = () => {
                   if (isDragging) return;
                   const realIndex = index % shuffledItems.length;
                   setSelectedIndex(realIndex);
-                  trackClick(item);
                 }}
                 className="parchment-card p-1 shadow-2xl group w-[300px] md:w-[400px] shrink-0 cursor-grab active:cursor-grabbing"
               >
                 <div className="bg-white p-4 h-full flex flex-col whitespace-normal">
                   <div className="aspect-square overflow-hidden mb-6 relative bg-gray-100">
                     <img 
-                      src={getOptimizedUrl(item.image, 300, 400)} 
+                      src={getOptimizedUrl(item.image, 600, 600)} 
                       draggable={false}
                       className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110" 
                       referrerPolicy="no-referrer" 
+                      crossOrigin="anonymous"
                       loading="lazy"
                     />
                   </div>
@@ -1292,59 +1233,11 @@ const Featured = () => {
               className="relative flex items-center justify-center cursor-grab active:cursor-grabbing"
             >
               <img 
-                src={getOptimizedUrl(selectedItem.image, 1920, 1080, true)} 
-                className="w-auto h-auto max-w-[90vw] max-h-[90vh] object-contain shadow-2xl"
+                src={getOptimizedUrl(selectedItem.image, 2560, 1440, true)} 
+                className="w-auto h-auto max-w-[95vw] max-h-[95vh] object-contain shadow-2xl"
                 referrerPolicy="no-referrer"
+                crossOrigin="anonymous"
               />
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {showStats && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setShowStats(false)}
-            className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-6"
-          >
-            <motion.div 
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 20, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="max-w-lg w-full bg-brand-dark border border-white/10 p-8 rounded-sm shadow-2xl"
-            >
-              <div className="flex justify-between items-center mb-8">
-                <h3 className="text-xl font-display font-bold text-white">Click Analytics</h3>
-                <button onClick={() => setShowStats(false)} className="text-white/40 hover:text-white">
-                  <X size={20} />
-                </button>
-              </div>
-              
-              <div className="space-y-4 max-h-[60vh] overflow-y-auto custom-scrollbar pr-4">
-                {Object.entries(stats).length > 0 ? (
-                  Object.entries(stats)
-                    .sort((a, b) => (b[1] as number) - (a[1] as number))
-                    .map(([key, count]) => (
-                      <div key={key} className="flex justify-between items-center py-2 border-b border-white/5">
-                        <span className="text-sm text-white/60">{key}</span>
-                        <span className="text-sm font-mono text-brand-red font-bold">{count} clicks</span>
-                      </div>
-                    ))
-                ) : (
-                  <p className="text-center text-white/20 py-10 italic">No clicks tracked yet.</p>
-                )}
-              </div>
-              
-              <button 
-                onClick={() => setShowStats(false)}
-                className="w-full mt-8 py-3 bg-white text-brand-dark text-[10px] font-bold uppercase tracking-widest hover:bg-brand-red hover:text-white transition-all"
-              >
-                Close Dashboard
-              </button>
             </motion.div>
           </motion.div>
         )}

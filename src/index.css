@@ -2,10 +2,10 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", "Microsoft YaHei", "微软雅黑", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", "PingFang SC", "Microsoft YaHei", "微软雅黑", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Inter", sans-serif;
   --font-signature: "Mr Dafoe", cursive;
-  --font-yahei: "Microsoft YaHei", "微软雅黑", sans-serif;
+  --font-yahei: "PingFang SC", "Microsoft YaHei", "微软雅黑", sans-serif;
   
   --color-brand-red: #E4002B;
   --color-brand-dark: #050505;
