@@ -552,7 +552,7 @@ const Hero = () => {
             <>
               <div className="absolute inset-0 z-0 pointer-events-none">
                 <img 
-                  src={getOptimizedUrl(slides[currentSlide].bg!, window.innerWidth > 768 ? 1600 : 1080, window.innerWidth > 768 ? 900 : 1350)} 
+                  src={getOptimizedUrl(slides[currentSlide].bg!, window.innerWidth > 768 ? 2560 : 1080, window.innerWidth > 768 ? 1440 : 1350)} 
                   alt="Background" 
                   className="w-full h-full object-cover brightness-[0.4] contrast-110"
                   referrerPolicy="no-referrer"
@@ -574,7 +574,7 @@ const Hero = () => {
               }}
             >
               <img 
-                src={getOptimizedUrl(slides[currentSlide].desktop!, 1600, 900)} 
+                src={getOptimizedUrl(slides[currentSlide].desktop!, 2560, 1440)} 
                 alt={slides[currentSlide].alt}
                 className="hidden md:block w-full h-full object-cover brightness-[0.8] hover:brightness-[0.9] transition-all duration-1000 pointer-events-none"
                 referrerPolicy="no-referrer"
@@ -582,7 +582,7 @@ const Hero = () => {
                 loading="eager"
               />
               <img 
-                src={getOptimizedUrl(slides[currentSlide].mobile!, 600, 1000)} 
+                src={getOptimizedUrl(slides[currentSlide].mobile!, 1080, 1800)} 
                 alt={slides[currentSlide].alt}
                 className="block md:hidden w-full h-full object-cover brightness-[0.8] pointer-events-none"
                 referrerPolicy="no-referrer"
