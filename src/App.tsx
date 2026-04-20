@@ -38,19 +38,21 @@ const getOptimizedUrl = (url: string, width?: number, height?: number, avoidProx
   
   let rawUrl = url;
   
-  // Handle GitHub URLs - direct link is most reliable
+  // Handle GitHub URLs - convert to raw content reliably
   if (url.includes('github.com') || url.includes('raw.githubusercontent.com')) {
     rawUrl = url.replace('github.com', 'raw.githubusercontent.com')
                 .replace('/blob/', '/')
                 .replace('/refs/heads/', '/');
-    
-    // For GitHub images, avoid proxy entirely as it often fails with raw content headers
-    return rawUrl;
+    rawUrl = rawUrl.split('?')[0];
   }
 
-  // Use wsrv.nl proxy for non-GitHub images
+  // Use wsrv.nl proxy for images to compress (WebP) and resize
+  // We re-enable this for speed, but ensures the URL is cleanly encoded
   if (rawUrl.startsWith('http') && !isVideo && !avoidProxy && !rawUrl.includes('youtube.com') && !rawUrl.includes('youtu.be')) {
-    let wsrvUrl = `https://wsrv.nl/?url=${encodeURIComponent(rawUrl)}&af&il&q=85`;
+    // Ultra-aggressive optimization for mobile: q=50 for small thumbnails, q=75 for medium
+    const isSmall = width && width < 600;
+    const quality = isSmall ? 50 : 75;
+    let wsrvUrl = `https://wsrv.nl/?url=${encodeURIComponent(rawUrl)}&af&il&q=${quality}`;
     if (width) wsrvUrl += `&w=${width}`;
     if (height) wsrvUrl += `&h=${height}`;
     return wsrvUrl;
@@ -548,11 +550,12 @@ const Hero = () => {
             <>
               <div className="absolute inset-0 z-0 pointer-events-none">
                 <img 
-                  src={getOptimizedUrl(slides[currentSlide].bg!, 1920, 1080)} 
+                  src={getOptimizedUrl(slides[currentSlide].bg!, window.innerWidth > 768 ? 1600 : 800, window.innerWidth > 768 ? 900 : 1200)} 
                   alt="Background" 
                   className="w-full h-full object-cover brightness-[0.4] contrast-110"
                   referrerPolicy="no-referrer"
-                  fetchPriority={currentSlide === 0 ? "high" : "auto"}
+                  fetchPriority="high"
+                  loading="eager"
                 />
                 <div className="absolute inset-0 bg-gradient-to-b from-brand-dark/50 via-transparent to-brand-dark/75" />
               </div>
@@ -569,18 +572,20 @@ const Hero = () => {
               }}
             >
               <img 
-                src={getOptimizedUrl(slides[currentSlide].desktop!, 1920, 1080)} 
+                src={getOptimizedUrl(slides[currentSlide].desktop!, 1600, 900)} 
                 alt={slides[currentSlide].alt}
                 className="hidden md:block w-full h-full object-cover brightness-[0.8] hover:brightness-[0.9] transition-all duration-1000 pointer-events-none"
                 referrerPolicy="no-referrer"
-                fetchPriority={currentSlide === 0 ? "high" : "auto"}
+                fetchPriority="high"
+                loading="eager"
               />
               <img 
-                src={getOptimizedUrl(slides[currentSlide].mobile!, 800, 1200)} 
+                src={getOptimizedUrl(slides[currentSlide].mobile!, 600, 1000)} 
                 alt={slides[currentSlide].alt}
                 className="block md:hidden w-full h-full object-cover brightness-[0.8] pointer-events-none"
                 referrerPolicy="no-referrer"
-                fetchPriority={currentSlide === 0 ? "high" : "auto"}
+                fetchPriority="high"
+                loading="eager"
               />
               <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-brand-dark/40 pointer-events-none" />
             </div>
@@ -698,10 +703,11 @@ const ExperienceAndServices = () => (
               >
                 <div className="absolute left-0 top-0 w-12 h-12 bg-brand-dark border border-white/10 p-1 z-10">
                   <img 
-                    src={getOptimizedUrl(exp.logo)} 
+                    src={getOptimizedUrl(exp.logo, 64, 64)} 
                     alt={exp.brand} 
                     className="w-full h-full object-cover" 
                     referrerPolicy="no-referrer"
+                    loading="lazy"
                   />
                 </div>
                 <div className="flex items-baseline justify-between mb-2 gap-2">
@@ -738,10 +744,11 @@ const ExperienceAndServices = () => (
                   <div className="text-brand-red shrink-0 w-8 h-8 flex items-center justify-center">
                     {service.iconUrl ? (
                       <motion.img 
-                        src={getOptimizedUrl(service.iconUrl)} 
+                        src={getOptimizedUrl(service.iconUrl, 48, 48)} 
                         alt={service.title}
                         className="w-full h-full object-contain animate-slow-spin pause-on-hover"
                         referrerPolicy="no-referrer"
+                        loading="lazy"
                       />
                     ) : (
                       <motion.div
@@ -799,9 +806,11 @@ const Spotlight = () => {
                     className={`aspect-video border cursor-pointer transition-all duration-300 ${selectedIndex === i ? 'border-brand-red ring-1 ring-brand-red' : 'border-white/10 hover:border-white/40'} bg-white/5`}
                   >
                     <img 
-                      src={getOptimizedUrl(p.image)} 
+                      src={getOptimizedUrl(p.image, window.innerWidth > 768 ? 400 : 200, window.innerWidth > 768 ? 225 : 112)} 
                       className="w-full h-full object-cover transition-all duration-500" 
                       referrerPolicy="no-referrer" 
+                      loading={i < 4 ? "eager" : "lazy"}
+                      fetchPriority={i < 4 ? "high" : "auto"}
                     />
                   </div>
                 );
@@ -856,10 +865,11 @@ const Spotlight = () => {
 
                 <div className="w-full aspect-video mt-14 mb-14 lg:mt-0 lg:mb-0 border border-white/10 p-1 bg-white/5 backdrop-blur-sm">
                   <img 
-                    src={getOptimizedUrl(currentImage, 1280, 720)} 
+                    src={getOptimizedUrl(currentImage, window.innerWidth > 768 ? 1280 : 800, window.innerWidth > 768 ? 720 : 450)} 
                     className="w-full h-full object-cover" 
                     referrerPolicy="no-referrer" 
-                    loading="lazy"
+                    loading={selectedIndex === 0 ? "eager" : "lazy"}
+                    fetchPriority={selectedIndex === 0 ? "high" : "auto"}
                   />
                 </div>
               </div>
@@ -916,10 +926,11 @@ const Archive = () => {
                 </div>
               ) : (
                 <img 
-                  src={getOptimizedUrl(project.image, 800, 450)} 
+                  src={getOptimizedUrl(project.image, window.innerWidth > 768 ? 800 : 500, window.innerWidth > 768 ? 450 : 280)} 
                   className="w-full h-full object-cover grayscale group-hover:grayscale-0 brightness-50 group-hover:brightness-100 transition-all duration-700" 
                   referrerPolicy="no-referrer"
-                  loading="lazy"
+                  loading={index < 2 ? "eager" : "lazy"}
+                  fetchPriority={index < 2 ? "high" : "auto"}
                 />
               )}
               <div className="absolute inset-0 flex flex-col justify-center items-center text-center p-12 bg-black/20 group-hover:bg-transparent transition-colors duration-500">
@@ -1055,7 +1066,23 @@ const Featured = () => {
     };
 
     const fetchGitHubImages = async () => {
-      setIsLoading(true);
+      // 1. Try to load from cache immediately to show content fast
+      const cached = localStorage.getItem(`github_images_cache_${GITHUB_REF}`);
+      let hasRenderedFromCache = false;
+      if (cached) {
+        try {
+          const parsedCache = JSON.parse(cached);
+          if (Array.isArray(parsedCache) && processFiles(parsedCache)) {
+            hasRenderedFromCache = true;
+            setIsLoading(false); // Stop spinner if we have cache
+          }
+        } catch (e) { /* ignore cache error */ }
+      }
+
+      if (!hasRenderedFromCache) {
+        setIsLoading(true);
+      }
+
       try {
         const response = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_FOLDER}?ref=${GITHUB_REF}`);
         
@@ -1073,21 +1100,14 @@ const Featured = () => {
           try {
             localStorage.setItem(`github_images_cache_${GITHUB_REF}`, JSON.stringify(data));
           } catch (e) { /* ignore */ }
-          if (processFiles(data)) return;
+          // Re-process if it's the first time OR to update background content
+          processFiles(data);
         }
       } catch (err) {
-        console.warn("GitHub Fetch Error, trying cache:", err);
-        const cached = localStorage.getItem(`github_images_cache_${GITHUB_REF}`);
-        if (cached) {
-          try {
-            if (processFiles(JSON.parse(cached))) return;
-          } catch (e) { /* ignore cache error */ }
-        }
+        console.warn("GitHub Fetch Error:", err);
       } finally {
         setIsLoading(false);
       }
-      // Ultimate fallback
-      setFeaturedItems(FEATURED_ITEMS);
     };
 
     fetchGitHubImages();
@@ -1150,7 +1170,8 @@ const Featured = () => {
             onDragEnd={() => setIsDragging(false)}
             className="flex gap-8 whitespace-nowrap cursor-grab active:cursor-grabbing"
           >
-            {[...shuffledItems, ...shuffledItems].map((item, index) => (
+            {/* For mobile speed, only duplicate if screen is wide enough to need infinite loop visibility */}
+            {(window.innerWidth > 768 ? [...shuffledItems, ...shuffledItems] : shuffledItems).map((item, index) => (
               <motion.div 
                 key={item.id + "-" + index} 
                 whileHover={{ scale: 1.02 }}
@@ -1164,12 +1185,13 @@ const Featured = () => {
                 <div className="bg-white p-4 h-full flex flex-col whitespace-normal">
                   <div className="aspect-square overflow-hidden mb-6 relative bg-gray-100">
                     <img 
-                      src={getOptimizedUrl(item.image, 600, 600)} 
+                      src={getOptimizedUrl(item.image, window.innerWidth > 768 ? 500 : 300, window.innerWidth > 768 ? 500 : 300)} 
                       draggable={false}
                       className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110" 
                       referrerPolicy="no-referrer" 
                       crossOrigin="anonymous"
-                      loading="lazy"
+                      loading={index < 2 ? "eager" : "lazy"}
+                      fetchPriority={index < 2 ? "high" : "auto"}
                     />
                   </div>
                   <div className="text-center flex-grow flex flex-col justify-center">
@@ -1233,7 +1255,7 @@ const Featured = () => {
               className="relative flex items-center justify-center cursor-grab active:cursor-grabbing"
             >
               <img 
-                src={getOptimizedUrl(selectedItem.image, 2560, 1440, true)} 
+                src={getOptimizedUrl(selectedItem.image, window.innerWidth > 1024 ? 2000 : 1200)} 
                 className="w-auto h-auto max-w-[95vw] max-h-[95vh] object-contain shadow-2xl"
                 referrerPolicy="no-referrer"
                 crossOrigin="anonymous"
