@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { BrowserRouter, Routes, Route, Link, useNavigate, useLocation, useParams } from 'react-router-dom';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, useMotionValue, useAnimationFrame } from 'motion/react';
 import { 
   Twitter, 
   Menu, 
@@ -564,7 +564,7 @@ const Hero = () => {
                 <img 
                   src={getOptimizedUrl(slides[currentSlide].bg!, 1920, 1080)} 
                   alt="Background" 
-                  className="w-full h-full object-cover brightness-[0.3] contrast-110"
+                  className="w-full h-full object-cover brightness-[0.4] contrast-110"
                   referrerPolicy="no-referrer"
                   fetchPriority={currentSlide === 0 ? "high" : "auto"}
                 />
@@ -585,14 +585,14 @@ const Hero = () => {
               <img 
                 src={getOptimizedUrl(slides[currentSlide].desktop!, 1920, 1080)} 
                 alt={slides[currentSlide].alt}
-                className="hidden md:block w-full h-full object-cover brightness-[0.6] hover:brightness-[0.8] transition-all duration-1000 pointer-events-none"
+                className="hidden md:block w-full h-full object-cover brightness-[0.8] hover:brightness-[0.9] transition-all duration-1000 pointer-events-none"
                 referrerPolicy="no-referrer"
                 fetchPriority={currentSlide === 0 ? "high" : "auto"}
               />
               <img 
                 src={getOptimizedUrl(slides[currentSlide].mobile!, 800, 1200)} 
                 alt={slides[currentSlide].alt}
-                className="block md:hidden w-full h-full object-cover brightness-[0.6] pointer-events-none"
+                className="block md:hidden w-full h-full object-cover brightness-[0.8] pointer-events-none"
                 referrerPolicy="no-referrer"
                 fetchPriority={currentSlide === 0 ? "high" : "auto"}
               />
@@ -962,6 +962,36 @@ const Featured = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const [isHovered, setIsHovered] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const x = useMotionValue(0);
+
+  useAnimationFrame(() => {
+    if (isHovered || isDragging || selectedIndex !== null || showStats || isLoading) return;
+    
+    let currentX = x.get() - 1; // Animation speed
+    if (containerRef.current) {
+      const halfWidth = containerRef.current.scrollWidth / 2;
+      if (currentX <= -halfWidth) {
+        currentX += halfWidth;
+      }
+    }
+    x.set(currentX);
+  });
+
+  // Handle wrapping during drag
+  useEffect(() => {
+    return x.on('change', (v) => {
+      if (containerRef.current) {
+        const halfWidth = containerRef.current.scrollWidth / 2;
+        if (v <= -halfWidth) {
+          x.set(v + halfWidth);
+        } else if (v > 0) {
+          x.set(v - halfWidth);
+        }
+      }
+    });
+  }, [x]);
 
   // GitHub Folder Configuration
   const GITHUB_REPO = "David007-CN/DW";
@@ -1168,27 +1198,34 @@ const Featured = () => {
             ))}
           </div>
         ) : (
-          <div 
+          <motion.div 
+            ref={containerRef}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
-            className="flex gap-8 whitespace-nowrap animate-infinite-scroll"
-            style={{ animationPlayState: (selectedItem || showStats || isHovered) ? 'paused' : 'running' }}
+            style={{ x }}
+            drag="x"
+            dragConstraints={{ left: -Infinity, right: Infinity }}
+            onDragStart={() => setIsDragging(true)}
+            onDragEnd={() => setIsDragging(false)}
+            className="flex gap-8 whitespace-nowrap cursor-grab active:cursor-grabbing"
           >
             {[...shuffledItems, ...shuffledItems].map((item, index) => (
               <motion.div 
                 key={item.id + "-" + index} 
                 whileHover={{ scale: 1.02 }}
                 onClick={() => {
+                  if (isDragging) return;
                   const realIndex = index % shuffledItems.length;
                   setSelectedIndex(realIndex);
                   trackClick(item);
                 }}
-                className="parchment-card p-1 shadow-2xl group w-[300px] md:w-[400px] shrink-0 cursor-pointer"
+                className="parchment-card p-1 shadow-2xl group w-[300px] md:w-[400px] shrink-0 cursor-grab active:cursor-grabbing"
               >
                 <div className="bg-white p-4 h-full flex flex-col whitespace-normal">
                   <div className="aspect-square overflow-hidden mb-6 relative bg-gray-100">
                     <img 
                       src={getOptimizedUrl(item.image, 300, 400)} 
+                      draggable={false}
                       className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110" 
                       referrerPolicy="no-referrer" 
                       loading="lazy"
@@ -1203,7 +1240,7 @@ const Featured = () => {
                 </div>
               </motion.div>
             ))}
-          </div>
+          </motion.div>
         )}
       </div>
 
@@ -1252,12 +1289,11 @@ const Featured = () => {
                   handlePrev();
                 }
               }}
-              onClick={(e) => e.stopPropagation()}
-              className="relative flex items-center justify-center w-full h-full cursor-grab active:cursor-grabbing"
+              className="relative flex items-center justify-center cursor-grab active:cursor-grabbing"
             >
               <img 
                 src={getOptimizedUrl(selectedItem.image, 1920, 1080, true)} 
-                className="w-auto h-auto max-w-full max-h-full md:max-h-[98vh] object-contain shadow-2xl"
+                className="w-auto h-auto max-w-[90vw] max-h-[90vh] object-contain shadow-2xl"
                 referrerPolicy="no-referrer"
               />
             </motion.div>
@@ -1661,8 +1697,7 @@ const GalleryPage = () => {
                   handlePrev();
                 }
               }}
-              className="relative max-w-7xl w-full aspect-video shadow-2xl cursor-grab active:cursor-grabbing"
-              onClick={(e) => e.stopPropagation()}
+              className="relative max-w-[90vw] max-h-[90vh] aspect-video shadow-2xl cursor-grab active:cursor-grabbing flex items-center justify-center"
             >
               {selectedUrl.includes('bilibili.com') || selectedUrl.includes('player.bilibili.com') ? (
                 <iframe 
