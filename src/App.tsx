@@ -779,7 +779,10 @@ const Spotlight = () => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isZoomed, setIsZoomed] = useState(false);
   const [rotation, setRotation] = useState(0);
-  const [isMaximized, setIsMaximized] = useState(false);
+  const [zoomScale, setZoomScale] = useState(1);
+  const [pinchStartDistance, setPinchStartDistance] = useState<number | null>(null);
+  const [pinchStartScale, setPinchStartScale] = useState(1);
+
   const project = PROJECTS[selectedIndex % PROJECTS.length];
   const currentImage = project.image;
 
@@ -787,14 +790,14 @@ const Spotlight = () => {
     e?.stopPropagation();
     setSelectedIndex((prev) => (prev - 1 + PROJECTS.length) % PROJECTS.length);
     setRotation(0); // Reset rotation on slide change
-    setIsMaximized(false); // Reset zoom on slide change
+    setZoomScale(1); // Reset zoom on slide change
   };
 
   const handleNext = (e?: React.MouseEvent) => {
     e?.stopPropagation();
     setSelectedIndex((prev) => (prev + 1) % PROJECTS.length);
     setRotation(0); // Reset rotation on slide change
-    setIsMaximized(false); // Reset zoom on slide change
+    setZoomScale(1); // Reset zoom on slide change
   };
 
   const toggleRotation = (e?: React.MouseEvent) => {
@@ -804,7 +807,34 @@ const Spotlight = () => {
 
   const toggleZoom = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsMaximized(!isMaximized);
+    setZoomScale(zoomScale > 1 ? 1 : 2.5);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      const dist = Math.hypot(
+        e.touches[0].pageX - e.touches[1].pageX,
+        e.touches[0].pageY - e.touches[1].pageY
+      );
+      setPinchStartDistance(dist);
+      setPinchStartScale(zoomScale);
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 2 && pinchStartDistance !== null) {
+      const dist = Math.hypot(
+        e.touches[0].pageX - e.touches[1].pageX,
+        e.touches[0].pageY - e.touches[1].pageY
+      );
+      const delta = dist / pinchStartDistance;
+      const newScale = Math.min(Math.max(pinchStartScale * delta, 1), 5);
+      setZoomScale(newScale);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setPinchStartDistance(null);
   };
   
   return (
@@ -967,27 +997,30 @@ const Spotlight = () => {
                 opacity: 1,
               }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="relative w-full h-full flex items-center justify-center p-4 overflow-hidden"
+              className="relative w-full h-full flex items-center justify-center p-4 overflow-hidden touch-none"
               onDoubleClick={toggleZoom}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
               onClick={() => {
-                // If not maximized, single click background to close
-                if (!isMaximized) setIsZoomed(false);
+                // If not zoomed, single click background to close
+                if (zoomScale <= 1) setIsZoomed(false);
               }}
             >
               <motion.div 
-                drag={isMaximized}
-                dragConstraints={{ left: -1000, right: 1000, top: -1000, bottom: 1000 }} // Allow free drag when zoomed
+                drag={zoomScale > 1}
+                dragConstraints={{ left: -1500, right: 1500, top: -1500, bottom: 1500 }} // Allow free drag when zoomed
                 animate={{ 
-                  scale: isMaximized ? 2.5 : 1, // 2.5x zoom feels like "100%" on many high-res screens relative to "contain"
+                  scale: zoomScale, 
                   rotate: rotation,
                 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                className={`relative flex items-center justify-center pointer-events-auto shadow-2xl ${isMaximized ? 'cursor-move' : 'cursor-zoom-in'}`}
+                className={`relative flex items-center justify-center pointer-events-auto shadow-2xl ${zoomScale > 1 ? 'cursor-move' : 'cursor-zoom-in'}`}
                 style={{ 
                   width: (rotation !== 0) ? '90vh' : 'auto',
                   height: (rotation !== 0) ? '90vw' : 'auto',
-                  maxWidth: (rotation !== 0 || isMaximized) ? 'none' : '90vw',
-                  maxHeight: (rotation !== 0 || isMaximized) ? 'none' : '85vh',
+                  maxWidth: (rotation !== 0 || zoomScale > 1) ? 'none' : '90vw',
+                  maxHeight: (rotation !== 0 || zoomScale > 1) ? 'none' : '85vh',
                 }}
                 onClick={(e) => e.stopPropagation()} // Prevent closing when clicking the image
               >
@@ -1001,11 +1034,20 @@ const Spotlight = () => {
               </motion.div>
             </motion.div>
 
-            {/* Title Overlay in Lightbox */}
-            <div className="absolute bottom-10 left-0 w-full text-center px-6 pointer-events-none">
-              <h4 className="text-xl font-bold text-white mb-2">{project.title}</h4>
-              <p className="text-sm text-white/40">{project.description}</p>
-            </div>
+            {/* Title Overlay in Lightbox - hidden when zoomed */}
+            <AnimatePresence>
+              {zoomScale <= 1.1 && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 20 }}
+                  className="absolute bottom-10 left-0 w-full text-center px-6 pointer-events-none z-[220]"
+                >
+                  <h4 className="text-xl font-bold text-white mb-2">{project.title}</h4>
+                  <p className="text-sm text-white/40">{project.description}</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         )}
       </AnimatePresence>
