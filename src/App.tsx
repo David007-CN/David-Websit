@@ -779,6 +779,7 @@ const Spotlight = () => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isZoomed, setIsZoomed] = useState(false);
   const [rotation, setRotation] = useState(0);
+  const [isMaximized, setIsMaximized] = useState(false);
   const project = PROJECTS[selectedIndex % PROJECTS.length];
   const currentImage = project.image;
 
@@ -786,17 +787,24 @@ const Spotlight = () => {
     e?.stopPropagation();
     setSelectedIndex((prev) => (prev - 1 + PROJECTS.length) % PROJECTS.length);
     setRotation(0); // Reset rotation on slide change
+    setIsMaximized(false); // Reset zoom on slide change
   };
 
   const handleNext = (e?: React.MouseEvent) => {
     e?.stopPropagation();
     setSelectedIndex((prev) => (prev + 1) % PROJECTS.length);
     setRotation(0); // Reset rotation on slide change
+    setIsMaximized(false); // Reset zoom on slide change
   };
 
   const toggleRotation = (e?: React.MouseEvent) => {
     e?.stopPropagation();
     setRotation((prev) => (prev === 0 ? 90 : 0));
+  };
+
+  const toggleZoom = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsMaximized(!isMaximized);
   };
   
   return (
@@ -954,20 +962,34 @@ const Spotlight = () => {
             <motion.div 
               key={`${selectedIndex}-${rotation}`}
               initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
+              animate={{ 
+                scale: 1, 
+                opacity: 1,
+              }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="relative w-full h-full flex items-center justify-center p-4"
-              onClick={toggleRotation}
+              className="relative w-full h-full flex items-center justify-center p-4 overflow-hidden"
+              onDoubleClick={toggleZoom}
+              onClick={() => {
+                // If not maximized, single click background to close
+                if (!isMaximized) setIsZoomed(false);
+              }}
             >
-              <div 
-                className="relative transition-all duration-500 ease-in-out flex items-center justify-center pointer-events-auto shadow-2xl overflow-hidden"
+              <motion.div 
+                drag={isMaximized}
+                dragConstraints={{ left: -1000, right: 1000, top: -1000, bottom: 1000 }} // Allow free drag when zoomed
+                animate={{ 
+                  scale: isMaximized ? 2.5 : 1, // 2.5x zoom feels like "100%" on many high-res screens relative to "contain"
+                  rotate: rotation,
+                }}
+                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                className={`relative flex items-center justify-center pointer-events-auto shadow-2xl ${isMaximized ? 'cursor-move' : 'cursor-zoom-in'}`}
                 style={{ 
-                  transform: `rotate(${rotation}deg)`,
                   width: (rotation !== 0) ? '90vh' : 'auto',
                   height: (rotation !== 0) ? '90vw' : 'auto',
-                  maxWidth: (rotation !== 0) ? 'none' : '90vw',
-                  maxHeight: (rotation !== 0) ? 'none' : '85vh',
+                  maxWidth: (rotation !== 0 || isMaximized) ? 'none' : '90vw',
+                  maxHeight: (rotation !== 0 || isMaximized) ? 'none' : '85vh',
                 }}
+                onClick={(e) => e.stopPropagation()} // Prevent closing when clicking the image
               >
                 <img 
                   src={getOptimizedUrl(currentImage, undefined, undefined, true)} 
@@ -976,7 +998,7 @@ const Spotlight = () => {
                   crossOrigin="anonymous"
                   draggable={false}
                 />
-              </div>
+              </motion.div>
             </motion.div>
 
             {/* Title Overlay in Lightbox */}
