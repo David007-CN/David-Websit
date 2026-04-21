@@ -126,10 +126,14 @@ const VideoPlayer = ({ url, fallbackImage, autoPlay = true, loop = true, muted =
           playsInline
           preload={preload}
           crossOrigin="anonymous"
+          controlsList="nodownload"
+          disablePictureInPicture
+          disableRemotePlayback
+          onContextMenu={(e) => e.preventDefault()}
           onLoadedData={handleReady}
           onCanPlay={handleReady}
           onPlaying={handleReady}
-          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 z-10 ${isReady ? 'opacity-100' : 'opacity-0'}`}
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 z-10 no-save ${isReady ? 'opacity-100' : 'opacity-0'}`}
         />
       ) : (
         /* YouTube Embed */

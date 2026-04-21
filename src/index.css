@@ -21,6 +21,24 @@
   h1, h2, h3, h4 {
     @apply font-display tracking-tight;
   }
+
+  /* Hide video download button in Chrome/Android */
+  video::-internal-media-controls-download-button {
+    display: none !important;
+  }
+  video::-webkit-media-controls-enclosure {
+    overflow: hidden !important;
+  }
+  video::-webkit-media-controls-panel {
+    width: calc(100% + 30px) !important; /* Hide the overflow menu */
+  }
+
+  /* Disable long-press to save image/video on mobile */
+  .no-save {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
 }
 
 .parchment-card {
