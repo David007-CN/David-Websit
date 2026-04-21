@@ -793,15 +793,11 @@ const Spotlight = () => {
   const handlePrev = (e?: React.MouseEvent) => {
     e?.stopPropagation();
     setSelectedIndex((prev) => (prev - 1 + PROJECTS.length) % PROJECTS.length);
-    setRotation(0); // Reset rotation on slide change
-    setZoomScale(1); // Reset zoom on slide change
   };
 
   const handleNext = (e?: React.MouseEvent) => {
     e?.stopPropagation();
     setSelectedIndex((prev) => (prev + 1) % PROJECTS.length);
-    setRotation(0); // Reset rotation on slide change
-    setZoomScale(1); // Reset zoom on slide change
   };
 
   const toggleRotation = (e?: React.MouseEvent) => {
