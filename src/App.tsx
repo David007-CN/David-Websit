@@ -1055,7 +1055,7 @@ const Spotlight = () => {
   );
 };
 
-const Archive = () => {
+const Archive = ({ archiveProjects }: { archiveProjects: Project[] }) => {
   const navigate = useNavigate();
   
   return (
@@ -1070,12 +1070,12 @@ const Archive = () => {
           <div className="w-24 h-[1px] bg-brand-red mx-auto" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
-          {ARCHIVE_PROJECTS.map((project, index) => (
+          {archiveProjects.map((project, index) => (
             <div 
               key={project.id} 
               onClick={() => navigate('/gallery/' + project.id)}
               className={`relative group overflow-hidden aspect-video cursor-pointer bg-white/5 ${
-                index === ARCHIVE_PROJECTS.length - 1 && ARCHIVE_PROJECTS.length % 2 !== 0 ? 'md:col-span-2' : ''
+                index === archiveProjects.length - 1 && archiveProjects.length % 2 !== 0 ? 'md:col-span-2' : ''
               }`}
             >
               {project.category === 'Video' ? (
@@ -1102,11 +1102,13 @@ const Archive = () => {
               <div className="absolute inset-0 flex flex-col justify-center items-center text-center p-12 bg-black/20 group-hover:bg-transparent transition-colors duration-500">
                 <p className="text-[11px] font-bold tracking-[0.1em] opacity-60 mb-2">{project.subtitle}</p>
                 <h3 className="text-2xl md:text-4xl font-display font-bold mb-4 group-hover:scale-110 transition-transform duration-500">{project.title}</h3>
-                <button 
-                  className="px-8 py-3 bg-brand-red text-white text-[10px] font-bold uppercase tracking-widest border border-brand-red hover:bg-brand-dark hover:text-white hover:border-white transition-all duration-300 shadow-lg"
-                >
-                  Learn More
-                </button>
+                <div className="flex flex-col items-center">
+                  <button 
+                    className="px-8 py-3 bg-brand-red text-white text-[10px] font-bold uppercase tracking-widest border border-brand-red hover:bg-brand-dark hover:text-white hover:border-white transition-all duration-300 shadow-lg"
+                  >
+                    Learn More
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -1616,12 +1618,125 @@ const Footer = () => {
   );
 };
 
-const GalleryPage = () => {
+const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
   const { id } = useParams<{ id: string }>();
-  const project = ARCHIVE_PROJECTS.find(p => p.id === Number(id)) || ARCHIVE_PROJECTS[0];
+  const [project, setProject] = useState<Project>(() => 
+    archiveProjects.find(p => p.id === Number(id)) || archiveProjects[0]
+  );
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Synchronize state with URL changes
+  useEffect(() => {
+    const freshProject = archiveProjects.find(p => p.id === Number(id)) || archiveProjects[0];
+    setProject(freshProject);
+    setSelectedIndex(null);
+    setError(null);
+  }, [id, archiveProjects]);
 
   const galleryItems = project.galleryImages || [];
+
+  useEffect(() => {
+    if (!project || project.title === 'Video') return;
+    
+    const fetchGalleryContent = async () => {
+      // 1. First check if we already have it in localStorage to avoid API calls
+      const cacheKey = `github_gallery_${project.title}_${project.id}`;
+      const cachedData = localStorage.getItem(cacheKey);
+      
+      if (cachedData) {
+        try {
+          const { data, timestamp } = JSON.parse(cachedData);
+          const isExpired = Date.now() - timestamp > 1000 * 60 * 60; // 1 hour expiration
+          
+          if (!isExpired && data && data.length > 0) {
+            setProject(prev => ({ ...prev, galleryImages: data }));
+            return;
+          }
+        } catch (e) {
+          localStorage.removeItem(cacheKey);
+        }
+      }
+
+      // Avoid refetching if already loaded in current state
+      if (galleryItems.length > 5) return;
+
+      setIsLoading(true);
+      setError(null);
+      
+      const config = CATEGORY_CONFIGS[project.title] || { folder: project.title };
+      const folderName = config.folder;
+      const ref = config.ref || GITHUB_REF;
+      const apiPath = `/api/github-proxy?owner=${GITHUB_USER}&repo=${GITHUB_REPO}&path=${encodeURIComponent(folderName)}&ref=${ref}`;
+
+      try {
+        const response = await fetch(apiPath);
+        if (response.ok) {
+          const files = await response.json();
+          if (Array.isArray(files)) {
+            const dynamicGallery = files
+              .filter(file => {
+                const ext = file.name.split('.').pop()?.toLowerCase();
+                return ['jpg', 'jpeg', 'png', 'webp', 'mp4', 'mov', 'webm'].includes(ext || '');
+              })
+              .map(file => {
+                const rawUrl = file.download_url || `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${ref}/${file.path}`;
+                return {
+                  url: rawUrl,
+                  cover: file.name.toLowerCase().match(/\.(mp4|mov|webm)$/) ? rawUrl.replace(/\.(mp4|mov|webm)$/i, '.jpg') : rawUrl,
+                  title: cleanFileNameToTitle(file.name)
+                };
+              });
+            
+            if (dynamicGallery.length > 0) {
+              setProject(prev => ({ ...prev, galleryImages: dynamicGallery }));
+              // Cache the result
+              localStorage.setItem(cacheKey, JSON.stringify({
+                data: dynamicGallery,
+                timestamp: Date.now()
+              }));
+            } else {
+              setError("No images found in this folder.");
+            }
+          }
+        } else {
+          if (response.status === 403) {
+            // Check if we have OLD cache we can show as fallback even if expired
+            if (cachedData) {
+              try {
+                const { data } = JSON.parse(cachedData);
+                setProject(prev => ({ ...prev, galleryImages: data }));
+                setError("Note: Displaying cached content due to GitHub Rate Limit.");
+                return;
+              } catch(e) {}
+            }
+            setError("GitHub API rate limit reached. Please try again after 1 hour.");
+          } else if (response.status === 404) {
+            setError(`Folder '${folderName}' not found in the repository.`);
+          } else {
+            setError(`Error fetching content: ${response.statusText}`);
+          }
+        }
+      } catch (err) {
+        console.error("Gallery Fetch Error:", err);
+        // Fallback to cache on network error
+        if (cachedData) {
+           try {
+            const { data } = JSON.parse(cachedData);
+            setProject(prev => ({ ...prev, galleryImages: data }));
+            setError("Displaying offline cache content.");
+            return;
+          } catch(e) {}
+        }
+        setError("Failed to connect to GitHub. Please check your connection.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchGalleryContent();
+  }, [project.title, project.id]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -1650,7 +1765,7 @@ const GalleryPage = () => {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedIndex]);
+  }, [selectedIndex, galleryItems.length]);
 
   const selectedItem = selectedIndex !== null ? galleryItems[selectedIndex] : null;
   const selectedUrl = selectedItem ? (typeof selectedItem === 'object' ? selectedItem.url : selectedItem) : null;
@@ -1669,7 +1784,7 @@ const GalleryPage = () => {
           </div>
 
           <div className="flex flex-wrap gap-3">
-            {ARCHIVE_PROJECTS.filter(p => p.id !== project.id).map((otherProject) => (
+            {archiveProjects.filter(p => p.id !== project.id).map((otherProject) => (
               <Link 
                 key={otherProject.id}
                 to={'/gallery/' + otherProject.id}
@@ -1681,8 +1796,30 @@ const GalleryPage = () => {
           </div>
         </div>
 
-        <div className={project.title === "Video" ? "space-y-16" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"}>
-          {(project.galleryImages || []).map((item, i) => {
+        <div className={project.title === "Video" ? "space-y-16" : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8"}>
+          {isLoading && galleryItems.length === 0 ? (
+            <div className="col-span-full py-24 text-center">
+              <div className="animate-spin w-8 h-8 border-2 border-brand-red border-t-transparent rounded-full mx-auto mb-4" />
+              <p className="text-white/20 text-[10px] font-bold tracking-widest uppercase">Connecting to GitHub Source...</p>
+            </div>
+          ) : error ? (
+            <div className="col-span-full py-24 text-center">
+              <p className="text-brand-red text-[10px] font-bold tracking-widest uppercase mb-2">Sync Status</p>
+              <p className="text-white/40 text-xs italic mb-8 mx-auto max-w-sm">{error}</p>
+              {error.includes("rate limit") && (
+                <button 
+                  onClick={() => window.location.reload()}
+                  className="px-8 py-3 border border-white/10 bg-white/5 text-[10px] font-bold tracking-widest hover:border-white transition-all uppercase"
+                >
+                  Retry Refresh
+                </button>
+              )}
+            </div>
+          ) : galleryItems.length === 0 && !isLoading ? (
+            <div className="col-span-full py-24 text-center">
+              <p className="text-white/20 text-[10px] font-bold tracking-widest uppercase">No assets found in folder</p>
+            </div>
+          ) : galleryItems.map((item, i) => {
             const isObject = typeof item === 'object';
             const videoUrl = isObject ? item.url : item;
             const imageUrl = project.title === "Video" 
@@ -1699,28 +1836,26 @@ const GalleryPage = () => {
                 className="group cursor-pointer"
                 onClick={() => setSelectedIndex(i)}
               >
-                <div className="relative aspect-video overflow-hidden bg-white/5 border border-white/10 p-1 mb-4">
+                <div className="relative aspect-video overflow-hidden bg-white/5 border border-white/10 p-1 mb-3">
                   <img 
-                    src={getOptimizedUrl(imageUrl, 800, 450)} 
+                    src={getOptimizedUrl(imageUrl, 600, 338)} 
                     className="w-full h-full object-cover transition-all duration-700 group-hover:scale-105"
                     referrerPolicy="no-referrer"
                     loading="lazy"
                   />
-                  {(project.title === "Video" || videoUrl.includes('bilibili.com') || videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be')) && (
+                  {(project.title === "Video" || videoUrl.includes('bilibili.com') || videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be') || videoUrl.match(/\.(mp4|mov|webm)$/i)) && (
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-20 h-20 rounded-full bg-brand-red/90 flex items-center justify-center text-white shadow-2xl transform group-hover:scale-110 transition-transform duration-500">
-                        <Play size={32} fill="currentColor" className="ml-1" />
+                      <div className="w-12 h-12 rounded-full bg-brand-red/90 flex items-center justify-center text-white shadow-2xl transform group-hover:scale-110 transition-transform duration-500">
+                        <Play size={20} fill="currentColor" className="ml-1" />
                       </div>
                     </div>
                   )}
                 </div>
-                <div className="flex justify-between items-end">
-                  <div>
-                    <h3 className={`${project.title === "Video" ? "text-base font-bold" : "text-[13px] font-medium text-white/60"} font-display mb-1`}>
-                      {isObject && item.title ? item.title : `${project.category} ${project.title === "Video" ? "Production" : "Case Study"} ${i + 1}`}
-                    </h3>
-                  </div>
-                  <span className="text-[10px] font-bold text-white/20 tracking-widest">{i + 1}</span>
+                <div className="flex justify-between items-start gap-2">
+                  <h3 className={`${project.title === "Video" ? "text-base font-bold" : "text-[12px] font-medium text-white/50"} font-display leading-tight flex-grow`}>
+                    {isObject && item.title ? item.title : `${project.category} Case ${i + 1}`}
+                  </h3>
+                  <span className="text-[9px] font-bold text-white/10 tracking-widest shrink-0 mt-0.5">{i + 1}</span>
                 </div>
               </motion.div>
             );
@@ -1817,17 +1952,122 @@ const GalleryPage = () => {
   );
 };
 
-const HomePage = () => (
+const HomePage = ({ archiveProjects }: { archiveProjects: Project[] }) => (
   <main>
     <Hero />
     <FeatureSection />
     <ExperienceAndServices />
     <Spotlight />
-    <Archive />
+    <Archive archiveProjects={archiveProjects} />
     <Featured />
     <Newsletter />
   </main>
 );
+
+const GITHUB_USER = 'David007-CN';
+const GITHUB_REPO = 'DW';
+const GITHUB_REF = 'main'; // or 'refs/heads/main'
+
+const cleanFileNameToTitle = (filename: string) => {
+  // Remove extension
+  let name = filename.replace(/\.[^/.]+$/, "");
+  
+  // Find the first underscore
+  const firstIdx = name.indexOf('_');
+  if (firstIdx !== -1) {
+    // Keep everything after the first _
+    name = name.substring(firstIdx + 1);
+    
+    // Find the 'second' underscore (which is the first one in the remaining string)
+    // The user mentioned "second slash", which usually corresponds to the second separator in this context
+    const secondIdx = name.indexOf('_');
+    if (secondIdx !== -1) {
+      name = name.substring(0, secondIdx);
+    }
+  }
+  
+  // Keep original casing as requested
+  return name;
+};
+
+const CATEGORY_CONFIGS: Record<string, { folder: string, ref?: string }> = {
+  "Design": { 
+    folder: "Design", 
+    ref: "a48e0ca44ebee91481e9b4336183822538120851" 
+  },
+  "Photography": { folder: "Photography" },
+  "Retouching": { folder: "Retouching" },
+  "Rendering": { folder: "Rendering" },
+  "AI Studio": { folder: "AI Studio" },
+  "Video": { folder: "Video" }
+};
+
+const INITIAL_ARCHIVE: Project[] = [
+  {
+    id: 1,
+    title: "Design",
+    subtitle: "Not decoration. Problem solving.",
+    category: "Design",
+    image: "https://picsum.photos/seed/design/1280/720",
+    galleryImages: []
+  },
+  {
+    id: 2,
+    title: "Photography",
+    subtitle: "More than images.",
+    category: "Photography",
+    image: "https://github.com/David007-CN/DW/blob/main/Cover/01_fly.jpg?raw=true",
+    galleryImages: []
+  },
+  {
+    id: 3,
+    title: "Retouching",
+    subtitle: "Nothing left unnoticed.",
+    category: "Retouching",
+    image: "https://picsum.photos/seed/retouching/1280/720",
+    galleryImages: []
+  },
+  {
+    id: 4,
+    title: "Rendering",
+    subtitle: "Visualized in detail.",
+    category: "Rendering",
+    image: "https://picsum.photos/seed/render/1280/720",
+    galleryImages: []
+  },
+  {
+    id: 5,
+    title: "AI Studio",
+    subtitle: "Where ideas take form.",
+    category: "AI Studio",
+    image: "https://picsum.photos/seed/ai/1280/720",
+    galleryImages: []
+  },
+  {
+    id: 6,
+    title: "Video",
+    subtitle: "Primarily 3rd-party production, with our concept guidance.",
+    category: "Video",
+    backgroundVideoId: "Ix7uaO1QJA4",
+    videoUrl: "https://github.com/David007-CN/DW/blob/560162b86408fbde325757658adc0082962ac679/Cover/bg-video-4s.mp4",
+    image: "https://github.com/David007-CN/DW/blob/560162b86408fbde325757658adc0082962ac679/Cover/bg-video-4s.jpg",
+    galleryImages: [
+      { 
+        url: "https://youtu.be/bLBBiNbUMQ4", 
+        title: "Pending refinement - Video 1"
+      },
+      { 
+        url: "https://youtu.be/A_TdfLXRKCQ", 
+        title: "Pending refinement - Video 2"
+      },
+       { 
+        url: "https://www.bilibili.com/video/BV1oNkTBnErQ?t=79.5", 
+        cover: "https://github.com/David007-CN/DW/blob/main/Cover/03_DSC06797.jpg?raw=true",
+        title: "Pending refinement - Video 3"
+      },
+    ]
+  }
+];
 
 export default function App() {
   return (
@@ -1835,8 +2075,8 @@ export default function App() {
       <div className="min-h-screen bg-brand-dark selection:bg-brand-red selection:text-white custom-scrollbar">
         <Navbar />
         <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/gallery/:id" element={<GalleryPage />} />
+          <Route path="/" element={<HomePage archiveProjects={INITIAL_ARCHIVE} />} />
+          <Route path="/gallery/:id" element={<GalleryPage archiveProjects={INITIAL_ARCHIVE} />} />
         </Routes>
         <Footer />
       </div>

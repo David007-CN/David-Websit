@@ -16,6 +16,42 @@ async function startServer() {
 
   app.use(express.json());
 
+  // API Route for GitHub Proxy
+  // This helps bypass CORS and provides a place to add a GITHUB_TOKEN for higher rate limits
+  app.get('/api/github-proxy', async (req, res) => {
+    const { owner, repo, path: filePath, ref } = req.query;
+    
+    if (!owner || !repo || !filePath) {
+      return res.status(400).json({ error: 'Missing parameters' });
+    }
+
+    const githubUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${filePath}?ref=${ref || 'main'}`;
+    
+    try {
+      const headers: Record<string, string> = {
+        'Accept': 'application/vnd.github.v3+json',
+        'User-Agent': 'NodeJS-Express-App'
+      };
+
+      // If user provides a TOKEN in .env, we use it to boost limit to 5000/hr
+      if (process.env.GITHUB_TOKEN) {
+        headers['Authorization'] = `token ${process.env.GITHUB_TOKEN}`;
+      }
+
+      const response = await fetch(githubUrl, { headers });
+      const data = await response.json();
+
+      if (!response.ok) {
+        return res.status(response.status).json(data);
+      }
+
+      res.status(200).json(data);
+    } catch (error) {
+      console.error('GitHub Proxy Error:', error);
+      res.status(500).json({ error: 'Failed to fetch from GitHub' });
+    }
+  });
+
   // API Route for Contact Form
   app.post('/api/contact', async (req, res) => {
     const { name, email, phone, message } = req.body;
