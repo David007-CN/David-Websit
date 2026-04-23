@@ -36,6 +36,9 @@ async function startServer() {
       // If user provides a TOKEN in .env, we use it to boost limit to 5000/hr
       if (process.env.GITHUB_TOKEN) {
         headers['Authorization'] = `token ${process.env.GITHUB_TOKEN}`;
+        console.log('GitHub Proxy: Using GITHUB_TOKEN for request to', filePath);
+      } else {
+        console.warn('GitHub Proxy: No GITHUB_TOKEN found in environment variables');
       }
 
       const response = await fetch(githubUrl, { headers });

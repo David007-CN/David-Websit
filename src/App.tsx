@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { BrowserRouter, Routes, Route, Link, useNavigate, useLocation, useParams } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Link, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { motion, AnimatePresence, useMotionValue, useAnimationFrame } from 'motion/react';
 import { 
   Twitter, 
@@ -1818,10 +1818,13 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
               <p className="text-white/40 text-xs italic mb-8 mx-auto max-w-sm">{error}</p>
               {error.includes("rate limit") && (
                 <button 
-                  onClick={() => window.location.reload()}
+                  onClick={() => {
+                    localStorage.clear(); // Clear cache on manual retry
+                    window.location.reload();
+                  }}
                   className="px-8 py-3 border border-white/10 bg-white/5 text-[10px] font-bold tracking-widest hover:border-white transition-all uppercase"
                 >
-                  Retry Refresh
+                  Clear Cache & Retry
                 </button>
               )}
             </div>
@@ -2081,7 +2084,7 @@ const INITIAL_ARCHIVE: Project[] = [
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <Router>
       <div className="min-h-screen bg-brand-dark selection:bg-brand-red selection:text-white custom-scrollbar">
         <Navbar />
         <Routes>
@@ -2090,6 +2093,6 @@ export default function App() {
         </Routes>
         <Footer />
       </div>
-    </BrowserRouter>
+    </Router>
   );
 }
