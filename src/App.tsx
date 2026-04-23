@@ -358,6 +358,7 @@ const FEATURED_ITEMS: Project[] = [
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const navigate = useNavigate();
   const location = useLocation();
   const isHomePage = location.pathname === '/';
 
@@ -384,9 +385,7 @@ const Navbar = () => {
                   document.getElementById('home')?.scrollIntoView({ behavior: 'smooth' });
                 } else {
                   navigate('/');
-                  setTimeout(() => {
-                    document.getElementById('home')?.scrollIntoView({ behavior: 'smooth' });
-                  }, 200);
+                  window.scrollTo(0, 0);
                 }
               }}
               className="flex items-center"
@@ -1673,18 +1672,24 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
       setIsLoading(true);
       setError(null);
       
-      const config = CATEGORY_CONFIGS[project.title] || { folder: project.title };
+      const config = CATEGORY_CONFIGS[project.title] || { folder: project.title, ref: undefined };
       const folderName = config.folder;
       const ref = config.ref || GITHUB_REF;
       
-      // Use proxy as primary, but prepare direct URL as fallback
       const apiPath = `/api/github-proxy?owner=${GITHUB_USER}&repo=${GITHUB_REPO}&path=${encodeURIComponent(folderName)}&ref=${ref}`;
       const directApiPath = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${encodeURIComponent(folderName)}?ref=${ref}`;
 
+      console.log(`Gallery: Fetching ${folderName} via proxy...`);
       try {
+        // Run diagnostic check in background
+        fetch('/api/github-status').then(r => r.json()).then(d => console.log("Proxy Status:", d)).catch(() => {});
+        
         let response = await fetch(apiPath);
         
-        // If proxy fails (404), try direct (might hit rate limit, but it's better than nothing)
+        if (!response.ok) {
+          const errorBody = await response.clone().text().catch(() => "N/A");
+          console.error(`Gallery: Proxy returned ${response.status}`, errorBody);
+        }
         if (!response.ok && response.status === 404) {
           console.warn("Proxy returned 404, attempting direct GitHub fetch...");
           response = await fetch(directApiPath);
@@ -2010,10 +2015,7 @@ const cleanFileNameToTitle = (filename: string) => {
 };
 
 const CATEGORY_CONFIGS: Record<string, { folder: string, ref?: string }> = {
-  "Design": { 
-    folder: "Design", 
-    ref: "a48e0ca44ebee91481e9b4336183822538120851" 
-  },
+  "Design": { folder: "Design" },
   "Photography": { folder: "Photography" },
   "Retouching": { folder: "Retouching" },
   "Rendering": { folder: "Rendering" },

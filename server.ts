@@ -17,7 +17,6 @@ async function startServer() {
   app.use(express.json());
 
   // API Route for GitHub Proxy
-  // This helps bypass CORS and provides a place to add a GITHUB_TOKEN for higher rate limits
   app.get('/api/github-proxy', async (req, res) => {
     const { owner, repo, path: filePath, ref } = req.query;
     
@@ -30,21 +29,23 @@ async function startServer() {
     try {
       const headers: Record<string, string> = {
         'Accept': 'application/vnd.github.v3+json',
-        'User-Agent': 'NodeJS-Express-App'
+        'User-Agent': 'David-Design-Portfolio'
       };
 
-      // If user provides a TOKEN in .env, we use it to boost limit to 5000/hr
-      if (process.env.GITHUB_TOKEN) {
-        headers['Authorization'] = `token ${process.env.GITHUB_TOKEN}`;
-        console.log('GitHub Proxy: Using GITHUB_TOKEN for request to', filePath);
+      if (process.env.GITHUB_TOKEN && process.env.GITHUB_TOKEN.trim() !== '') {
+        // Support both old 'token' and newer 'Bearer' formats
+        const token = process.env.GITHUB_TOKEN.trim();
+        headers['Authorization'] = token.startsWith('ghp_') ? `token ${token}` : `Bearer ${token}`;
+        console.log(`GitHub Proxy: Using Token for ${owner}/${repo}/${filePath}`);
       } else {
-        console.warn('GitHub Proxy: No GITHUB_TOKEN found in environment variables');
+        console.warn('GitHub Proxy: NO TOKEN FOUND. Using unauthenticated request (60 req/hr limit).');
       }
 
       const response = await fetch(githubUrl, { headers });
       const data = await response.json();
 
       if (!response.ok) {
+        console.error(`GitHub API Error (${response.status}):`, data.message || data);
         return res.status(response.status).json(data);
       }
 
@@ -53,6 +54,15 @@ async function startServer() {
       console.error('GitHub Proxy Error:', error);
       res.status(500).json({ error: 'Failed to fetch from GitHub' });
     }
+  });
+
+  // Diagnostic route to check Token presence (hidden value)
+  app.get('/api/github-status', (req, res) => {
+    const hasToken = !!process.env.GITHUB_TOKEN && process.env.GITHUB_TOKEN.trim() !== '';
+    res.json({ 
+      tokenConfigured: hasToken,
+      tokenPrefix: hasToken ? process.env.GITHUB_TOKEN!.substring(0, 4) + '...' : 'none'
+    });
   });
 
   // API Route for Contact Form
