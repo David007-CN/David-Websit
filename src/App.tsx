@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { HashRouter as Router, Routes, Route, Link, useNavigate, useLocation, useParams } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { motion, AnimatePresence, useMotionValue, useAnimationFrame } from 'motion/react';
 import { 
   Twitter, 
@@ -357,9 +357,9 @@ const Navbar = () => {
   }, []);
 
   const navLinks = [
-    { name: 'About Me', href: isHomePage ? '#about' : '/#about' },
-    { name: 'Portfolio', href: isHomePage ? '#works' : '/#works' },
-    { name: 'Services', href: isHomePage ? '#contact' : '/#contact' },
+    { name: 'About Me', href: '#about' },
+    { name: 'Portfolio', href: '#works' },
+    { name: 'Services', href: '#contact' },
   ];
 
   return (
@@ -389,23 +389,25 @@ const Navbar = () => {
             {/* Desktop Nav */}
             <div className="hidden md:flex items-center gap-8">
               {navLinks.map((link) => (
-                link.href.startsWith('#') ? (
-                  <a 
-                    key={link.name} 
-                    href={link.href} 
-                    className="text-[11px] font-bold text-white/70 hover:text-white transition-colors uppercase tracking-[0.2em]"
-                  >
-                    {link.name}
-                  </a>
-                ) : (
-                  <Link
-                    key={link.name}
-                    to={link.href}
-                    className="text-[11px] font-bold text-white/70 hover:text-white transition-colors uppercase tracking-[0.2em]"
-                  >
-                    {link.name}
-                  </Link>
-                )
+                <button
+                  key={link.name}
+                  onClick={() => {
+                    if (isHomePage) {
+                      const id = link.href.replace('#', '');
+                      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+                    } else {
+                      navigate('/');
+                      // Scroll after navigation
+                      setTimeout(() => {
+                        const id = link.href.replace('#', '');
+                        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+                      }, 100);
+                    }
+                  }}
+                  className="text-[11px] font-bold text-white/70 hover:text-white transition-colors uppercase tracking-[0.2em]"
+                >
+                  {link.name}
+                </button>
               ))}
             </div>
           </div>
@@ -416,7 +418,10 @@ const Navbar = () => {
                 if (isHomePage) {
                   document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
                 } else {
-                  window.location.href = '/#contact';
+                  navigate('/');
+                  setTimeout(() => {
+                    document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
+                  }, 100);
                 }
               }}
               className="px-6 py-2 bg-brand-red text-white text-[11px] font-bold uppercase tracking-widest hover:bg-white hover:text-brand-dark transition-all duration-300"
@@ -441,25 +446,25 @@ const Navbar = () => {
               className="absolute top-full left-0 w-full bg-brand-dark border-b border-white/5 py-8 px-6 flex flex-col gap-6 md:hidden"
             >
               {navLinks.map((link) => (
-                link.href.startsWith('#') ? (
-                  <a 
-                    key={link.name} 
-                    href={link.href} 
-                    className="text-2xl font-display font-bold hover:text-brand-red transition-colors"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    {link.name}
-                  </a>
-                ) : (
-                  <Link
-                    key={link.name}
-                    to={link.href}
-                    className="text-2xl font-display font-bold hover:text-brand-red transition-colors"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    {link.name}
-                  </Link>
-                )
+                <button
+                  key={link.name}
+                  onClick={() => {
+                    setIsOpen(false);
+                    if (isHomePage) {
+                      const id = link.href.replace('#', '');
+                      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+                    } else {
+                      navigate('/');
+                      setTimeout(() => {
+                        const id = link.href.replace('#', '');
+                        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+                      }, 100);
+                    }
+                  }}
+                  className="text-2xl font-display font-bold hover:text-brand-red transition-colors text-left"
+                >
+                  {link.name}
+                </button>
               ))}
             </motion.div>
           )}
@@ -1252,15 +1257,11 @@ const Featured = () => {
       }
 
       try {
-        const response = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_FOLDER}?ref=${GITHUB_REF}`);
+        const apiPath = `/api/github-proxy?owner=${GITHUB_USER}&repo=${GITHUB_REPO}&path=${GITHUB_FOLDER}&ref=${GITHUB_REF}`;
+        const response = await fetch(apiPath);
         
-        if (response.status === 403) {
-          console.warn("GitHub API rate limited.");
-          throw new Error("Rate limit");
-        }
-
         if (!response.ok) {
-          throw new Error(`GitHub API returned ${response.status}`);
+          throw new Error(`Proxy status ${response.status}`);
         }
         
         const data = await response.json();
@@ -1268,11 +1269,18 @@ const Featured = () => {
           try {
             localStorage.setItem(`github_images_cache_${GITHUB_REF}`, JSON.stringify(data));
           } catch (e) { /* ignore */ }
-          // Re-process if it's the first time OR to update background content
           processFiles(data);
         }
       } catch (err) {
-        console.warn("GitHub Fetch Error:", err);
+        console.warn("GitHub Proxy Error, falling back to direct:", err);
+        // Fallback to direct fetch
+        try {
+          const response = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${GITHUB_FOLDER}?ref=${GITHUB_REF}`);
+          if (response.ok) {
+            const data = await response.json();
+            if (Array.isArray(data)) processFiles(data);
+          }
+        } catch (e) {}
       } finally {
         setIsLoading(false);
       }
