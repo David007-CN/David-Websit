@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useNavigate, useLocation, useParams } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Link, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { motion, AnimatePresence, useMotionValue, useAnimationFrame } from 'motion/react';
 import { 
   Twitter, 
@@ -32,6 +32,10 @@ import { Project } from './types';
 import { PROJECTS } from './data/projects';
 
 // --- Utilities ---
+const GITHUB_USER = "David007-CN";
+const GITHUB_REPO = "DW";
+const GITHUB_REF = "main";
+
 const getOptimizedUrl = (url: string, width?: number, height?: number, avoidProxy?: boolean) => {
   if (!url) return url;
   
@@ -42,10 +46,17 @@ const getOptimizedUrl = (url: string, width?: number, height?: number, avoidProx
   
   // Handle GitHub URLs - convert to raw content reliably
   if (url.includes('github.com') || url.includes('raw.githubusercontent.com')) {
+    // If it's already a raw user content URL with a token or specific query, keep it as is
+    if (url.includes('raw.githubusercontent.com') && url.includes('?')) return url;
+
     rawUrl = url.replace('github.com', 'raw.githubusercontent.com')
                 .replace('/blob/', '/')
                 .replace('/refs/heads/', '/');
-    rawUrl = rawUrl.split('?')[0];
+    
+    // Only strip query if it's not already a raw URL (avoids breaking download_url tokens)
+    if (!url.includes('raw.githubusercontent.com')) {
+      rawUrl = rawUrl.split('?')[0];
+    }
   }
 
   // Use wsrv.nl proxy for images to compress (WebP) and resize
@@ -367,15 +378,18 @@ const Navbar = () => {
       <nav className={`w-full transition-all duration-300 relative z-10 bg-brand-dark border-b border-white/5 ${scrolled ? 'py-1' : 'py-2'}`}>
         <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
           <div className="flex items-center gap-12">
-            <a 
-              href={isHomePage ? "#home" : "/#home"}
-              className="flex items-center"
-              onClick={(e) => {
+            <button 
+              onClick={() => {
                 if (isHomePage) {
-                  e.preventDefault();
                   document.getElementById('home')?.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                  navigate('/');
+                  setTimeout(() => {
+                    document.getElementById('home')?.scrollIntoView({ behavior: 'smooth' });
+                  }, 200);
                 }
               }}
+              className="flex items-center"
             >
               <motion.img 
                 whileHover={{ scale: 1.05 }}
@@ -384,7 +398,7 @@ const Navbar = () => {
                 className="h-10 md:h-12 w-auto object-contain"
                 referrerPolicy="no-referrer"
               />
-            </a>
+            </button>
 
             {/* Desktop Nav */}
             <div className="hidden md:flex items-center gap-8">
@@ -397,11 +411,10 @@ const Navbar = () => {
                       document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
                     } else {
                       navigate('/');
-                      // Scroll after navigation
                       setTimeout(() => {
                         const id = link.href.replace('#', '');
                         document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-                      }, 100);
+                      }, 200);
                     }
                   }}
                   className="text-[11px] font-bold text-white/70 hover:text-white transition-colors uppercase tracking-[0.2em]"
@@ -1162,9 +1175,7 @@ const Featured = () => {
   }, [x]);
 
   // GitHub Folder Configuration
-  const GITHUB_REPO = "David007-CN/DW";
   const GITHUB_FOLDER = "Life"; 
-  const GITHUB_REF = "main"; // Track main branch for real-time updates
 
   useEffect(() => {
     const processFiles = (data: any[]) => {
@@ -1177,24 +1188,13 @@ const Featured = () => {
           const name = decodeURIComponent(file.name);
           const fileName = name.split('.')[0];
           
-          // 1. Title: Everything before the FIRST underscore.
           const firstUnderscoreIndex = fileName.indexOf('_');
           let title = firstUnderscoreIndex !== -1 ? fileName.substring(0, firstUnderscoreIndex) : fileName;
           
-          // 1.1 Ignore numeric suffixes like -1, -10 etc inside the title part
           title = title.replace(/-\d+$/, '');
-
-          // 1.2 Append "Show" if title is NRA
-          if (title.toUpperCase() === 'NRA') {
-             title = title + " Show";
-          }
+          if (title.toUpperCase() === 'NRA') title = title + " Show";
+          if (title.toUpperCase() === 'XINJIANG') title = title + " Travel";
           
-          // 1.3 Append "Travel" if title is Xinjiang
-          if (title.toUpperCase() === 'XINJIANG') {
-             title = title + " Travel";
-          }
-          
-          // 2. Time: Find 6-digit date starting with 20...
           let time = "2 0 2 5";
           const dateMatch = fileName.match(/20\d{4}/);
           if (dateMatch) {
@@ -1202,12 +1202,12 @@ const Featured = () => {
              time = dateStr.split('').map((char, i) => i === 3 ? char + ' . ' : char).join(' ');
           }
 
-          // Generate a more robust URL for direct access from main/ref
-          const imageUrl = `https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_REF}/${GITHUB_FOLDER}/${file.name}`;
+          // Directly use download_url for reliability
+          const imageUrl = file.download_url || `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_REF}/${GITHUB_FOLDER}/${file.name}`;
 
           return {
             id: 2000 + index,
-            title: title, // Exact capitalization as in filename
+            title: title, 
             category: "Life",
             image: imageUrl,
             time: time
@@ -1827,7 +1827,9 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
               {error.includes("rate limit") && (
                 <button 
                   onClick={() => {
-                    localStorage.clear(); // Clear cache on manual retry
+                    localStorage.clear();
+                    // Just reload the app, HashRouter handles the rest
+                    window.location.hash = ''; // Back to home hash
                     window.location.reload();
                   }}
                   className="px-8 py-3 border border-white/10 bg-white/5 text-[10px] font-bold tracking-widest hover:border-white transition-all uppercase"
@@ -1984,10 +1986,6 @@ const HomePage = ({ archiveProjects }: { archiveProjects: Project[] }) => (
     <Newsletter />
   </main>
 );
-
-const GITHUB_USER = 'David007-CN';
-const GITHUB_REPO = 'DW';
-const GITHUB_REF = 'main'; // or 'refs/heads/main'
 
 const cleanFileNameToTitle = (filename: string) => {
   // Remove extension
