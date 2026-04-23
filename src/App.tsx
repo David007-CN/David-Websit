@@ -1668,10 +1668,20 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
       const config = CATEGORY_CONFIGS[project.title] || { folder: project.title };
       const folderName = config.folder;
       const ref = config.ref || GITHUB_REF;
+      
+      // Use proxy as primary, but prepare direct URL as fallback
       const apiPath = `/api/github-proxy?owner=${GITHUB_USER}&repo=${GITHUB_REPO}&path=${encodeURIComponent(folderName)}&ref=${ref}`;
+      const directApiPath = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${encodeURIComponent(folderName)}?ref=${ref}`;
 
       try {
-        const response = await fetch(apiPath);
+        let response = await fetch(apiPath);
+        
+        // If proxy fails (404), try direct (might hit rate limit, but it's better than nothing)
+        if (!response.ok && response.status === 404) {
+          console.warn("Proxy returned 404, attempting direct GitHub fetch...");
+          response = await fetch(directApiPath);
+        }
+
         if (response.ok) {
           const files = await response.json();
           if (Array.isArray(files)) {
