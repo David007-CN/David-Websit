@@ -179,143 +179,7 @@ const VideoPlayer = ({ url, fallbackImage, autoPlay = true, loop = true, muted =
   );
 };
 
-// --- Mock Data ---
-const ARCHIVE_PROJECTS: Project[] = [
-  {
-    id: 1,
-    title: "Design",
-    subtitle: "Not decoration. Problem solving.",
-    category: "Design",
-    image: "https://picsum.photos/seed/design/1280/720",
-    galleryImages: [
-      { url: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/04_Osight%20C%20launch%20banner_1920x1080.jpg?raw=true", cover: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/04_Osight%20C%20launch%20banner_1920x1080.jpg?raw=true", title: "Osight C Launch Banner" },
-      { url: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/01_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg?raw=true", cover: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/01_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg?raw=true", title: "Osight SE Launch Banner" },
-      { url: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/06_Osight%20C%20Teaser_1920x1080.jpg?raw=true", cover: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/06_Osight%20C%20Teaser_1920x1080.jpg?raw=true", title: "Osight C Teaser" },
-      { url: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/03_C%20and%20K%20Teaser_1920x1080.jpg?raw=true", cover: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/03_C%20and%20K%20Teaser_1920x1080.jpg?raw=true", title: "C and K Teaser" },
-      { url: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/02_SE%20GN%206%20MOA%20Trial%20sales_1920x1080.jpg?raw=true", cover: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/02_SE%20GN%206%20MOA%20Trial%20sales_1920x1080.jpg?raw=true", title: "SE GN Trial Sales" },
-      { url: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/05_Osight%20C%20launch%20banner_1920x1080.jpg?raw=true", cover: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/05_Osight%20C%20launch%20banner_1920x1080.jpg?raw=true", title: "Osight C Banner Without Gun" },
-      { url: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/07_Osight%20C%20GN%20launch%20banner_1920x1080.jpg?raw=true", cover: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/07_Osight%20C%20GN%20launch%20banner_1920x1080.jpg?raw=true", title: "Osight C GN Launch Banner" },
-      { url: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/08_XR%20banner10_1200x628_AZ.jpg?raw=true", cover: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/08_XR%20banner10_1200x628_AZ.jpg?raw=true", title: "XR Ads Banner" },
-      { url: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/09_C%20GN%20banner2_1200x628_SN.jpg?raw=true", cover: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/09_C%20GN%20banner2_1200x628_SN.jpg?raw=true", title: "C GN Ads Banner" },
-      { url: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/10_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg?raw=true", cover: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/10_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg?raw=true", title: "Osight SE 6MOA GN alternative banner" },
-      { url: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/11_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg?raw=true", cover: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/11_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg?raw=true", title: "Osight SE 6MOA GN banner without gun" },
-      { url: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/12_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg?raw=true", cover: "https://github.com/David007-CN/DW/blob/main/Expertise%20Showcase/12_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg?raw=true", title: "Osight SE 6MOA GN alternative banner without gun" },
-      { url: "https://picsum.photos/seed/design-13/1920/1080", cover: "https://picsum.photos/seed/design-13/1920/1080", title: "Design Project 13" },
-      { url: "https://picsum.photos/seed/design-14/1920/1080", cover: "https://picsum.photos/seed/design-14/1920/1080", title: "Design Project 14" },
-      { url: "https://picsum.photos/seed/design-15/1920/1080", cover: "https://picsum.photos/seed/design-15/1920/1080", title: "Design Project 15" },
-      { url: "https://picsum.photos/seed/design-16/1920/1080", cover: "https://picsum.photos/seed/design-16/1920/1080", title: "Design Project 16" },
-      { url: "https://picsum.photos/seed/design-17/1920/1080", cover: "https://picsum.photos/seed/design-17/1920/1080", title: "Design Project 17" },
-      { url: "https://picsum.photos/seed/design-18/1920/1080", cover: "https://picsum.photos/seed/design-18/1920/1080", title: "Design Project 18" },
-      { url: "https://picsum.photos/seed/design-19/1920/1080", cover: "https://picsum.photos/seed/design-19/1920/1080", title: "Design Project 19" },
-      { url: "https://picsum.photos/seed/design-20/1920/1080", cover: "https://picsum.photos/seed/design-20/1920/1080", title: "Design Project 20" },
-      { url: "https://picsum.photos/seed/design-21/1920/1080", cover: "https://picsum.photos/seed/design-21/1920/1080", title: "Design Project 21" },
-    ]
-  },
-  {
-    id: 2,
-    title: "Photography",
-    subtitle: "More than images.",
-    category: "Photography",
-    image: "https://github.com/David007-CN/DW/blob/main/Cover/01_fly.jpg?raw=true",
-    galleryImages: [
-      { url: "https://picsum.photos/seed/photo-1/1920/1080", cover: "https://picsum.photos/seed/photo-1/1920/1080", title: "Photography Project 1" },
-      { url: "https://picsum.photos/seed/photo-2/1920/1080", cover: "https://picsum.photos/seed/photo-2/1920/1080", title: "Photography Project 2" },
-      { url: "https://picsum.photos/seed/photo-3/1920/1080", cover: "https://picsum.photos/seed/photo-3/1920/1080", title: "Photography Project 3" },
-      { url: "https://picsum.photos/seed/photo-4/1920/1080", cover: "https://picsum.photos/seed/photo-4/1920/1080", title: "Photography Project 4" },
-      { url: "https://picsum.photos/seed/photo-5/1920/1080", cover: "https://picsum.photos/seed/photo-5/1920/1080", title: "Photography Project 5" },
-      { url: "https://picsum.photos/seed/photo-6/1920/1080", cover: "https://picsum.photos/seed/photo-6/1920/1080", title: "Photography Project 6" },
-      { url: "https://picsum.photos/seed/photo-7/1920/1080", cover: "https://picsum.photos/seed/photo-7/1920/1080", title: "Photography Project 7" },
-      { url: "https://picsum.photos/seed/photo-8/1920/1080", cover: "https://picsum.photos/seed/photo-8/1920/1080", title: "Photography Project 8" },
-      { url: "https://picsum.photos/seed/photo-9/1920/1080", cover: "https://picsum.photos/seed/photo-9/1920/1080", title: "Photography Project 9" },
-      { url: "https://picsum.photos/seed/photo-10/1920/1080", cover: "https://picsum.photos/seed/photo-10/1920/1080", title: "Photography Project 10" },
-      { url: "https://picsum.photos/seed/photo-11/1920/1080", cover: "https://picsum.photos/seed/photo-11/1920/1080", title: "Photography Project 11" },
-      { url: "https://picsum.photos/seed/photo-12/1920/1080", cover: "https://picsum.photos/seed/photo-12/1920/1080", title: "Photography Project 12" },
-      { url: "https://picsum.photos/seed/photo-13/1920/1080", cover: "https://picsum.photos/seed/photo-13/1920/1080", title: "Photography Project 13" },
-      { url: "https://picsum.photos/seed/photo-14/1920/1080", cover: "https://picsum.photos/seed/photo-14/1920/1080", title: "Photography Project 14" },
-      { url: "https://picsum.photos/seed/photo-15/1920/1080", cover: "https://picsum.photos/seed/photo-15/1920/1080", title: "Photography Project 15" },
-      { url: "https://picsum.photos/seed/photo-16/1920/1080", cover: "https://picsum.photos/seed/photo-16/1920/1080", title: "Photography Project 16" },
-      { url: "https://picsum.photos/seed/photo-17/1920/1080", cover: "https://picsum.photos/seed/photo-17/1920/1080", title: "Photography Project 17" },
-      { url: "https://picsum.photos/seed/photo-18/1920/1080", cover: "https://picsum.photos/seed/photo-18/1920/1080", title: "Photography Project 18" },
-    ]
-  },
-  {
-    id: 3,
-    title: "Retouching",
-    subtitle: "Nothing left unnoticed.",
-    category: "Retouching",
-    image: "https://picsum.photos/seed/retouching/1280/720",
-    galleryImages: [
-      { url: "https://picsum.photos/seed/retouch-1/1920/1080", cover: "https://picsum.photos/seed/retouch-1/1920/1080", title: "Retouching Project 1" },
-      { url: "https://picsum.photos/seed/retouch-2/1920/1080", cover: "https://picsum.photos/seed/retouch-2/1920/1080", title: "Retouching Project 2" },
-      { url: "https://picsum.photos/seed/retouch-3/1920/1080", cover: "https://picsum.photos/seed/retouch-3/1920/1080", title: "Retouching Project 3" },
-      { url: "https://picsum.photos/seed/retouch-4/1920/1080", cover: "https://picsum.photos/seed/retouch-4/1920/1080", title: "Retouching Project 4" },
-      { url: "https://picsum.photos/seed/retouch-5/1920/1080", cover: "https://picsum.photos/seed/retouch-5/1920/1080", title: "Retouching Project 5" },
-      { url: "https://picsum.photos/seed/retouch-6/1920/1080", cover: "https://picsum.photos/seed/retouch-6/1920/1080", title: "Retouching Project 6" },
-      { url: "https://picsum.photos/seed/retouch-7/1920/1080", cover: "https://picsum.photos/seed/retouch-7/1920/1080", title: "Retouching Project 7" },
-      { url: "https://picsum.photos/seed/retouch-8/1920/1080", cover: "https://picsum.photos/seed/retouch-8/1920/1080", title: "Retouching Project 8" },
-      { url: "https://picsum.photos/seed/retouch-9/1920/1080", cover: "https://picsum.photos/seed/retouch-9/1920/1080", title: "Retouching Project 9" },
-      { url: "https://picsum.photos/seed/retouch-10/1920/1080", cover: "https://picsum.photos/seed/retouch-10/1920/1080", title: "Retouching Project 10" },
-      { url: "https://picsum.photos/seed/retouch-11/1920/1080", cover: "https://picsum.photos/seed/retouch-11/1920/1080", title: "Retouching Project 11" },
-      { url: "https://picsum.photos/seed/retouch-12/1920/1080", cover: "https://picsum.photos/seed/retouch-12/1920/1080", title: "Retouching Project 12" },
-    ]
-  },
-  {
-    id: 4,
-    title: "Rendering",
-    subtitle: "Visualized in detail.",
-    category: "Rendering",
-    image: "https://picsum.photos/seed/render/1280/720",
-    galleryImages: [
-      { url: "https://picsum.photos/seed/render-1/1920/1080", cover: "https://picsum.photos/seed/render-1/1920/1080", title: "Rendering Project 1" },
-      { url: "https://picsum.photos/seed/render-2/1920/1080", cover: "https://picsum.photos/seed/render-2/1920/1080", title: "Rendering Project 2" },
-      { url: "https://picsum.photos/seed/render-3/1920/1080", cover: "https://picsum.photos/seed/render-3/1920/1080", title: "Rendering Project 3" },
-      { url: "https://picsum.photos/seed/render-4/1920/1080", cover: "https://picsum.photos/seed/render-4/1920/1080", title: "Rendering Project 4" },
-    ]
-  },
-  {
-    id: 5,
-    title: "AI Studio",
-    subtitle: "Where ideas take form.",
-    category: "AI Studio",
-    image: "https://picsum.photos/seed/ai/1280/720",
-    galleryImages: [
-      { url: "https://picsum.photos/seed/ai-1/1920/1080", cover: "https://picsum.photos/seed/ai-1/1920/1080", title: "AI Studio Project 1" },
-      { url: "https://picsum.photos/seed/ai-2/1920/1080", cover: "https://picsum.photos/seed/ai-2/1920/1080", title: "AI Studio Project 2" },
-      { url: "https://picsum.photos/seed/ai-3/1920/1080", cover: "https://picsum.photos/seed/ai-3/1920/1080", title: "AI Studio Project 3" },
-      { url: "https://picsum.photos/seed/ai-4/1920/1080", cover: "https://picsum.photos/seed/ai-4/1920/1080", title: "AI Studio Project 4" },
-      { url: "https://picsum.photos/seed/ai-5/1920/1080", cover: "https://picsum.photos/seed/ai-5/1920/1080", title: "AI Studio Project 5" },
-      { url: "https://picsum.photos/seed/ai-6/1920/1080", cover: "https://picsum.photos/seed/ai-6/1920/1080", title: "AI Studio Project 6" },
-      { url: "https://picsum.photos/seed/ai-7/1920/1080", cover: "https://picsum.photos/seed/ai-7/1920/1080", title: "AI Studio Project 7" },
-      { url: "https://picsum.photos/seed/ai-8/1920/1080", cover: "https://picsum.photos/seed/ai-8/1920/1080", title: "AI Studio Project 8" },
-      { url: "https://picsum.photos/seed/ai-9/1920/1080", cover: "https://picsum.photos/seed/ai-9/1920/1080", title: "AI Studio Project 9" },
-    ]
-  },
-  {
-    id: 6,
-    title: "Video",
-    subtitle: "Primarily 3rd-party production, with our concept guidance.",
-    category: "Video",
-    backgroundVideoId: "Ix7uaO1QJA4",
-    videoUrl: "https://github.com/David007-CN/DW/blob/560162b86408fbde325757658adc0082962ac679/Cover/bg-video-4s.mp4",
-    image: "https://github.com/David007-CN/DW/blob/560162b86408fbde325757658adc0082962ac679/Cover/bg-video-4s.jpg",
-    galleryImages: [
-      { 
-        url: "https://youtu.be/bLBBiNbUMQ4", 
-        title: "Pending refinement - Video 1"
-      },
-      { 
-        url: "https://youtu.be/A_TdfLXRKCQ", 
-        title: "Pending refinement - Video 2"
-      },
-       { 
-        url: "https://www.bilibili.com/video/BV1oNkTBnErQ?t=79.5", 
-        cover: "https://github.com/David007-CN/DW/blob/main/Cover/03_DSC06797.jpg?raw=true",
-        title: "Pending refinement - Video 3"
-      },
-    ]
-  }
-];
-
+// --- Experience Data ---
 const EXPERIENCE = [
   {
     year: "2024.12 - PRESENT",
@@ -1177,8 +1041,8 @@ const Featured = () => {
 
   const displayItems = useMemo(() => {
     if (shuffledItems.length === 0) return [];
-    // 增加重复次数，确保哪怕在超宽 4K 屏上也能平滑填满
-    const repeatCount = window.innerWidth > 1400 ? 6 : 4;
+    // 增加更高的重复次数，确保哪怕在 8K 或多屏宽屏上也能平稳循环
+    const repeatCount = 12; 
     const items = [];
     for (let i = 0; i < repeatCount; i++) {
       items.push(...shuffledItems);
@@ -1722,6 +1586,14 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
   useEffect(() => {
     if (!project || project.title === 'Video') return;
     
+    // Reset loading state and gallery if id changes significantly
+    setProject(prev => {
+      if (prev.id !== Number(id)) {
+        return { ...prev, galleryImages: archiveProjects.find(p => p.id === Number(id))?.galleryImages || [] };
+      }
+      return prev;
+    });
+
     const fetchGalleryContent = async () => {
       // 1. First check if we already have it in localStorage to avoid API calls
       const cacheKey = `github_gallery_${project.title}_${project.id}`;
@@ -1751,8 +1623,8 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
       const folderName = config.folder;
       const ref = config.ref || GITHUB_REF;
       
-      const apiPath = `/api/github-proxy?owner=${GITHUB_USER}&repo=${GITHUB_REPO}&path=${encodeURIComponent(folderName)}&ref=${ref}`;
-      const directApiPath = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${encodeURIComponent(folderName)}?ref=${ref}`;
+      const apiPath = `/api/github-proxy?owner=${GITHUB_USER}&repo=${GITHUB_REPO}&path=${encodeURIComponent(folderName)}&ref=${ref}&t=${Date.now()}`;
+      const directApiPath = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${encodeURIComponent(folderName)}?ref=${ref}&t=${Date.now()}`;
 
       console.log(`Gallery: Fetching ${folderName} via proxy...`);
       try {
@@ -1771,14 +1643,17 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
         }
 
         if (response.ok) {
-          const files = await response.json();
-          if (Array.isArray(files)) {
-            const dynamicGallery = files
-              .filter(file => {
-                const ext = file.name.split('.').pop()?.toLowerCase();
-                return ['jpg', 'jpeg', 'png', 'webp', 'mp4', 'mov', 'webm'].includes(ext || '');
-              })
-              .map(file => {
+          try {
+            const files = await response.json();
+            if (Array.isArray(files)) {
+              const dynamicGallery = files
+                .filter(file => {
+                  const name = file.name.toLowerCase();
+                  if (name === '.ds_store' || name === 'readme.md') return false;
+                  const ext = name.split('.').pop();
+                  return ['jpg', 'jpeg', 'png', 'webp', 'mp4', 'mov', 'webm'].includes(ext || '');
+                })
+                .map(file => {
                 const rawUrl = file.download_url || `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${ref}/${file.path}`;
                 return {
                   url: rawUrl,
@@ -1797,6 +1672,10 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
             } else {
               setError("No images found in this folder.");
             }
+          }
+        } catch (jsonErr) {
+            console.error("Gallery JSON Parsing Error:", jsonErr);
+            setError("The response from GitHub source was invalid. Please check your folder structure.");
           }
         } else {
           const errorData = await response.json().catch(() => ({}));
@@ -2129,7 +2008,7 @@ const cleanFileNameToTitle = (filename: string) => {
 };
 
 const CATEGORY_CONFIGS: Record<string, { folder: string, ref?: string }> = {
-  "Design": { folder: "Design" },
+  "Design": { folder: "Expertise Showcase" },
   "Photography": { folder: "Photography" },
   "Retouching": { folder: "Retouching" },
   "Rendering": { folder: "Rendering" },
@@ -2144,14 +2023,27 @@ const INITIAL_ARCHIVE: Project[] = [
     subtitle: "Not decoration. Problem solving.",
     category: "Design",
     image: "https://picsum.photos/seed/design/1280/720",
-    galleryImages: []
+    galleryImages: [
+      { url: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/04_Osight%20C%20launch%20banner_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/04_Osight%20C%20launch%20banner_1920x1080.jpg", title: "Osight C Launch Banner" },
+      { url: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/01_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/01_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg", title: "Osight SE Launch Banner" },
+      { url: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/06_Osight%20C%20Teaser_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/06_Osight%20C%20Teaser_1920x1080.jpg", title: "Osight C Teaser" },
+      { url: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/03_C%20and%20K%20Teaser_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/03_C%20and%20K%20Teaser_1920x1080.jpg", title: "C and K Teaser" },
+      { url: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/02_SE%20GN%206%20MOA%20Trial%20sales_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/02_SE%20GN%206%20MOA%20Trial%20sales_1920x1080.jpg", title: "SE GN Trial Sales" },
+      { url: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/05_Osight%20C%20launch%20banner_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/05_Osight%20C%20launch%20banner_1920x1080.jpg", title: "Osight C Banner Without Gun" },
+      { url: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/07_Osight%20C%20GN%20launch%20banner_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/07_Osight%20C%20GN%20launch%20banner_1920x1080.jpg", title: "Osight C GN Launch Banner" },
+      { url: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/08_XR%20banner10_1200x628_AZ.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/08_XR%20banner10_1200x628_AZ.jpg", title: "XR Ads Banner" },
+      { url: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/09_C%20GN%20banner2_1200x628_SN.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/09_C%20GN%20banner2_1200x628_SN.jpg", title: "C GN Ads Banner" },
+      { url: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/10_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/10_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg", title: "Osight SE 6MOA GN alternative banner" },
+      { url: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/11_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/11_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg", title: "Osight SE 6MOA GN banner without gun" },
+      { url: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/12_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/12_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg", title: "Osight SE 6MOA GN alternative banner without gun" },
+    ]
   },
   {
     id: 2,
     title: "Photography",
     subtitle: "More than images.",
     category: "Photography",
-    image: "https://github.com/David007-CN/DW/blob/main/Cover/01_fly.jpg?raw=true",
+    image: "https://raw.githubusercontent.com/David007-CN/DW/main/Cover/01_fly.jpg",
     galleryImages: []
   },
   {
@@ -2184,21 +2076,21 @@ const INITIAL_ARCHIVE: Project[] = [
     subtitle: "Primarily 3rd-party production, with our concept guidance.",
     category: "Video",
     backgroundVideoId: "Ix7uaO1QJA4",
-    videoUrl: "https://github.com/David007-CN/DW/blob/560162b86408fbde325757658adc0082962ac679/Cover/bg-video-4s.mp4",
-    image: "https://github.com/David007-CN/DW/blob/560162b86408fbde325757658adc0082962ac679/Cover/bg-video-4s.jpg",
+    videoUrl: "https://raw.githubusercontent.com/David007-CN/DW/main/Cover/bg-video-4s.mp4",
+    image: "https://raw.githubusercontent.com/David007-CN/DW/main/Cover/bg-video-4s.jpg",
     galleryImages: [
       { 
         url: "https://youtu.be/bLBBiNbUMQ4", 
-        title: "Pending refinement - Video 1"
+        title: "D-V8 Concept Reel"
       },
       { 
         url: "https://youtu.be/A_TdfLXRKCQ", 
-        title: "Pending refinement - Video 2"
+        title: "Osight Launch Event"
       },
        { 
         url: "https://www.bilibili.com/video/BV1oNkTBnErQ?t=79.5", 
-        cover: "https://github.com/David007-CN/DW/blob/main/Cover/03_DSC06797.jpg?raw=true",
-        title: "Pending refinement - Video 3"
+        cover: "https://raw.githubusercontent.com/David007-CN/DW/main/Cover/03_DSC06797.jpg",
+        title: "Studio Showcase"
       },
     ]
   }
