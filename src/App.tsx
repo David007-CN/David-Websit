@@ -129,7 +129,15 @@ const VideoPlayer = ({ url, fallbackImage, autoPlay = true, loop = true, muted =
       videoRef.current.setAttribute('controlsList', 'nodownload nofullscreen noremoteplayback');
       videoRef.current.setAttribute('disablePictureInPicture', 'true');
       videoRef.current.setAttribute('disableRemotePlayback', 'true');
+      // 核心修复：防止手机端系统显示默认下载或浮动按钮
+      videoRef.current.setAttribute('controls', 'false');
+      videoRef.current.controls = false;
       videoRef.current.oncontextmenu = (e) => e.preventDefault();
+      
+      // 尝试自动播放以确保视频加载
+      videoRef.current.play().catch(() => {
+        // Silent catch for autoplay blocks
+      });
     }
   }, [url]);
 
@@ -162,7 +170,7 @@ const VideoPlayer = ({ url, fallbackImage, autoPlay = true, loop = true, muted =
           onLoadedData={handleReady}
           onCanPlay={handleReady}
           onPlaying={handleReady}
-          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 z-10 no-save pointer-events-none select-none ${isReady ? 'opacity-100' : 'opacity-100' /* 强制保持可见或受 Ready 状态控制 */}`}
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 z-10 no-save pointer-events-none select-none`}
           style={{ opacity: isReady ? 1 : 0 }}
         />
       ) : (
@@ -825,13 +833,22 @@ const Spotlight = () => {
                   className="w-full aspect-video mt-14 mb-14 lg:mt-0 lg:mb-0 border border-white/10 p-1 bg-white/5 backdrop-blur-sm cursor-zoom-in group-hover:border-white/30 transition-colors overflow-hidden"
                   onClick={() => setIsZoomed(true)}
                 >
-                  <img 
-                    src={getOptimizedUrl(currentImage, window.innerWidth > 768 ? 1280 : 800, window.innerWidth > 768 ? 720 : 450)} 
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
-                    referrerPolicy="no-referrer" 
-                    loading={selectedIndex === 0 ? "eager" : "lazy"}
-                    fetchPriority={selectedIndex === 0 ? "high" : "auto"}
-                  />
+                  {project.category === 'Video' ? (
+                    <VideoPlayer 
+                      url={getOptimizedUrl(project.videoUrl || `https://www.youtube.com/watch?v=${project.backgroundVideoId}`)}
+                      fallbackImage={getOptimizedUrl(project.image, 1280, 720)}
+                      autoPlay={true}
+                      loop={true}
+                    />
+                  ) : (
+                    <img 
+                      src={getOptimizedUrl(currentImage, window.innerWidth > 768 ? 1280 : 800, window.innerWidth > 768 ? 720 : 450)} 
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+                      referrerPolicy="no-referrer" 
+                      loading={selectedIndex === 0 ? "eager" : "lazy"}
+                      fetchPriority={selectedIndex === 0 ? "high" : "auto"}
+                    />
+                  )}
                   
                   {/* Zoom Icon Hint */}
                   <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 pointer-events-none">
@@ -1126,7 +1143,7 @@ const Featured = () => {
            time = dateStr.split('').map((char, i) => i === 3 ? char + ' . ' : char).join(' ');
         }
 
-        const imageUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_REF}/${GITHUB_FOLDER}/${file.name}`;
+        const imageUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_REF}/${GITHUB_FOLDER}/${encodeURIComponent(file.name)}`;
 
         return {
           id: 2000 + index,
