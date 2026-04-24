@@ -21,27 +21,6 @@
     <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/David007-CN/DW/main/David%20Signature/David%20Signature%20red%20bold.png" />
     
     <title>David | Visual Designer & Brand Strategist Portfolio</title>
-    <script>
-      // 核心修复：在 React 加载前彻底禁用滚动恢复，防止刷新时跳回底部
-      if ('scrollRestoration' in history) {
-        history.scrollRestoration = 'manual';
-      }
-      
-      // 强制重置滚动位置
-      window.scrollTo(0, 0);
-      
-      // 监听加载，确保滚动始终保持在顶部直到内容完全呈现
-      const forceScrollTop = () => {
-        window.scrollTo(0, 0);
-        document.body.style.overflow = 'visible';
-        document.documentElement.style.overflow = 'visible';
-      };
-      
-      window.addEventListener('load', forceScrollTop);
-      window.addEventListener('beforeunload', () => {
-        window.scrollTo(0, 0);
-      });
-    </script>
   </head>
   <body>
     <div id="root"></div>

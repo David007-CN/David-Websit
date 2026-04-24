@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { HashRouter as Router, Routes, Route, Link, useNavigate, useLocation, useParams } from 'react-router-dom';
+import React, { useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { Routes, Route, Link, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { motion, AnimatePresence, useMotionValue, useAnimationFrame } from 'motion/react';
 import { 
   Twitter, 
@@ -1236,16 +1236,18 @@ const Featured = () => {
           const fileName = name.split('.')[0];
           
           // 优化标题解析： Xinjiang 必须准确匹配，Osight 后缀大写
-          let title = fileName.includes('_') ? fileName.split('_')[0] : fileName;
+          const rawName = fileName.toLowerCase();
           
-          if (title.toLowerCase().includes('xinjiang')) {
+          if (rawName.includes('xinjiang')) {
             title = "Xinjiang Travel";
+          } else if (rawName === 'nra' || rawName.startsWith('nra_')) {
+            title = "NRA Show";
           } else {
-            // 移除数字
-            title = title.replace(/\d+/g, '').trim();
-            const upperText = title.toUpperCase();
-            if (upperText === 'NRA') title = "NRA Show";
-            else if (title.toLowerCase().startsWith('osight')) {
+            // 默认解析：取第一个下划线前的内容并移除数字
+            let baseTitle = fileName.includes('_') ? fileName.split('_')[0] : fileName;
+            title = baseTitle.replace(/\d+/g, '').trim();
+            
+            if (title.toLowerCase().startsWith('osight')) {
               const suffix = fileName.includes('_') ? fileName.split('_')[0].substring(6) : fileName.substring(6);
               title = suffix ? `Osight ${suffix.toUpperCase()}` : "Osight";
             } else {
@@ -2216,36 +2218,52 @@ if (typeof window !== 'undefined' && 'scrollRestoration' in window.history) {
 }
 
 export default function App() {
-  useEffect(() => {
-    // 基础重置即刻执行
-    window.scrollTo(0, 0);
-    
-    const hackScroll = () => {
-      // 只要刷新或路由改变，确保没有任何隐藏的锁定样式导致卡死
-      document.body.style.overflow = 'visible';
-      document.documentElement.style.overflow = 'visible';
-      document.body.style.height = 'auto';
-      document.documentElement.style.height = 'auto';
-      document.body.style.position = 'static';
+  const location = useLocation();
+
+  // 核心修复：刷新时强制回顶并开启滚动能力
+  useLayoutEffect(() => {
+    // 禁用浏览器自动滚动恢复
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+
+    const forceReset = () => {
+      // 暴力回顶
+      window.scrollTo(0, 0);
+      document.body.scrollTop = 0;
+      document.documentElement.scrollTop = 0;
+      
+      // 彻底解锁滚动能力
+      const styles = {
+        overflow: 'auto',
+        height: 'auto',
+        minHeight: '100vh',
+        position: 'static',
+        touchAction: 'auto'
+      };
+      
+      Object.assign(document.body.style, styles);
+      Object.assign(document.documentElement.style, styles);
+      
+      // 特殊情况：如果是苹果设备或某些特定的容器导致的卡死
+      document.body.classList.remove('overflow-hidden', 'fixed');
     };
 
-    hackScroll();
-    // 针对 React 异步渲染后的二次确认
-    const timer = setTimeout(hackScroll, 500);
-    return () => clearTimeout(timer);
+    forceReset();
+    // 多次确认，防止异步组件（如 Archive）渲染导致的位置偏移
+    const timers = [10, 100, 300, 700].map(ms => setTimeout(forceReset, ms));
+    return () => timers.forEach(clearTimeout);
   }, []);
 
   return (
-    <Router>
+    <div className="min-h-screen bg-brand-dark selection:bg-brand-red selection:text-white custom-scrollbar">
       <ScrollToTop />
-      <div className="min-h-screen bg-brand-dark selection:bg-brand-red selection:text-white custom-scrollbar">
-        <Navbar />
-        <Routes>
-          <Route path="/" element={<HomePage archiveProjects={INITIAL_ARCHIVE} />} />
-          <Route path="/gallery/:id" element={<GalleryPage archiveProjects={INITIAL_ARCHIVE} />} />
-        </Routes>
-        <Footer />
-      </div>
-    </Router>
+      <Navbar />
+      <Routes location={location} key={location.pathname}>
+        <Route path="/" element={<HomePage archiveProjects={INITIAL_ARCHIVE} />} />
+        <Route path="/gallery/:id" element={<GalleryPage archiveProjects={INITIAL_ARCHIVE} />} />
+      </Routes>
+      <Footer />
+    </div>
   );
 }
