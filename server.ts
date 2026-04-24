@@ -32,7 +32,8 @@ async function startServer() {
         'User-Agent': 'David-Design-Portfolio'
       };
 
-      let token = process.env.GITHUB_TOKEN ? process.env.GITHUB_TOKEN.trim() : null;
+      let token = process.env.GITHUB_TOKEN || process.env.VITE_GITHUB_TOKEN || '';
+      token = token.trim();
 
       if (token) {
         // Remove "Bearer " or "token " if the user manually added it to the string
@@ -182,7 +183,11 @@ async function startServer() {
   } else {
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
+    // 更安全的路由：如果不是以 /api 开头的请求，则返回 index.html
     app.get('*', (req, res) => {
+      if (req.path.startsWith('/api')) {
+        return res.status(404).json({ error: 'API route not found' });
+      }
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }

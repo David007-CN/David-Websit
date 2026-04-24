@@ -62,16 +62,19 @@ const getOptimizedUrl = (url: string, width?: number, height?: number, avoidProx
 
   // Use wsrv.nl proxy for images to compress (WebP) and resize
   if (rawUrl.startsWith('http') && !isVideo && !avoidProxy && !rawUrl.includes('youtube.com') && !rawUrl.includes('youtu.be')) {
-    // Aggressive optimization for mobile
+    if (!rawUrl) return '';
+    // Skip optimization for local assets or already optimized ones
+    if (!rawUrl.startsWith('http') || rawUrl.includes('placeholder')) return rawUrl;
+
     const mWidth = isMobile ? Math.min(width || 800, 800) : width;
     const mHeight = isMobile ? Math.min(height || 800, 800) : height;
-    const quality = isMobile ? 70 : (mWidth && mWidth >= 1080 ? 92 : 85);
     
-    let wsrvUrl = `https://wsrv.nl/?url=${encodeURIComponent(rawUrl)}&af&il&q=${quality}`;
+    // Always use original URL for cross-origin reliability if optimized fails
+    const finalQuality = isMobile ? 70 : (mWidth && mWidth >= 1080 ? 92 : 85);
+    
+    let wsrvUrl = `https://wsrv.nl/?url=${encodeURIComponent(rawUrl)}&af&il&q=${finalQuality}&output=webp`;
     if (mWidth) wsrvUrl += `&w=${mWidth}`;
     if (mHeight) wsrvUrl += `&h=${mHeight}`;
-    // Removed forced webp output as it might cause issues on some desktop environments
-    // wsrv.nl will still optimize the delivery
     return wsrvUrl;
   }
 
@@ -122,8 +125,9 @@ const VideoPlayer = ({ url, fallbackImage, autoPlay = true, loop = true, muted =
       videoRef.current.setAttribute('webkit-playsinline', 'true');
       videoRef.current.setAttribute('x5-playsinline', 'true');
       videoRef.current.setAttribute('x5-video-player-type', 'h5');
-      // 控制下载提醒，加强防嗅探提示
       videoRef.current.setAttribute('controlsList', 'nodownload nofullscreen noremoteplayback');
+      videoRef.current.setAttribute('disablePictureInPicture', 'true');
+      videoRef.current.setAttribute('disableRemotePlayback', 'true');
       videoRef.current.oncontextmenu = (e) => e.preventDefault();
     }
   }, [url]);
@@ -401,7 +405,10 @@ const Navbar = () => {
                   navigate('/');
                   // 使用更高可靠性的滚动重置
                   window.requestAnimationFrame(() => {
-                    window.scrollTo({ top: 0, behavior: 'instant' });
+                    window.scrollTo(0, 0);
+                    // 强制恢复 body 滚动，防止某些弹窗组件导致的卡死
+                    document.body.style.overflow = 'auto';
+                    document.documentElement.style.overflow = 'auto';
                   });
                 }
               }}
@@ -1224,17 +1231,27 @@ const Featured = () => {
           ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif'].some(ext => file.name.toLowerCase().endsWith('.' + ext))
         )
         .map((file: any, index: number) => {
+          // 图片标题解析逻辑
           const name = decodeURIComponent(file.name);
           const fileName = name.split('.')[0];
           
-          // 优化标题解析：将下划线和中划线换成空格，去除末尾数字标识
-          let title = fileName.replace(/[_-]/g, ' ').replace(/\s\d+$/, '');
+          // 优化标题解析： Xinjiang 必须准确匹配，Osight 后缀大写
+          let title = fileName.includes('_') ? fileName.split('_')[0] : fileName;
           
-          if (title.toUpperCase() === 'NRA') title = "NRA Show";
-          if (title.toUpperCase() === 'XINJIANG') title = "Xinjiang Travel";
-          
-          // 保证首字母大写
-          title = title.replace(/\b\w/g, (l: string) => l.toUpperCase());
+          if (title.toLowerCase().includes('xinjiang')) {
+            title = "Xinjiang Travel";
+          } else {
+            // 移除数字
+            title = title.replace(/\d+/g, '').trim();
+            const upperText = title.toUpperCase();
+            if (upperText === 'NRA') title = "NRA Show";
+            else if (title.toLowerCase().startsWith('osight')) {
+              const suffix = fileName.includes('_') ? fileName.split('_')[0].substring(6) : fileName.substring(6);
+              title = suffix ? `Osight ${suffix.toUpperCase()}` : "Osight";
+            } else {
+              title = title.charAt(0).toUpperCase() + title.slice(1);
+            }
+          }
 
           let time = "2 0 2 5";
           const dateMatch = fileName.match(/20\d{4}/);
@@ -1406,19 +1423,12 @@ const Featured = () => {
                       fetchPriority={index < 3 ? "high" : "auto"}
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
-                        // 如果已经尝试过原始链接也失败，则显示占位图
-                        if (target.dataset.tried === 'original') {
-                          target.src = `https://images.unsplash.com/photo-1542831371-29b0f74f9713?q=80&w=1000&auto=format&fit=crop`; // 优质占位图
-                          return;
-                        }
+                        if (target.dataset.tried === 'original') return;
                         
                         target.dataset.tried = 'original';
-                        // 桌面端加载失败尝试切换协议或直接链接
                         const currentUrl = target.src;
                         if (currentUrl.includes('wsrv.nl')) {
                            target.src = item.image;
-                        } else {
-                           target.src = `https://images.unsplash.com/photo-1542831371-29b0f74f9713?q=80&w=1000&auto=format&fit=crop`;
                         }
                       }}
                     />
@@ -2177,16 +2187,54 @@ const INITIAL_ARCHIVE: Project[] = [
 
 // --- Scroll To Top Helper ---
 const ScrollToTop = () => {
-  const { pathname } = useLocation();
+  const { pathname, hash } = useLocation();
   
   useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [pathname]);
+    if (!hash) {
+      // 使用更底层的覆盖方式
+      const forceTop = () => {
+        window.scrollTo(0, 0);
+        document.body.scrollTo(0, 0);
+        if (document.scrollingElement) {
+          document.scrollingElement.scrollTop = 0;
+        }
+      };
+      
+      forceTop();
+      requestAnimationFrame(forceTop);
+      const t = setTimeout(forceTop, 30);
+      return () => clearTimeout(t);
+    }
+  }, [pathname, hash]);
   
   return null;
 };
 
+// 强制在全局范围禁用滚动恢复，防止刷新时跳回底部
+if (typeof window !== 'undefined' && 'scrollRestoration' in window.history) {
+  window.history.scrollRestoration = 'manual';
+}
+
 export default function App() {
+  useEffect(() => {
+    // 基础重置即刻执行
+    window.scrollTo(0, 0);
+    
+    const hackScroll = () => {
+      // 只要刷新或路由改变，确保没有任何隐藏的锁定样式导致卡死
+      document.body.style.overflow = 'visible';
+      document.documentElement.style.overflow = 'visible';
+      document.body.style.height = 'auto';
+      document.documentElement.style.height = 'auto';
+      document.body.style.position = 'static';
+    };
+
+    hackScroll();
+    // 针对 React 异步渲染后的二次确认
+    const timer = setTimeout(hackScroll, 500);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <Router>
       <ScrollToTop />
