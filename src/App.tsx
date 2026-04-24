@@ -384,15 +384,16 @@ const Navbar = () => {
       <nav className={`w-full transition-all duration-300 relative z-10 bg-brand-dark border-b border-white/5 ${scrolled ? 'py-1' : 'py-2'}`}>
         <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
           <div className="flex items-center gap-12">
-            <Link 
-              to="/"
-              onClick={(e) => {
+            <button 
+              onClick={() => {
                 if (isHomePage) {
-                  e.preventDefault();
                   document.getElementById('home')?.scrollIntoView({ behavior: 'smooth' });
                 } else {
-                  // Link handles the navigate('/'), but we want to ensure we start at top
-                  window.scrollTo(0, 0);
+                  navigate('/');
+                  // Force scroll to top after navigation
+                  setTimeout(() => {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }, 100);
                 }
               }}
               className="flex items-center"
@@ -404,7 +405,7 @@ const Navbar = () => {
                 className="h-10 md:h-12 w-auto object-contain"
                 referrerPolicy="no-referrer"
               />
-            </Link>
+            </button>
 
             {/* Desktop Nav */}
             <div className="hidden md:flex items-center gap-8">
@@ -1731,21 +1732,30 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
             }
           }
         } else {
+          const errorData = await response.json().catch(() => ({}));
+          console.error("GitHub API Error Details:", errorData);
+
           if (response.status === 403) {
+            const hasToken = errorData.debugInfo?.tokenUsed;
+            const message = errorData.message || '';
+            const statusMsg = hasToken 
+              ? "GitHub Token used but limit reached. Check token permissions." 
+              : "No GitHub Token detected by server. Please add GITHUB_TOKEN to Settings.";
+            
             // Check if we have OLD cache we can show as fallback even if expired
             if (cachedData) {
               try {
                 const { data } = JSON.parse(cachedData);
                 setProject(prev => ({ ...prev, galleryImages: data }));
-                setError("Note: Displaying cached content due to GitHub Rate Limit.");
+                setError(`Note: Displaying cached content. ${statusMsg}`);
                 return;
               } catch(e) {}
             }
-            setError("GitHub API rate limit reached. Please try again after 1 hour.");
+            setError(`GitHub API rate limit reached. ${statusMsg} ${message}`);
           } else if (response.status === 404) {
             setError(`Folder '${folderName}' not found in the repository.`);
           } else {
-            setError(`Error fetching content: ${response.statusText}`);
+            setError(`Error fetching content: ${errorData.message || response.statusText}`);
           }
         }
       } catch (err) {
@@ -1840,8 +1850,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                 <button 
                   onClick={() => {
                     localStorage.clear();
-                    // Just reload the app, HashRouter handles the rest
-                    window.location.hash = ''; // Back to home hash
+                    // Just reload the current page to retry fetch
                     window.location.reload();
                   }}
                   className="px-8 py-3 border border-white/10 bg-white/5 text-[10px] font-bold tracking-widest hover:border-white transition-all uppercase"
