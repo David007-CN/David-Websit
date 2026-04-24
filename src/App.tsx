@@ -70,7 +70,8 @@ const getOptimizedUrl = (url: string, width?: number, height?: number, avoidProx
     let wsrvUrl = `https://wsrv.nl/?url=${encodeURIComponent(rawUrl)}&af&il&q=${quality}`;
     if (mWidth) wsrvUrl += `&w=${mWidth}`;
     if (mHeight) wsrvUrl += `&h=${mHeight}`;
-    wsrvUrl += `&output=webp`; // Force WebP for all browsers that support it
+    // Removed forced webp output as it might cause issues on some desktop environments
+    // wsrv.nl will still optimize the delivery
     return wsrvUrl;
   }
 
@@ -116,13 +117,19 @@ const VideoPlayer = ({ url, fallbackImage, autoPlay = true, loop = true, muted =
       if (videoRef.current.readyState >= 2) {
         handleReady();
       }
-      // Explicitly set muted via DOM for better mobile support
+      // Explicitly set muted and mobile specific attributes via DOM
       videoRef.current.muted = true;
+      videoRef.current.setAttribute('playsinline', 'true');
+      videoRef.current.setAttribute('webkit-playsinline', 'true');
+      videoRef.current.setAttribute('x5-playsinline', 'true');
+      videoRef.current.setAttribute('x5-video-player-type', 'h5');
+      videoRef.current.setAttribute('x5-video-player-fullscreen', 'true');
+      videoRef.current.setAttribute('x5-video-orientation', 'portrait');
     }
-  }, []);
+  }, [url]);
 
   return (
-    <div className="absolute inset-0 w-full h-full pointer-events-none bg-black overflow-hidden">
+    <div className="absolute inset-0 w-full h-full pointer-events-none bg-black overflow-hidden select-none">
       {/* 始终显示封面图作为占位，直到视频准备就绪 */}
       <img
         src={fallbackImage}
@@ -142,6 +149,8 @@ const VideoPlayer = ({ url, fallbackImage, autoPlay = true, loop = true, muted =
           loop={loop}
           playsInline
           webkit-playsinline="true"
+          x5-playsinline="true"
+          x5-video-player-type="h5"
           preload={preload}
           crossOrigin="anonymous"
           controlsList="nodownload nofullscreen noremoteplayback"
@@ -1156,14 +1165,32 @@ const Featured = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const x = useMotionValue(0);
 
+  const shuffledItems = useMemo(() => {
+    return featuredItems;
+  }, [featuredItems]);
+
+  const displayItems = useMemo(() => {
+    // Duplicate items to ensure smooth infinite loop and reduce perceived repetition
+    // If we have few items, duplicate more times
+    if (shuffledItems.length === 0) return [];
+    if (shuffledItems.length < 10) return [...shuffledItems, ...shuffledItems, ...shuffledItems, ...shuffledItems];
+    return [...shuffledItems, ...shuffledItems];
+  }, [shuffledItems]);
+
   useAnimationFrame(() => {
     if (isHovered || isDragging || selectedIndex !== null || isLoading) return;
     
-    let currentX = x.get() - 1; // Animation speed
+    let currentX = x.get() - 0.8; // Slightly slower speed for better viewing
     if (containerRef.current) {
-      const halfWidth = containerRef.current.scrollWidth / 2;
-      if (currentX <= -halfWidth) {
-        currentX += halfWidth;
+      const scrollWidth = containerRef.current.scrollWidth;
+      const count = shuffledItems.length;
+      if (count === 0) return;
+      
+      // Calculate the width of one single set of items
+      const itemWidth = scrollWidth / (displayItems.length / count);
+      
+      if (currentX <= -itemWidth) {
+        currentX += itemWidth;
       }
     }
     x.set(currentX);
@@ -1173,15 +1200,20 @@ const Featured = () => {
   useEffect(() => {
     return x.on('change', (v) => {
       if (containerRef.current) {
-        const halfWidth = containerRef.current.scrollWidth / 2;
-        if (v <= -halfWidth) {
-          x.set(v + halfWidth);
+        const scrollWidth = containerRef.current.scrollWidth;
+        const count = shuffledItems.length;
+        if (count === 0) return;
+        
+        const itemWidth = scrollWidth / (displayItems.length / count);
+        
+        if (v <= -itemWidth) {
+          x.set(v + itemWidth);
         } else if (v > 0) {
-          x.set(v - halfWidth);
+          x.set(v - itemWidth);
         }
       }
     });
-  }, [x]);
+  }, [x, displayItems.length, shuffledItems.length]);
 
   // GitHub Folder Configuration
   const GITHUB_FOLDER = "Life"; 
@@ -1241,7 +1273,7 @@ const Featured = () => {
           if (foundIndex === -1) foundIndex = 0;
           interleaved.push(pool.splice(foundIndex, 1)[0]);
         }
-        setFeaturedItems(interleaved.slice(0, 24));
+        setFeaturedItems(interleaved.slice(0, 48)); // Increased from 24 to 48 to reduce perceived repetition
         return true;
       }
       return false;
@@ -1298,10 +1330,6 @@ const Featured = () => {
     fetchGitHubImages();
   }, []);
 
-  const shuffledItems = useMemo(() => {
-    return featuredItems;
-  }, [featuredItems]);
-
   const handleNext = (e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (selectedIndex !== null) {
@@ -1355,8 +1383,7 @@ const Featured = () => {
             onDragEnd={() => setIsDragging(false)}
             className="flex gap-8 whitespace-nowrap cursor-grab active:cursor-grabbing"
           >
-            {/* For mobile speed, only duplicate if screen is wide enough to need infinite loop visibility */}
-            {(window.innerWidth > 768 ? [...shuffledItems, ...shuffledItems] : shuffledItems).map((item, index) => (
+            {displayItems.map((item, index) => (
               <motion.div 
                 key={item.id + "-" + index} 
                 whileHover={{ scale: 1.02 }}
@@ -1375,8 +1402,14 @@ const Featured = () => {
                       className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110" 
                       referrerPolicy="no-referrer" 
                       crossOrigin="anonymous"
-                      loading={index < 2 ? "eager" : "lazy"}
-                      fetchPriority={index < 2 ? "high" : "auto"}
+                      loading={index < 3 ? "eager" : "lazy"}
+                      fetchPriority={index < 3 ? "high" : "auto"}
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        if (!target.src.includes('wsrv.nl')) return; // Avoid infinite loop
+                        // Fallback to direct URL if optimization fails
+                        target.src = item.image;
+                      }}
                     />
                   </div>
                   <div className="text-center flex-grow flex flex-col justify-center">
