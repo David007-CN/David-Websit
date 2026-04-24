@@ -1237,6 +1237,7 @@ const Featured = () => {
           
           // 优化标题解析： Xinjiang 必须准确匹配，Osight 后缀大写
           const rawName = fileName.toLowerCase();
+          let title = "";
           
           if (rawName.includes('xinjiang')) {
             title = "Xinjiang Travel";
@@ -1248,10 +1249,10 @@ const Featured = () => {
             title = baseTitle.replace(/\d+/g, '').trim();
             
             if (title.toLowerCase().startsWith('osight')) {
-              const suffix = fileName.includes('_') ? fileName.split('_')[0].substring(6) : fileName.substring(6);
-              title = suffix ? `Osight ${suffix.toUpperCase()}` : "Osight";
+              const suffix = baseTitle.substring(6);
+              title = suffix ? `Osight ${suffix}` : "Osight";
             } else {
-              title = title.charAt(0).toUpperCase() + title.slice(1);
+              title = title.length > 0 ? title.charAt(0).toUpperCase() + title.slice(1) : title;
             }
           }
 
@@ -2038,14 +2039,15 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                   handlePrev();
                 }
               }}
-              className="relative max-w-[90vw] max-h-[90vh] aspect-video shadow-2xl cursor-grab active:cursor-grabbing flex items-center justify-center"
+              className="relative w-full max-w-[90vw] lg:max-w-6xl aspect-video shadow-2xl flex items-center justify-center overflow-hidden bg-black"
+              onClick={(e) => e.stopPropagation()}
             >
               {selectedUrl.includes('bilibili.com') || selectedUrl.includes('player.bilibili.com') ? (
                 <iframe 
                   src={
                     selectedUrl.includes('player.bilibili.com') 
                       ? selectedUrl 
-                      : 'https://player.bilibili.com/player.html?bvid=' + (selectedUrl.includes('BV') ? 'BV' + selectedUrl.split('BV')[1].split(/[?&/]/)[0] : '') + '&page=1&high_quality=1&autoplay=0'
+                      : 'https://player.bilibili.com/player.html?bvid=' + (selectedUrl.includes('BV') ? 'BV' + selectedUrl.split('BV')[1].split(/[?&/]/)[0] : '') + '&page=1&high_quality=1&autoplay=1'
                   }
                   className="w-full h-full border-none"
                   allowFullScreen
@@ -2057,15 +2059,22 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                     selectedUrl.includes('youtu.be') 
                       ? selectedUrl.split('/').pop()?.split('?')[0] 
                       : (selectedUrl.includes('v=') ? selectedUrl.split('v=')[1].split('&')[0] : '')
-                  )}
+                  ) + '?autoplay=1'}
                   className="w-full h-full border-none"
                   allowFullScreen
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 />
+              ) : selectedUrl.match(/\.(mp4|mov|webm)$/i) ? (
+                <video 
+                  src={selectedUrl}
+                  controls
+                  autoPlay
+                  className="w-full h-full object-contain"
+                />
               ) : (
                 <img 
                   src={getOptimizedUrl(selectedUrl, 1920, 1080, true)} 
-                  className="w-full h-full object-contain"
+                  className="w-full h-full object-contain pointer-events-none"
                   referrerPolicy="no-referrer"
                 />
               )}
@@ -2259,7 +2268,7 @@ export default function App() {
     <div className="min-h-screen bg-brand-dark selection:bg-brand-red selection:text-white custom-scrollbar">
       <ScrollToTop />
       <Navbar />
-      <Routes location={location} key={location.pathname}>
+      <Routes location={location}>
         <Route path="/" element={<HomePage archiveProjects={INITIAL_ARCHIVE} />} />
         <Route path="/gallery/:id" element={<GalleryPage archiveProjects={INITIAL_ARCHIVE} />} />
       </Routes>

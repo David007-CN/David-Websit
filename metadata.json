@@ -1,5 +1,6 @@
 {
-  "name": "David Portfolio",
-  "description": "A high-end, dark-themed personal portfolio for a creative designer, featuring works, about, and contact sections with a bold black and red aesthetic.",
-  "requestFramePermissions": []
+  "name": "David’s personal website",
+  "description": "这是大卫作品集的完美版本V1。包含了高性能的视频画廊、流畅的滚动体验以及优化的响应式设计，采用黑红高级视觉设计语言。",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
 }
