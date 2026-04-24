@@ -1176,23 +1176,26 @@ const Featured = () => {
   }, [featuredItems]);
 
   const displayItems = useMemo(() => {
-    // Duplicate items to ensure smooth infinite loop and reduce perceived repetition
-    // Increasing to 3 copies for ultra-wide PC monitors
     if (shuffledItems.length === 0) return [];
-    if (shuffledItems.length < 15) return [...shuffledItems, ...shuffledItems, ...shuffledItems, ...shuffledItems, ...shuffledItems];
-    return [...shuffledItems, ...shuffledItems, ...shuffledItems];
+    // 增加重复次数，确保哪怕在超宽 4K 屏上也能平滑填满
+    const repeatCount = window.innerWidth > 1400 ? 6 : 4;
+    const items = [];
+    for (let i = 0; i < repeatCount; i++) {
+      items.push(...shuffledItems);
+    }
+    return items;
   }, [shuffledItems]);
 
   useAnimationFrame(() => {
     if (isHovered || isDragging || selectedIndex !== null || isLoading) return;
     
-    let currentX = x.get() - 0.8; // Slightly slower speed for better viewing
+    // 降低一点速度，PC 端更稳健
+    let currentX = x.get() - 0.7; 
     if (containerRef.current) {
       const scrollWidth = containerRef.current.scrollWidth;
       const count = shuffledItems.length;
       if (count === 0) return;
       
-      // Calculate the width of one single set of items
       const itemWidth = scrollWidth / (displayItems.length / count);
       
       if (currentX <= -itemWidth) {
@@ -1231,11 +1234,8 @@ const Featured = () => {
         ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif'].some(ext => file.name.toLowerCase().endsWith('.' + ext))
       )
       .map((file: any, index: number) => {
-        // 图片标题解析逻辑
         const name = decodeURIComponent(file.name);
         const fileName = name.split('.')[0];
-        
-        // 优化标题解析： Xinjiang 必须准确匹配，Osight 后缀大写
         const rawName = fileName.toLowerCase();
         let title = "";
         
@@ -1244,7 +1244,6 @@ const Featured = () => {
         } else if (rawName === 'nra' || rawName.startsWith('nra_')) {
           title = "NRA Show";
         } else {
-          // 默认解析：取第一个下划线前的内容并移除数字
           let baseTitle = fileName.includes('_') ? fileName.split('_')[0] : fileName;
           title = baseTitle.replace(/\d+/g, '').trim();
           
@@ -1263,8 +1262,7 @@ const Featured = () => {
            time = dateStr.split('').map((char, i) => i === 3 ? char + ' . ' : char).join(' ');
         }
 
-        // Directly use download_url for reliability
-        const imageUrl = file.download_url || `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_REF}/${GITHUB_FOLDER}/${file.name}`;
+        const imageUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_REF}/${GITHUB_FOLDER}/${file.name}`;
 
         return {
           id: 2000 + index,
@@ -1277,23 +1275,7 @@ const Featured = () => {
 
     if (githubItems.length > 0) {
       let shuffled = [...githubItems].sort(() => Math.random() - 0.5);
-      const interleaved: Project[] = [];
-      const pool = [...shuffled];
-      
-      while (pool.length > 0) {
-        let foundIndex = -1;
-        const len = interleaved.length;
-        if (len >= 2) {
-          const p1 = interleaved[len - 1].title.substring(0, 4).toLowerCase();
-          const p2 = interleaved[len - 2].title.substring(0, 4).toLowerCase();
-          if (p1 === p2 && p1.length >= 4) {
-            foundIndex = pool.findIndex(item => item.title.substring(0, 4).toLowerCase() !== p1);
-          }
-        }
-        if (foundIndex === -1) foundIndex = 0;
-        interleaved.push(pool.splice(foundIndex, 1)[0]);
-      }
-      setFeaturedItems(interleaved.slice(0, 48)); 
+      setFeaturedItems(shuffled.slice(0, 48)); 
       return true;
     }
     return false;
@@ -1302,54 +1284,53 @@ const Featured = () => {
   const fetchGitHubImages = async (isManual = false) => {
     if (isManual) {
       setIsLoading(true);
-      // Clear cache on manual refresh
       localStorage.removeItem(`github_images_cache_${GITHUB_REF}`);
     }
 
     if (!isManual) {
       const cached = localStorage.getItem(`github_images_cache_${GITHUB_REF}`);
-      let hasRenderedFromCache = false;
       if (cached) {
         try {
           const parsedCache = JSON.parse(cached);
           if (Array.isArray(parsedCache) && processFiles(parsedCache)) {
-            hasRenderedFromCache = true;
             setIsLoading(false); 
           }
-        } catch (e) { /* ignore cache error */ }
-      }
-
-      if (!hasRenderedFromCache) {
-        setIsLoading(true);
+        } catch (e) { }
       }
     }
 
+    const controllers = {
+      direct: `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${GITHUB_FOLDER}?ref=${GITHUB_REF}${isManual ? '&t=' + Date.now() : ''}`,
+      proxy: `/api/github-proxy?owner=${GITHUB_USER}&repo=${GITHUB_REPO}&path=${GITHUB_FOLDER}&ref=${GITHUB_REF}${isManual ? '&t=' + Date.now() : ''}`
+    };
+
+    // 优先尝试直接访问，失败后回退代理
     try {
-      // Add random seed to URL to bypass any intermediary caches
-      const seed = isManual ? `&t=${Date.now()}` : '';
-      const apiPath = `/api/github-proxy?owner=${GITHUB_USER}&repo=${GITHUB_REPO}&path=${GITHUB_FOLDER}&ref=${GITHUB_REF}${seed}`;
-      const response = await fetch(apiPath);
-      
-      if (!response.ok) {
-        throw new Error(`Proxy status ${response.status}`);
-      }
-      
-      const data = await response.json();
-      if (Array.isArray(data)) {
-        try {
+      const response = await fetch(controllers.direct);
+      if (response.ok) {
+        const data = await response.json();
+        if (Array.isArray(data)) {
           localStorage.setItem(`github_images_cache_${GITHUB_REF}`, JSON.stringify(data));
-        } catch (e) { /* ignore */ }
-        processFiles(data);
+          processFiles(data);
+          setIsLoading(false);
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn("Direct fetch failed, falling back to proxy...");
+    }
+
+    try {
+      const response = await fetch(controllers.proxy);
+      if (response.ok) {
+        const data = await response.json();
+        if (Array.isArray(data)) {
+          localStorage.setItem(`github_images_cache_${GITHUB_REF}`, JSON.stringify(data));
+          processFiles(data);
+        }
       }
     } catch (err) {
-      console.warn("GitHub Proxy Error, falling back to direct:", err);
-      try {
-        const response = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${GITHUB_FOLDER}?ref=${GITHUB_REF}`);
-        if (response.ok) {
-          const data = await response.json();
-          if (Array.isArray(data)) processFiles(data);
-        }
-      } catch (e) {}
+      console.error("All fetch attempts failed");
     } finally {
       setIsLoading(false);
     }
