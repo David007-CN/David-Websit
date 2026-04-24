@@ -1177,10 +1177,10 @@ const Featured = () => {
 
   const displayItems = useMemo(() => {
     // Duplicate items to ensure smooth infinite loop and reduce perceived repetition
-    // If we have few items, duplicate more times
+    // Increasing to 3 copies for ultra-wide PC monitors
     if (shuffledItems.length === 0) return [];
-    if (shuffledItems.length < 10) return [...shuffledItems, ...shuffledItems, ...shuffledItems, ...shuffledItems];
-    return [...shuffledItems, ...shuffledItems];
+    if (shuffledItems.length < 15) return [...shuffledItems, ...shuffledItems, ...shuffledItems, ...shuffledItems, ...shuffledItems];
+    return [...shuffledItems, ...shuffledItems, ...shuffledItems];
   }, [shuffledItems]);
 
   useAnimationFrame(() => {
@@ -1300,7 +1300,11 @@ const Featured = () => {
   };
 
   const fetchGitHubImages = async (isManual = false) => {
-    if (isManual) setIsLoading(true); 
+    if (isManual) {
+      setIsLoading(true);
+      // Clear cache on manual refresh
+      localStorage.removeItem(`github_images_cache_${GITHUB_REF}`);
+    }
 
     if (!isManual) {
       const cached = localStorage.getItem(`github_images_cache_${GITHUB_REF}`);
@@ -1321,7 +1325,9 @@ const Featured = () => {
     }
 
     try {
-      const apiPath = `/api/github-proxy?owner=${GITHUB_USER}&repo=${GITHUB_REPO}&path=${GITHUB_FOLDER}&ref=${GITHUB_REF}`;
+      // Add random seed to URL to bypass any intermediary caches
+      const seed = isManual ? `&t=${Date.now()}` : '';
+      const apiPath = `/api/github-proxy?owner=${GITHUB_USER}&repo=${GITHUB_REPO}&path=${GITHUB_FOLDER}&ref=${GITHUB_REF}${seed}`;
       const response = await fetch(apiPath);
       
       if (!response.ok) {
@@ -1420,13 +1426,14 @@ const Featured = () => {
                 <div className="bg-white p-4 h-full flex flex-col whitespace-normal">
                   <div className="aspect-square overflow-hidden mb-6 relative bg-gray-100">
                     <img 
-                      src={getOptimizedUrl(item.image, window.innerWidth > 768 ? 800 : 600, window.innerWidth > 768 ? 800 : 600)} 
+                      src={getOptimizedUrl(item.image, window.innerWidth > 768 ? 1000 : 800)} 
                       draggable={false}
-                      className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110" 
+                      className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 select-none touch-none" 
                       referrerPolicy="no-referrer" 
                       crossOrigin="anonymous"
                       loading={index < 3 ? "eager" : "lazy"}
                       fetchPriority={index < 3 ? "high" : "auto"}
+                      style={{ WebkitTouchCallout: 'none', WebkitUserSelect: 'none' }}
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
                         if (target.dataset.tried === 'original') return;
