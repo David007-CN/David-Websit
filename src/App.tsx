@@ -26,7 +26,8 @@ import {
   ChevronDown,
   Eye,
   Maximize,
-  RotateCcw
+  RotateCcw,
+  RefreshCw
 } from 'lucide-react';
 import { Project } from './types';
 import { PROJECTS } from './data/projects';
@@ -1223,84 +1224,85 @@ const Featured = () => {
   // GitHub Folder Configuration
   const GITHUB_FOLDER = "Life"; 
 
-  useEffect(() => {
-    const processFiles = (data: any[]) => {
-      const githubItems: Project[] = data
-        .filter((file: any) => 
-          file.type === 'file' && 
-          ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif'].some(ext => file.name.toLowerCase().endsWith('.' + ext))
-        )
-        .map((file: any, index: number) => {
-          // 图片标题解析逻辑
-          const name = decodeURIComponent(file.name);
-          const fileName = name.split('.')[0];
-          
-          // 优化标题解析： Xinjiang 必须准确匹配，Osight 后缀大写
-          const rawName = fileName.toLowerCase();
-          let title = "";
-          
-          if (rawName.includes('xinjiang')) {
-            title = "Xinjiang Travel";
-          } else if (rawName === 'nra' || rawName.startsWith('nra_')) {
-            title = "NRA Show";
-          } else {
-            // 默认解析：取第一个下划线前的内容并移除数字
-            let baseTitle = fileName.includes('_') ? fileName.split('_')[0] : fileName;
-            title = baseTitle.replace(/\d+/g, '').trim();
-            
-            if (title.toLowerCase().startsWith('osight')) {
-              const suffix = baseTitle.substring(6);
-              title = suffix ? `Osight ${suffix}` : "Osight";
-            } else {
-              title = title.length > 0 ? title.charAt(0).toUpperCase() + title.slice(1) : title;
-            }
-          }
-
-          let time = "2 0 2 5";
-          const dateMatch = fileName.match(/20\d{4}/);
-          if (dateMatch) {
-             const dateStr = dateMatch[0];
-             time = dateStr.split('').map((char, i) => i === 3 ? char + ' . ' : char).join(' ');
-          }
-
-          // Directly use download_url for reliability
-          const imageUrl = file.download_url || `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_REF}/${GITHUB_FOLDER}/${file.name}`;
-
-          return {
-            id: 2000 + index,
-            title: title, 
-            category: "Life",
-            image: imageUrl,
-            time: time
-          };
-        });
-
-      if (githubItems.length > 0) {
-        let shuffled = [...githubItems].sort(() => Math.random() - 0.5);
-        const interleaved: Project[] = [];
-        const pool = [...shuffled];
+  const processFiles = (data: any[]) => {
+    const githubItems: Project[] = data
+      .filter((file: any) => 
+        file.type === 'file' && 
+        ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif'].some(ext => file.name.toLowerCase().endsWith('.' + ext))
+      )
+      .map((file: any, index: number) => {
+        // 图片标题解析逻辑
+        const name = decodeURIComponent(file.name);
+        const fileName = name.split('.')[0];
         
-        while (pool.length > 0) {
-          let foundIndex = -1;
-          const len = interleaved.length;
-          if (len >= 2) {
-            const p1 = interleaved[len - 1].title.substring(0, 4).toLowerCase();
-            const p2 = interleaved[len - 2].title.substring(0, 4).toLowerCase();
-            if (p1 === p2 && p1.length >= 4) {
-              foundIndex = pool.findIndex(item => item.title.substring(0, 4).toLowerCase() !== p1);
-            }
+        // 优化标题解析： Xinjiang 必须准确匹配，Osight 后缀大写
+        const rawName = fileName.toLowerCase();
+        let title = "";
+        
+        if (rawName.includes('xinjiang')) {
+          title = "Xinjiang Travel";
+        } else if (rawName === 'nra' || rawName.startsWith('nra_')) {
+          title = "NRA Show";
+        } else {
+          // 默认解析：取第一个下划线前的内容并移除数字
+          let baseTitle = fileName.includes('_') ? fileName.split('_')[0] : fileName;
+          title = baseTitle.replace(/\d+/g, '').trim();
+          
+          if (title.toLowerCase().startsWith('osight')) {
+            const suffix = baseTitle.substring(6);
+            title = suffix ? `Osight ${suffix}` : "Osight";
+          } else {
+            title = title.length > 0 ? title.charAt(0).toUpperCase() + title.slice(1) : title;
           }
-          if (foundIndex === -1) foundIndex = 0;
-          interleaved.push(pool.splice(foundIndex, 1)[0]);
         }
-        setFeaturedItems(interleaved.slice(0, 48)); // Increased from 24 to 48 to reduce perceived repetition
-        return true;
-      }
-      return false;
-    };
 
-    const fetchGitHubImages = async () => {
-      // 1. Try to load from cache immediately to show content fast
+        let time = "2 0 2 5";
+        const dateMatch = fileName.match(/20\d{4}/);
+        if (dateMatch) {
+           const dateStr = dateMatch[0];
+           time = dateStr.split('').map((char, i) => i === 3 ? char + ' . ' : char).join(' ');
+        }
+
+        // Directly use download_url for reliability
+        const imageUrl = file.download_url || `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_REF}/${GITHUB_FOLDER}/${file.name}`;
+
+        return {
+          id: 2000 + index,
+          title: title, 
+          category: "Life",
+          image: imageUrl,
+          time: time
+        };
+      });
+
+    if (githubItems.length > 0) {
+      let shuffled = [...githubItems].sort(() => Math.random() - 0.5);
+      const interleaved: Project[] = [];
+      const pool = [...shuffled];
+      
+      while (pool.length > 0) {
+        let foundIndex = -1;
+        const len = interleaved.length;
+        if (len >= 2) {
+          const p1 = interleaved[len - 1].title.substring(0, 4).toLowerCase();
+          const p2 = interleaved[len - 2].title.substring(0, 4).toLowerCase();
+          if (p1 === p2 && p1.length >= 4) {
+            foundIndex = pool.findIndex(item => item.title.substring(0, 4).toLowerCase() !== p1);
+          }
+        }
+        if (foundIndex === -1) foundIndex = 0;
+        interleaved.push(pool.splice(foundIndex, 1)[0]);
+      }
+      setFeaturedItems(interleaved.slice(0, 48)); 
+      return true;
+    }
+    return false;
+  };
+
+  const fetchGitHubImages = async (isManual = false) => {
+    if (isManual) setIsLoading(true); 
+
+    if (!isManual) {
       const cached = localStorage.getItem(`github_images_cache_${GITHUB_REF}`);
       let hasRenderedFromCache = false;
       if (cached) {
@@ -1308,7 +1310,7 @@ const Featured = () => {
           const parsedCache = JSON.parse(cached);
           if (Array.isArray(parsedCache) && processFiles(parsedCache)) {
             hasRenderedFromCache = true;
-            setIsLoading(false); // Stop spinner if we have cache
+            setIsLoading(false); 
           }
         } catch (e) { /* ignore cache error */ }
       }
@@ -1316,37 +1318,38 @@ const Featured = () => {
       if (!hasRenderedFromCache) {
         setIsLoading(true);
       }
+    }
 
-      try {
-        const apiPath = `/api/github-proxy?owner=${GITHUB_USER}&repo=${GITHUB_REPO}&path=${GITHUB_FOLDER}&ref=${GITHUB_REF}`;
-        const response = await fetch(apiPath);
-        
-        if (!response.ok) {
-          throw new Error(`Proxy status ${response.status}`);
-        }
-        
-        const data = await response.json();
-        if (Array.isArray(data)) {
-          try {
-            localStorage.setItem(`github_images_cache_${GITHUB_REF}`, JSON.stringify(data));
-          } catch (e) { /* ignore */ }
-          processFiles(data);
-        }
-      } catch (err) {
-        console.warn("GitHub Proxy Error, falling back to direct:", err);
-        // Fallback to direct fetch
-        try {
-          const response = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${GITHUB_FOLDER}?ref=${GITHUB_REF}`);
-          if (response.ok) {
-            const data = await response.json();
-            if (Array.isArray(data)) processFiles(data);
-          }
-        } catch (e) {}
-      } finally {
-        setIsLoading(false);
+    try {
+      const apiPath = `/api/github-proxy?owner=${GITHUB_USER}&repo=${GITHUB_REPO}&path=${GITHUB_FOLDER}&ref=${GITHUB_REF}`;
+      const response = await fetch(apiPath);
+      
+      if (!response.ok) {
+        throw new Error(`Proxy status ${response.status}`);
       }
-    };
+      
+      const data = await response.json();
+      if (Array.isArray(data)) {
+        try {
+          localStorage.setItem(`github_images_cache_${GITHUB_REF}`, JSON.stringify(data));
+        } catch (e) { /* ignore */ }
+        processFiles(data);
+      }
+    } catch (err) {
+      console.warn("GitHub Proxy Error, falling back to direct:", err);
+      try {
+        const response = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${GITHUB_FOLDER}?ref=${GITHUB_REF}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (Array.isArray(data)) processFiles(data);
+        }
+      } catch (e) {}
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchGitHubImages();
   }, []);
 
@@ -1447,6 +1450,23 @@ const Featured = () => {
             ))}
           </motion.div>
         )}
+      </div>
+
+      <div className="mt-16 text-center">
+        <motion.button 
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => fetchGitHubImages(true)}
+          className="inline-flex items-center px-6 py-3 bg-white/5 border border-white/10 text-white/50 hover:text-white hover:bg-white/10 hover:border-white/20 rounded-full transition-all duration-300 font-display text-sm tracking-widest uppercase group"
+        >
+          <div className="relative mr-3">
+            <RefreshCw className={`w-4 h-4 transition-transform duration-700 ${isLoading ? 'animate-spin' : 'group-hover:rotate-180'}`} />
+          </div>
+          {isLoading ? 'Shuffling...' : 'Shuffle Random Batch'}
+        </motion.button>
+        <p className="mt-4 text-[10px] text-white/20 tracking-[0.2em] uppercase font-light">
+          Click to explore other moments from the archive
+        </p>
       </div>
 
       <AnimatePresence>
