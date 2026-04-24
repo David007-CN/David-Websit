@@ -36,6 +36,9 @@ const GITHUB_USER = "David007-CN";
 const GITHUB_REPO = "DW";
 const GITHUB_REF = "main";
 
+// Detection for mobile performance
+const isMobile = typeof window !== 'undefined' ? /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768 : false;
+
 const getOptimizedUrl = (url: string, width?: number, height?: number, avoidProxy?: boolean) => {
   if (!url) return url;
   
@@ -46,29 +49,28 @@ const getOptimizedUrl = (url: string, width?: number, height?: number, avoidProx
   
   // Handle GitHub URLs - convert to raw content reliably
   if (url.includes('github.com') || url.includes('raw.githubusercontent.com')) {
-    // If it's already a raw user content URL with a token or specific query, keep it as is
     if (url.includes('raw.githubusercontent.com') && url.includes('?')) return url;
 
     rawUrl = url.replace('github.com', 'raw.githubusercontent.com')
                 .replace('/blob/', '/')
                 .replace('/refs/heads/', '/');
     
-    // Only strip query if it's not already a raw URL (avoids breaking download_url tokens)
     if (!url.includes('raw.githubusercontent.com')) {
       rawUrl = rawUrl.split('?')[0];
     }
   }
 
   // Use wsrv.nl proxy for images to compress (WebP) and resize
-  // We re-enable this for speed, but ensures the URL is cleanly encoded
   if (rawUrl.startsWith('http') && !isVideo && !avoidProxy && !rawUrl.includes('youtube.com') && !rawUrl.includes('youtu.be')) {
-    // Balanced optimization: higher quality for visual excellence
-    const isSmall = width && width < 600;
-    const isHighRes = width && width >= 1080;
-    const quality = isSmall ? 80 : (isHighRes ? 92 : 85);
+    // Aggressive optimization for mobile
+    const mWidth = isMobile ? Math.min(width || 800, 800) : width;
+    const mHeight = isMobile ? Math.min(height || 800, 800) : height;
+    const quality = isMobile ? 70 : (mWidth && mWidth >= 1080 ? 92 : 85);
+    
     let wsrvUrl = `https://wsrv.nl/?url=${encodeURIComponent(rawUrl)}&af&il&q=${quality}`;
-    if (width) wsrvUrl += `&w=${width}`;
-    if (height) wsrvUrl += `&h=${height}`;
+    if (mWidth) wsrvUrl += `&w=${mWidth}`;
+    if (mHeight) wsrvUrl += `&h=${mHeight}`;
+    wsrvUrl += `&output=webp`; // Force WebP for all browsers that support it
     return wsrvUrl;
   }
 
@@ -127,25 +129,28 @@ const VideoPlayer = ({ url, fallbackImage, autoPlay = true, loop = true, muted =
       />
       
       {!url.includes('youtube.com') && !url.includes('youtu.be') ? (
-        <video
-          key={url}
-          ref={videoRef}
-          src={url}
-          autoPlay={autoPlay}
-          muted={muted}
-          loop={loop}
-          playsInline
-          preload={preload}
-          crossOrigin="anonymous"
-          controlsList="nodownload"
-          disablePictureInPicture
-          disableRemotePlayback
-          onContextMenu={(e) => e.preventDefault()}
-          onLoadedData={handleReady}
-          onCanPlay={handleReady}
-          onPlaying={handleReady}
-          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 z-10 no-save ${isReady ? 'opacity-100' : 'opacity-0'}`}
-        />
+        // Disable video on mobile to save bandwidth and improve performance
+        !isMobile ? (
+          <video
+            key={url}
+            ref={videoRef}
+            src={url}
+            autoPlay={autoPlay}
+            muted={muted}
+            loop={loop}
+            playsInline
+            preload={preload}
+            crossOrigin="anonymous"
+            controlsList="nodownload"
+            disablePictureInPicture
+            disableRemotePlayback
+            onContextMenu={(e) => e.preventDefault()}
+            onLoadedData={handleReady}
+            onCanPlay={handleReady}
+            onPlaying={handleReady}
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 z-10 no-save ${isReady ? 'opacity-100' : 'opacity-0'}`}
+          />
+        ) : null
       ) : (
         /* YouTube Embed */
         <iframe
@@ -379,12 +384,14 @@ const Navbar = () => {
       <nav className={`w-full transition-all duration-300 relative z-10 bg-brand-dark border-b border-white/5 ${scrolled ? 'py-1' : 'py-2'}`}>
         <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
           <div className="flex items-center gap-12">
-            <button 
-              onClick={() => {
+            <Link 
+              to="/"
+              onClick={(e) => {
                 if (isHomePage) {
+                  e.preventDefault();
                   document.getElementById('home')?.scrollIntoView({ behavior: 'smooth' });
                 } else {
-                  navigate('/');
+                  // Link handles the navigate('/'), but we want to ensure we start at top
                   window.scrollTo(0, 0);
                 }
               }}
@@ -397,7 +404,7 @@ const Navbar = () => {
                 className="h-10 md:h-12 w-auto object-contain"
                 referrerPolicy="no-referrer"
               />
-            </button>
+            </Link>
 
             {/* Desktop Nav */}
             <div className="hidden md:flex items-center gap-8">
@@ -2090,9 +2097,21 @@ const INITIAL_ARCHIVE: Project[] = [
   }
 ];
 
+// --- Scroll To Top Helper ---
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+  
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  
+  return null;
+};
+
 export default function App() {
   return (
     <Router>
+      <ScrollToTop />
       <div className="min-h-screen bg-brand-dark selection:bg-brand-red selection:text-white custom-scrollbar">
         <Navbar />
         <Routes>
