@@ -112,8 +112,12 @@ const VideoPlayer = ({ url, fallbackImage, autoPlay = true, loop = true, muted =
   };
 
   useEffect(() => {
-    if (videoRef.current && videoRef.current.readyState >= 2) {
-      handleReady();
+    if (videoRef.current) {
+      if (videoRef.current.readyState >= 2) {
+        handleReady();
+      }
+      // Explicitly set muted via DOM for better mobile support
+      videoRef.current.muted = true;
     }
   }, []);
 
@@ -129,28 +133,26 @@ const VideoPlayer = ({ url, fallbackImage, autoPlay = true, loop = true, muted =
       />
       
       {!url.includes('youtube.com') && !url.includes('youtu.be') ? (
-        // Disable video on mobile to save bandwidth and improve performance
-        !isMobile ? (
-          <video
-            key={url}
-            ref={videoRef}
-            src={url}
-            autoPlay={autoPlay}
-            muted={muted}
-            loop={loop}
-            playsInline
-            preload={preload}
-            crossOrigin="anonymous"
-            controlsList="nodownload"
-            disablePictureInPicture
-            disableRemotePlayback
-            onContextMenu={(e) => e.preventDefault()}
-            onLoadedData={handleReady}
-            onCanPlay={handleReady}
-            onPlaying={handleReady}
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 z-10 no-save ${isReady ? 'opacity-100' : 'opacity-0'}`}
-          />
-        ) : null
+        <video
+          key={url}
+          ref={videoRef}
+          src={url}
+          autoPlay={autoPlay}
+          muted={true}
+          loop={loop}
+          playsInline
+          webkit-playsinline="true"
+          preload={preload}
+          crossOrigin="anonymous"
+          controlsList="nodownload nofullscreen noremoteplayback"
+          disablePictureInPicture
+          disableRemotePlayback
+          onContextMenu={(e) => e.preventDefault()}
+          onLoadedData={handleReady}
+          onCanPlay={handleReady}
+          onPlaying={handleReady}
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 z-10 no-save pointer-events-none select-none ${isReady ? 'opacity-100' : 'opacity-0'}`}
+        />
       ) : (
         /* YouTube Embed */
         <iframe
@@ -1107,11 +1109,11 @@ const Archive = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                 <div 
                   className="absolute inset-0 w-full h-full grayscale group-hover:grayscale-0 brightness-[0.7] group-hover:brightness-100 transition-all duration-1000 overflow-hidden pointer-events-none bg-black"
                 >
-                  <VideoPlayer 
-                    url={getOptimizedUrl(project.videoUrl || `https://www.youtube.com/watch?v=${project.backgroundVideoId}`)}
-                    fallbackImage={getOptimizedUrl(project.image, 800, 450)}
-                    preload="none"
-                  />
+                    <VideoPlayer 
+                      url={getOptimizedUrl(project.videoUrl || `https://www.youtube.com/watch?v=${project.backgroundVideoId}`)}
+                      fallbackImage={getOptimizedUrl(project.image, 800, 450)}
+                      preload="metadata"
+                    />
                   {/* 叠加遮罩层，默认较暗以突出文字，滑过时变透明 */}
                   <div className="absolute inset-0 bg-black/50 group-hover:bg-black/10 transition-colors duration-1000" />
                 </div>
