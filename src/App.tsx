@@ -117,14 +117,14 @@ const VideoPlayer = ({ url, fallbackImage, autoPlay = true, loop = true, muted =
       if (videoRef.current.readyState >= 2) {
         handleReady();
       }
-      // Explicitly set muted and mobile specific attributes via DOM
       videoRef.current.muted = true;
       videoRef.current.setAttribute('playsinline', 'true');
       videoRef.current.setAttribute('webkit-playsinline', 'true');
       videoRef.current.setAttribute('x5-playsinline', 'true');
       videoRef.current.setAttribute('x5-video-player-type', 'h5');
-      videoRef.current.setAttribute('x5-video-player-fullscreen', 'true');
-      videoRef.current.setAttribute('x5-video-orientation', 'portrait');
+      // 控制下载提醒，加强防嗅探提示
+      videoRef.current.setAttribute('controlsList', 'nodownload nofullscreen noremoteplayback');
+      videoRef.current.oncontextmenu = (e) => e.preventDefault();
     }
   }, [url]);
 
@@ -133,9 +133,8 @@ const VideoPlayer = ({ url, fallbackImage, autoPlay = true, loop = true, muted =
       {/* 始终显示封面图作为占位，直到视频准备就绪 */}
       <img
         src={fallbackImage}
-        alt="Video thumbnail"
+        alt=""
         className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 z-0 ${isReady ? 'opacity-0' : 'opacity-100'}`}
-        loading="lazy"
         referrerPolicy="no-referrer"
       />
       
@@ -149,8 +148,6 @@ const VideoPlayer = ({ url, fallbackImage, autoPlay = true, loop = true, muted =
           loop={loop}
           playsInline
           webkit-playsinline="true"
-          x5-playsinline="true"
-          x5-video-player-type="h5"
           preload={preload}
           crossOrigin="anonymous"
           controlsList="nodownload nofullscreen noremoteplayback"
@@ -160,7 +157,8 @@ const VideoPlayer = ({ url, fallbackImage, autoPlay = true, loop = true, muted =
           onLoadedData={handleReady}
           onCanPlay={handleReady}
           onPlaying={handleReady}
-          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 z-10 no-save pointer-events-none select-none ${isReady ? 'opacity-100' : 'opacity-0'}`}
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 z-10 no-save pointer-events-none select-none ${isReady ? 'opacity-100' : 'opacity-100' /* 强制保持可见或受 Ready 状态控制 */}`}
+          style={{ opacity: isReady ? 1 : 0 }}
         />
       ) : (
         /* YouTube Embed */
@@ -401,10 +399,10 @@ const Navbar = () => {
                   document.getElementById('home')?.scrollIntoView({ behavior: 'smooth' });
                 } else {
                   navigate('/');
-                  // Force scroll to top after navigation
-                  setTimeout(() => {
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                  }, 100);
+                  // 使用更高可靠性的滚动重置
+                  window.requestAnimationFrame(() => {
+                    window.scrollTo({ top: 0, behavior: 'instant' });
+                  });
                 }
               }}
               className="flex items-center"
@@ -1229,13 +1227,15 @@ const Featured = () => {
           const name = decodeURIComponent(file.name);
           const fileName = name.split('.')[0];
           
-          const firstUnderscoreIndex = fileName.indexOf('_');
-          let title = firstUnderscoreIndex !== -1 ? fileName.substring(0, firstUnderscoreIndex) : fileName;
+          // 优化标题解析：将下划线和中划线换成空格，去除末尾数字标识
+          let title = fileName.replace(/[_-]/g, ' ').replace(/\s\d+$/, '');
           
-          title = title.replace(/-\d+$/, '');
-          if (title.toUpperCase() === 'NRA') title = title + " Show";
-          if (title.toUpperCase() === 'XINJIANG') title = title + " Travel";
+          if (title.toUpperCase() === 'NRA') title = "NRA Show";
+          if (title.toUpperCase() === 'XINJIANG') title = "Xinjiang Travel";
           
+          // 保证首字母大写
+          title = title.replace(/\b\w/g, (l: string) => l.toUpperCase());
+
           let time = "2 0 2 5";
           const dateMatch = fileName.match(/20\d{4}/);
           if (dateMatch) {
@@ -1406,16 +1406,20 @@ const Featured = () => {
                       fetchPriority={index < 3 ? "high" : "auto"}
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
-                        // Avoid infinite recursion
+                        // 如果已经尝试过原始链接也失败，则显示占位图
                         if (target.dataset.tried === 'original') {
-                          target.src = 'https://placehold.co/600x400/111/fff?text=Image+Load+Error';
+                          target.src = `https://images.unsplash.com/photo-1542831371-29b0f74f9713?q=80&w=1000&auto=format&fit=crop`; // 优质占位图
                           return;
                         }
                         
-                        console.warn("Image load failed, trying raw GitHub URL:", item.image);
                         target.dataset.tried = 'original';
-                        // Fallback to original image without wsrv.nl optimization
-                        target.src = item.image;
+                        // 桌面端加载失败尝试切换协议或直接链接
+                        const currentUrl = target.src;
+                        if (currentUrl.includes('wsrv.nl')) {
+                           target.src = item.image;
+                        } else {
+                           target.src = `https://images.unsplash.com/photo-1542831371-29b0f74f9713?q=80&w=1000&auto=format&fit=crop`;
+                        }
                       }}
                     />
                   </div>
