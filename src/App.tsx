@@ -1406,8 +1406,15 @@ const Featured = () => {
                       fetchPriority={index < 3 ? "high" : "auto"}
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
-                        if (!target.src.includes('wsrv.nl')) return; // Avoid infinite loop
-                        // Fallback to direct URL if optimization fails
+                        // Avoid infinite recursion
+                        if (target.dataset.tried === 'original') {
+                          target.src = 'https://placehold.co/600x400/111/fff?text=Image+Load+Error';
+                          return;
+                        }
+                        
+                        console.warn("Image load failed, trying raw GitHub URL:", item.image);
+                        target.dataset.tried = 'original';
+                        // Fallback to original image without wsrv.nl optimization
                         target.src = item.image;
                       }}
                     />
@@ -1783,10 +1790,18 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                 const { data } = JSON.parse(cachedData);
                 setProject(prev => ({ ...prev, galleryImages: data }));
                 setError(`Note: Displaying cached content. ${statusMsg}`);
+                // Automatic cache cleanup if error persists
+                if (localStorage.getItem('github_error_count')) {
+                  const count = parseInt(localStorage.getItem('github_error_count') || '0');
+                  if (count > 3) localStorage.clear();
+                  localStorage.setItem('github_error_count', (count + 1).toString());
+                } else {
+                  localStorage.setItem('github_error_count', '1');
+                }
                 return;
               } catch(e) {}
             }
-            setError(`GitHub API rate limit reached. ${statusMsg} ${message}`);
+            setError(`GitHub API rate limit reached. ${statusMsg} ${message}. Please check if GITHUB_TOKEN is correct in project Secrets.`);
           } else if (response.status === 404) {
             setError(`Folder '${folderName}' not found in the repository.`);
           } else {
@@ -1882,16 +1897,31 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
               <p className="text-brand-red text-[10px] font-bold tracking-widest uppercase mb-2">Sync Status</p>
               <p className="text-white/40 text-xs italic mb-8 mx-auto max-w-sm">{error}</p>
               {error.includes("rate limit") && (
-                <button 
-                  onClick={() => {
-                    localStorage.clear();
-                    // Just reload the current page to retry fetch
-                    window.location.reload();
-                  }}
-                  className="px-8 py-3 border border-white/10 bg-white/5 text-[10px] font-bold tracking-widest hover:border-white transition-all uppercase"
-                >
-                  Clear Cache & Retry
-                </button>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <button 
+              onClick={() => {
+                localStorage.clear();
+                window.location.reload();
+              }}
+              className="px-8 py-3 border border-white/10 bg-white/5 text-[10px] font-bold tracking-widest hover:border-white transition-all uppercase"
+            >
+              Clear Cache & Retry
+            </button>
+            <button 
+              onClick={async () => {
+                try {
+                  const res = await fetch('/api/github-status');
+                  const status = await res.json();
+                  alert(`Server Status:\nToken Configured: ${status.tokenConfigured}\nValidation: ${status.validation.message}\nRate Limit Remaining: ${status.validation.rateLimit}`);
+                } catch (e) {
+                  alert("Failed to fetch server status. Check if server is running.");
+                }
+              }}
+              className="px-8 py-3 border border-brand-primary/50 text-brand-primary text-[10px] font-bold tracking-widest hover:bg-brand-primary hover:text-black transition-all uppercase"
+            >
+              Check Server Token Status
+            </button>
+          </div>
               )}
             </div>
           ) : galleryItems.length === 0 && !isLoading ? (
