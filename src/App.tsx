@@ -1069,6 +1069,11 @@ const Featured = () => {
     return featuredItems;
   }, [featuredItems]);
 
+  // 当列表长度发生变化或强制手动刷新时，重置滚动位置
+  useEffect(() => {
+    x.set(0);
+  }, [shuffledItems.length, x]);
+
   const displayItems = useMemo(() => {
     if (shuffledItems.length === 0) return [];
     // 增加更高的重复次数，确保哪怕在 8K 或多屏宽屏上也能平稳循环
@@ -1102,26 +1107,7 @@ const Featured = () => {
   // Handle wrapping during drag
   useEffect(() => {
     return x.on('change', (v) => {
-      if (containerRef.current) {
-        const scrollWidth = containerRef.current.scrollWidth;
-        const count = shuffledItems.length;
-        if (count === 0) return;
-        
-        const itemWidth = scrollWidth / (displayItems.length / count);
-        
-        if (v <= -itemWidth) {
-          x.set(v + itemWidth);
-        } else if (v > 0) {
-          x.set(v - itemWidth);
-        }
-      }
-    });
-  }, [x, displayItems.length, shuffledItems.length]);
-
-  // GitHub Folder Configuration
-  const GITHUB_FOLDER = "Life"; 
-
-  const processFiles = (data: any[]) => {
+      if (containerRe  const processFiles = (data: any[]) => {
     const githubItems: Project[] = data
       .filter((file: any) => 
         file.type === 'file' && 
@@ -1130,33 +1116,23 @@ const Featured = () => {
       .map((file: any, index: number) => {
         const name = decodeURIComponent(file.name);
         const fileName = name.split('.')[0];
-        const rawName = fileName.toLowerCase();
+        const rawName = fileName.toLowerCase().replace(/_/g, ' ');
         let title = "";
         
-        if (rawName.includes('xinjiang')) {
+        // 移除日期部分 (如 202601)
+        const nameWithoutDate = fileName.replace(/_20\d{4}$/, '').replace(/_20\d{2}$/, '');
+        const parts = nameWithoutDate.split('_');
+
+        if (nameWithoutDate.toLowerCase().includes('xinjiang')) {
           title = "Xinjiang Travel";
-        } else if (rawName === 'nra' || rawName.startsWith('nra_')) {
+        } else if (nameWithoutDate.toLowerCase().startsWith('nra')) {
           title = "NRA Show";
+        } else if (nameWithoutDate.toLowerCase().startsWith('osight')) {
+          // 保持首字母大写，后续部分也处理
+          title = parts.map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join(' ');
+          if (title.toLowerCase() === 'osight ai') title = 'Osight AI';
         } else {
-          // 更智能的标题解析：通过下划线分割，排除日期部分
-          let nameParts = fileName.split('_');
-          // 如果最后一部分是 6 位数字且以 20 开头（例：202601），则视为日期并移除
-          if (nameParts.length > 1 && nameParts[nameParts.length - 1].match(/^20\d{4}$/)) {
-             nameParts.pop();
-          }
-          title = nameParts.join(' ');
-          
-          if (title.toLowerCase().startsWith('osight')) {
-            // 如果是以 Osight 开头，确保后续部分也被正确保留
-            // 之前的 logic 只能处理 split('_')[0]，现在 join 之后已经是完整名称了
-            title = title.length > 6 ? `Osight ${title.substring(6).trim()}` : "Osight";
-          }
-          
-          // 首字母大写优化
-          title = title.trim();
-          if (title.length > 0) {
-            title = title.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-          }
+          title = parts.map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join(' ');
         }
 
         let time = "2 0 2 5";
@@ -1166,23 +1142,29 @@ const Featured = () => {
            time = dateStr.split('').map((char, i) => i === 3 ? char + ' . ' : char).join(' ');
         }
 
+        // GitHub 原始地址
         const imageUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_REF}/${GITHUB_FOLDER}/${encodeURIComponent(file.name)}`;
-        // 增加备用的 statically 代理 URL
-        const fallbackUrl = `https://cdn.statically.io/gh/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_REF}/${GITHUB_FOLDER}/${file.name}`;
+        // Statically CDN (对中国用户较友好)
+        const staticallyUrl = `https://cdn.statically.io/gh/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_REF}/${GITHUB_FOLDER}/${file.name}`;
+        // jsDelivr CDN
+        const jsdelivrUrl = `https://cdn.jsdelivr.net/gh/${GITHUB_USER}/${GITHUB_REPO}@${GITHUB_REF}/${GITHUB_FOLDER}/${file.name}`;
 
         return {
           id: 2000 + index,
           title: title, 
           category: "Life",
           image: imageUrl,
-          fallbackImage: fallbackUrl,
-          time: time
-        };
+          fallbackImage: staticallyUrl,
+          time: time,
+          // 记录所有备选地址
+          altImages: [jsdelivrUrl, staticallyUrl, imageUrl]
+        } as Project & { altImages: string[] };
       });
 
     if (githubItems.length > 0) {
-      let shuffled = [...githubItems].sort(() => Math.random() - 0.5);
+      const shuffled = [...githubItems].sort(() => Math.random() - 0.5);
       setFeaturedItems(shuffled.slice(0, 48)); 
+      setShuffleVersion(prev => prev + 1);
       return true;
     }
     return false;
@@ -1191,16 +1173,22 @@ const Featured = () => {
   const fetchGitHubImages = async (isManual = false) => {
     if (isManual) {
       setIsLoading(true);
+      // 先清空展示，形成点击后的视觉回馈
+      setFeaturedItems([]);
       localStorage.removeItem(`github_images_cache_${GITHUB_REF}`);
     }
 
+    // 先检查缓存 (非手动模式)
     if (!isManual) {
       const cached = localStorage.getItem(`github_images_cache_${GITHUB_REF}`);
       if (cached) {
         try {
           const parsedCache = JSON.parse(cached);
-          if (Array.isArray(parsedCache) && processFiles(parsedCache)) {
-            setIsLoading(false); 
+          if (Array.isArray(parsedCache)) {
+             if (processFiles(parsedCache)) {
+               setIsLoading(false);
+               return;
+             }
           }
         } catch (e) { }
       }
@@ -1211,7 +1199,37 @@ const Featured = () => {
       proxy: `/api/github-proxy?owner=${GITHUB_USER}&repo=${GITHUB_REPO}&path=${GITHUB_FOLDER}&ref=${GITHUB_REF}${isManual ? '&t=' + Date.now() : ''}`
     };
 
-    // 优先尝试直接访问，失败后回退代理
+    try {
+      const response = await fetch(controllers.direct);
+      if (response.ok) {
+        const data = await response.json();
+        if (Array.isArray(data)) {
+          localStorage.setItem(`github_images_cache_${GITHUB_REF}`, JSON.stringify(data));
+          processFiles(data);
+          setIsLoading(false);
+          return;
+        }
+      }
+    } catch (e) {}
+
+    try {
+      const response = await fetch(controllers.proxy);
+      if (response.ok) {
+        const data = await response.json();
+        if (Array.isArray(data)) {
+          localStorage.setItem(`github_images_cache_${GITHUB_REF}`, JSON.stringify(data));
+          processFiles(data);
+        }
+      }
+    } catch (err) {
+      console.error("All fetch attempts failed");
+      // 如果彻底失败，加载默认项
+      setFeaturedItems(FEATURED_ITEMS);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+ 优先尝试直接访问，失败后回退代理
     try {
       const response = await fetch(controllers.direct);
       if (response.ok) {
@@ -1325,23 +1343,17 @@ const Featured = () => {
                       style={{ WebkitTouchCallout: 'none', WebkitUserSelect: 'none' }}
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
-                        const currentTried = target.dataset.tried || '';
+                        const altImages = (item as any).altImages || [];
+                        const currentIdx = parseInt(target.dataset.altIdx || "-1");
+                        const nextIdx = currentIdx + 1;
                         
-                        if (currentTried === 'statically') return;
-                        
-                        if (currentTried === 'original') {
-                           // 尝试 statically 代理
-                           target.dataset.tried = 'statically';
-                           if ((item as any).fallbackImage) {
-                             target.src = (item as any).fallbackImage;
-                           }
-                           return;
-                        }
-                        
-                        target.dataset.tried = 'original';
-                        const currentUrl = target.src;
-                        if (currentUrl.includes('wsrv.nl')) {
-                           target.src = item.image;
+                        if (nextIdx < altImages.length) {
+                          target.dataset.altIdx = nextIdx.toString();
+                          target.src = altImages[nextIdx];
+                        } else if (!target.dataset.triedOriginal) {
+                          // 最后尝试一次原始链接（如果不带优化参数）
+                          target.dataset.triedOriginal = "true";
+                          target.src = item.image;
                         }
                       }}
                     />
