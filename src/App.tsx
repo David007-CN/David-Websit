@@ -1342,8 +1342,9 @@ const Featured = () => {
             onMouseLeave={() => setIsHovered(false)}
             style={{ x }}
             drag="x"
-            dragDirectionLock
+            dragElastic={0.1}
             dragConstraints={{ left: -Infinity, right: Infinity }}
+            dragTransition={{ power: 0.2, timeConstant: 200 }}
             onDragStart={() => setIsDragging(true)}
             onDragEnd={() => setIsDragging(false)}
             className="flex gap-8 whitespace-nowrap cursor-grab active:cursor-grabbing touch-pan-y"
@@ -1893,39 +1894,13 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
               <div className="animate-spin w-8 h-8 border-2 border-brand-red border-t-transparent rounded-full mx-auto mb-4" />
               <p className="text-white/20 text-[10px] font-bold tracking-widest uppercase">Connecting to GitHub Source...</p>
             </div>
-          ) : galleryItems.length === 0 && !isLoading ? (
+          ) : (galleryItems.length === 0 && !isLoading) || (error && galleryItems.length === 0 && (error.toLowerCase().includes("not found") || error.toLowerCase().includes("no images found"))) ? (
             <div className="col-span-full py-48 text-center border-y border-white/5 bg-white/[0.01]">
               <p className="text-white/40 text-[13px] italic font-display tracking-wide">No images found in this folder.</p>
             </div>
           ) : error && galleryItems.length === 0 ? (
-            <div className="col-span-full py-24 text-center">
-              <p className="text-brand-red text-[10px] font-bold tracking-widest uppercase mb-2">Sync Status</p>
-              <p className="text-white/40 text-xs italic mb-8 mx-auto max-w-sm">{error}</p>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <button 
-                  onClick={() => {
-                    localStorage.clear();
-                    window.location.reload();
-                  }}
-                  className="px-8 py-3 border border-white/10 bg-white/5 text-[10px] font-bold tracking-widest hover:border-white transition-all uppercase"
-                >
-                  Clear Cache & Retry
-                </button>
-                <button 
-                  onClick={async () => {
-                    try {
-                      const res = await fetch('/api/github-status');
-                      const status = await res.json();
-                      alert(`Server Status:\nToken Configured: ${status.tokenConfigured}\nValidation: ${status.validation.message}\nRate Limit Remaining: ${status.validation.rateLimit}`);
-                    } catch (e) {
-                      alert("Failed to fetch server status. Check if server is running.");
-                    }
-                  }}
-                  className="px-8 py-3 border border-brand-primary/50 text-brand-primary text-[10px] font-bold tracking-widest hover:bg-brand-primary hover:text-black transition-all uppercase"
-                >
-                  Check Server Token Status
-                </button>
-              </div>
+            <div className="col-span-full py-48 text-center border-y border-white/5 bg-white/[0.01]">
+              <p className="text-white/40 text-[13px] italic font-display tracking-wide">No images found in this folder.</p>
             </div>
           ) : galleryItems.map((item, i) => {
             const isObject = typeof item === 'object';
@@ -2089,6 +2064,7 @@ const HomePage = ({ archiveProjects }: { archiveProjects: Project[] }) => (
     <ExperienceAndServices />
     <Spotlight />
     <Archive archiveProjects={archiveProjects} />
+    <div className="h-16 md:h-24 bg-[#0A0A0A]" aria-hidden="true" />
     <Featured />
     <Newsletter />
   </main>
