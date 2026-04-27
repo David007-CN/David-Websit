@@ -101,35 +101,60 @@ const getVideoThumbnail = (url: string, manualCover?: string) => {
 
 const formatTitle = (fileName: string) => {
   if (!fileName) return "";
-  // Handle URLs by taking the last segment
-  let title = fileName.split('/').pop() || fileName;
-  // Remove query parameters
-  title = title.split('?')[0];
-  // Remove extension
-  title = title.replace(/\.[^/.]+$/, "");
+  // 提取文件名（不含路径和扩展名）
+  let name = fileName.split('/').pop() || fileName;
+  name = name.split('?')[0].replace(/\.[^/.]+$/, "");
   
-  // 1. Remove year suffixes like _2025 or _202601
-  title = title.replace(/_?20\d{2,4}.*$/, '');
-  // 2. Remove common camera artifacts
-  title = title.replace(/_?DSC_\d+$/i, '');
-  // 3. Replace underscores/hyphens with spaces
+  const testName = name.toLowerCase();
+
+  // 1. 精确匹配表 (优先级最高)
+  const mapping: { [key: string]: string } = {
+    "nra_202604_dsc_8238": "NRA Show Exhibition",
+    "nra_202604_dsc_8239": "Outdoor Shooting",
+    "nra_202604_dsc_8240": "Product Detail",
+    "osight_se_adjust_brightness": "Osight SE Adjust Brightness",
+    "osight_se_carry": "Osight SE Carry",
+    "osight_se_concealed_carry": "Osight SE Concealed Carry",
+    "xinjiang": "Xinjiang Travel"
+  };
+
+  // 检查是否在映射表中（忽略大小写和下划线/空格差异）
+  const normalizedKey = name.toLowerCase().replace(/[ -]/g, '_');
+  for (const key in mapping) {
+    if (normalizedKey.includes(key)) return mapping[key];
+  }
+
+  // 2. 如果文件名已经是很清晰的标题（含空格且无 DSC/年份字样），直接返回
+  if (name.includes(' ') && !name.match(/DSC_\d+/i) && !name.match(/20\d{2}/)) {
+    return name;
+  }
+
+  // 3. 通用处理逻辑
+  let title = name;
+  
+  // 移除年份标记（如 _202601）
+  title = title.replace(/_?20\d{2,4}(\d{2})?/, '');
+  // 移除相机编号（如 DSC_8238）
+  title = title.replace(/_?DSC_\d+/i, '');
+  // 替换分隔符
   title = title.replace(/[_-]/g, ' ').trim();
-  
-  // Specific case mappings
-  const testTitle = title.toLowerCase();
-  if (testTitle.includes('xinjiang')) return "Xinjiang Travel";
-  if (testTitle.startsWith('nra')) return "NRA Show";
-  if (testTitle.startsWith('osight')) {
-    title = title.replace(/^osight/i, 'Osight');
-    if (testTitle.includes('ai')) title = title.replace(/ai/i, ' AI');
-    return title;
-  }
-  
-  // Formatting: Capitalize if it's all lowercase
-  if (title === title.toLowerCase()) {
-    title = title.split(' ').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ');
-  }
-  
+
+  // 4. 品牌/型号词提取与修正
+  const words = title.split(' ');
+  const formattedWords = words.map(word => {
+    const upper = word.toUpperCase();
+    // 强制大写的缩写
+    if (upper === 'NRA') return 'NRA Show';
+    if (upper === 'XINJIANG') return 'Xinjiang Travel';
+    if (['SE', 'XR', 'AI', 'GN'].includes(upper)) return upper;
+    // 品牌词
+    if (upper === 'OSIGHT') return 'Osight';
+    // 首字母大写
+    return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+  });
+
+  title = formattedWords.join(' ');
+
   return title || "Project Asset";
 };
 
