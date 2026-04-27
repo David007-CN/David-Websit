@@ -1325,6 +1325,11 @@ const Featured = () => {
               <div key={i} className="w-[300px] md:w-[400px] aspect-square bg-white/5 animate-pulse rounded-sm" />
             ))}
           </div>
+        ) : shuffledItems.length === 0 ? (
+          <div className="w-full py-32 text-center border-y border-white/5 bg-white/[0.02]">
+             <p className="text-white/20 text-[11px] font-bold tracking-[0.3em] uppercase mb-2">Sync Status</p>
+             <p className="text-white/40 text-sm italic font-display">No images found in this folder.</p>
+          </div>
         ) : (
           <motion.div 
             ref={containerRef}
@@ -1389,22 +1394,24 @@ const Featured = () => {
         )}
       </div>
 
-      <div className="mt-16 text-center">
-        <motion.button 
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => fetchGitHubImages(true)}
-          className="inline-flex items-center px-6 py-3 bg-white/5 border border-white/10 text-white/50 hover:text-white hover:bg-white/10 hover:border-white/20 rounded-full transition-all duration-300 font-display text-sm tracking-widest uppercase group"
-        >
-          <div className="relative mr-3">
-            <RefreshCw className={`w-4 h-4 transition-transform duration-700 ${isLoading ? 'animate-spin' : 'group-hover:rotate-180'}`} />
-          </div>
-          {isLoading ? 'Shuffling...' : 'Shuffle Random Batch'}
-        </motion.button>
-        <p className="mt-4 text-[10px] text-white/20 tracking-[0.2em] uppercase font-light">
-          Click to explore other moments from the archive
-        </p>
-      </div>
+      {shuffledItems.length > 0 && (
+        <div className="mt-16 text-center">
+          <motion.button 
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => fetchGitHubImages(true)}
+            className="inline-flex items-center px-6 py-3 bg-white/5 border border-white/10 text-white/50 hover:text-white hover:bg-white/10 hover:border-white/20 rounded-full transition-all duration-300 font-display text-sm tracking-widest uppercase group"
+          >
+            <div className="relative mr-3">
+              <RefreshCw className={`w-4 h-4 transition-transform duration-700 ${isLoading ? 'animate-spin' : 'group-hover:rotate-180'}`} />
+            </div>
+            {isLoading ? 'Shuffling...' : 'Shuffle Random Batch'}
+          </motion.button>
+          <p className="mt-4 text-[10px] text-white/20 tracking-[0.2em] uppercase font-light">
+            Click to explore other moments from the archive
+          </p>
+        </div>
+      )}
 
       <AnimatePresence>
         {selectedIndex !== null && selectedItem && (
@@ -1881,41 +1888,41 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
               <div className="animate-spin w-8 h-8 border-2 border-brand-red border-t-transparent rounded-full mx-auto mb-4" />
               <p className="text-white/20 text-[10px] font-bold tracking-widest uppercase">Connecting to GitHub Source...</p>
             </div>
-          ) : error ? (
+          ) : error && !error.includes("No images found") && !error.includes("not found") ? (
             <div className="col-span-full py-24 text-center">
               <p className="text-brand-red text-[10px] font-bold tracking-widest uppercase mb-2">Sync Status</p>
               <p className="text-white/40 text-xs italic mb-8 mx-auto max-w-sm">{error}</p>
               {error.includes("rate limit") && (
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <button 
-              onClick={() => {
-                localStorage.clear();
-                window.location.reload();
-              }}
-              className="px-8 py-3 border border-white/10 bg-white/5 text-[10px] font-bold tracking-widest hover:border-white transition-all uppercase"
-            >
-              Clear Cache & Retry
-            </button>
-            <button 
-              onClick={async () => {
-                try {
-                  const res = await fetch('/api/github-status');
-                  const status = await res.json();
-                  alert(`Server Status:\nToken Configured: ${status.tokenConfigured}\nValidation: ${status.validation.message}\nRate Limit Remaining: ${status.validation.rateLimit}`);
-                } catch (e) {
-                  alert("Failed to fetch server status. Check if server is running.");
-                }
-              }}
-              className="px-8 py-3 border border-brand-primary/50 text-brand-primary text-[10px] font-bold tracking-widest hover:bg-brand-primary hover:text-black transition-all uppercase"
-            >
-              Check Server Token Status
-            </button>
-          </div>
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                  <button 
+                    onClick={() => {
+                      localStorage.clear();
+                      window.location.reload();
+                    }}
+                    className="px-8 py-3 border border-white/10 bg-white/5 text-[10px] font-bold tracking-widest hover:border-white transition-all uppercase"
+                  >
+                    Clear Cache & Retry
+                  </button>
+                  <button 
+                    onClick={async () => {
+                      try {
+                        const res = await fetch('/api/github-status');
+                        const status = await res.json();
+                        alert(`Server Status:\nToken Configured: ${status.tokenConfigured}\nValidation: ${status.validation.message}\nRate Limit Remaining: ${status.validation.rateLimit}`);
+                      } catch (e) {
+                        alert("Failed to fetch server status. Check if server is running.");
+                      }
+                    }}
+                    className="px-8 py-3 border border-brand-primary/50 text-brand-primary text-[10px] font-bold tracking-widest hover:bg-brand-primary hover:text-black transition-all uppercase"
+                  >
+                    Check Server Token Status
+                  </button>
+                </div>
               )}
             </div>
-          ) : galleryItems.length === 0 && !isLoading ? (
+          ) : (galleryItems.length === 0 && !isLoading) || (error && (error.includes("No images found") || error.includes("not found"))) ? (
             <div className="col-span-full py-24 text-center">
-              <p className="text-white/20 text-[10px] font-bold tracking-widest uppercase">No assets found in folder</p>
+              <p className="text-white/20 text-[10px] font-bold tracking-widest uppercase">No images found in this folder.</p>
             </div>
           ) : galleryItems.map((item, i) => {
             const isObject = typeof item === 'object';
@@ -2012,11 +2019,13 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                 }
               }}
               className={`relative shadow-2xl flex items-center justify-center overflow-hidden bg-black ${
-                selectedUrl.includes('bilibili.com') || selectedUrl.includes('youtube.com') || selectedUrl.includes('youtu.be')
-                  ? "w-full max-w-[95vw] aspect-video" 
+                selectedUrl.includes('bilibili.com') || (selectedUrl.includes('youtube.com') && !selectedUrl.includes('shorts/')) || selectedUrl.includes('youtu.be')
+                  ? "w-full max-w-[95vw] max-h-[90vh] aspect-video" 
+                : selectedUrl.includes('shorts/')
+                  ? "h-[85vh] aspect-[9/16] max-w-[95vw]"
                 : selectedUrl.match(/\.(mp4|mov|webm)$/i)
-                  ? "w-auto h-auto max-w-[95vw] max-h-[90vh]"
-                : "w-auto h-auto max-w-[min(95vw,1920px)] max-h-[min(90vh,1080px)]"
+                  ? "max-w-[100vw] max-h-[100vh] w-auto h-auto"
+                : "max-w-[min(95vw,1920px)] max-h-[min(90vh,1080px)] w-auto h-auto"
               }`}
               onClick={(e) => e.stopPropagation()}
             >
@@ -2034,7 +2043,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                   />
                 </div>
               ) : selectedUrl.includes('youtube.com') || selectedUrl.includes('youtu.be') ? (
-                <div className="w-full h-full aspect-video">
+                <div className={`w-full h-full ${selectedUrl.includes('shorts/') ? 'aspect-[9/16]' : 'aspect-video'}`}>
                   <iframe 
                     src={'https://www.youtube.com/embed/' + (
                       selectedUrl.includes('youtu.be') 
