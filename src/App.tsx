@@ -129,6 +129,7 @@ const VideoPlayer = ({ url, fallbackImage, autoPlay = true, loop = true, muted =
       videoRef.current.setAttribute('controlsList', 'nodownload nofullscreen noremoteplayback');
       videoRef.current.setAttribute('disablePictureInPicture', 'true');
       videoRef.current.setAttribute('disableRemotePlayback', 'true');
+      videoRef.current.setAttribute('x-webkit-airplay', 'deny');
       // 核心修复：防止手机端系统显示默认下载或浮动按钮
       // 移除 controls 属性，而不是仅设置为 false，有些浏览器只要检测到属性存在就会显示
       videoRef.current.removeAttribute('controls');
@@ -137,8 +138,9 @@ const VideoPlayer = ({ url, fallbackImage, autoPlay = true, loop = true, muted =
       
       // 对于微信/QQ浏览器的 X5 内核进一步优化
       videoRef.current.setAttribute('x5-video-player-fullscreen', 'true');
-      videoRef.current.setAttribute('x5-video-orientation', 'portait');
+      videoRef.current.setAttribute('x5-video-orientation', 'portrait');
       videoRef.current.setAttribute('x5-video-player-type', 'h5-page');
+      videoRef.current.setAttribute('x5-video-ignore-video-orientation', 'true');
       
       // 尝试自动播放以确保视频加载
       videoRef.current.play().catch(() => {
@@ -158,28 +160,32 @@ const VideoPlayer = ({ url, fallbackImage, autoPlay = true, loop = true, muted =
       />
       
       {!url.includes('youtube.com') && !url.includes('youtu.be') ? (
-        <video
-          key={url}
-          ref={videoRef}
-          src={url}
-          autoPlay={autoPlay}
-          muted={true}
-          loop={loop}
-          playsInline
-          webkit-playsinline="true"
-          x5-playsinline="true"
-          preload={preload}
-          crossOrigin="anonymous"
-          controlsList="nodownload nofullscreen noremoteplayback"
-          disablePictureInPicture
-          disableRemotePlayback
-          onContextMenu={(e) => e.preventDefault()}
-          onLoadedData={handleReady}
-          onCanPlay={handleReady}
-          onPlaying={handleReady}
-          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 z-10 no-save pointer-events-none select-none`}
-          style={{ opacity: isReady ? 1 : 0 }}
-        />
+        <>
+          <video
+            key={url}
+            ref={videoRef}
+            src={url}
+            autoPlay={autoPlay}
+            muted={true}
+            loop={loop}
+            playsInline
+            webkit-playsinline="true"
+            x5-playsinline="true"
+            preload={preload}
+            crossOrigin="anonymous"
+            controlsList="nodownload nofullscreen noremoteplayback"
+            disablePictureInPicture
+            disableRemotePlayback
+            onContextMenu={(e) => e.preventDefault()}
+            onLoadedData={handleReady}
+            onCanPlay={handleReady}
+            onPlaying={handleReady}
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 z-10 no-save pointer-events-none select-none`}
+            style={{ opacity: isReady ? 1 : 0 }}
+          />
+          {/* 透明保护层：防止部分浏览器在长按或点击时弹出下载菜单 */}
+          <div className="absolute inset-0 z-20 bg-transparent pointer-events-auto" onContextMenu={(e) => e.preventDefault()} />
+        </>
       ) : (
         /* YouTube Embed */
         <iframe
@@ -1132,14 +1138,24 @@ const Featured = () => {
         } else if (rawName === 'nra' || rawName.startsWith('nra_')) {
           title = "NRA Show";
         } else {
-          let baseTitle = fileName.includes('_') ? fileName.split('_')[0] : fileName;
-          title = baseTitle.replace(/\d+/g, '').trim();
+          // 更智能的标题解析：通过下划线分割，排除日期部分
+          let nameParts = fileName.split('_');
+          // 如果最后一部分是 6 位数字且以 20 开头（例：202601），则视为日期并移除
+          if (nameParts.length > 1 && nameParts[nameParts.length - 1].match(/^20\d{4}$/)) {
+             nameParts.pop();
+          }
+          title = nameParts.join(' ');
           
           if (title.toLowerCase().startsWith('osight')) {
-            const suffix = baseTitle.substring(6);
-            title = suffix ? `Osight ${suffix}` : "Osight";
-          } else {
-            title = title.length > 0 ? title.charAt(0).toUpperCase() + title.slice(1) : title;
+            // 如果是以 Osight 开头，确保后续部分也被正确保留
+            // 之前的 logic 只能处理 split('_')[0]，现在 join 之后已经是完整名称了
+            title = title.length > 6 ? `Osight ${title.substring(6).trim()}` : "Osight";
+          }
+          
+          // 首字母大写优化
+          title = title.trim();
+          if (title.length > 0) {
+            title = title.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
           }
         }
 
@@ -1151,12 +1167,15 @@ const Featured = () => {
         }
 
         const imageUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_REF}/${GITHUB_FOLDER}/${encodeURIComponent(file.name)}`;
+        // 增加备用的 statically 代理 URL
+        const fallbackUrl = `https://cdn.statically.io/gh/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_REF}/${GITHUB_FOLDER}/${file.name}`;
 
         return {
           id: 2000 + index,
           title: title, 
           category: "Life",
           image: imageUrl,
+          fallbackImage: fallbackUrl,
           time: time
         };
       });
@@ -1306,7 +1325,18 @@ const Featured = () => {
                       style={{ WebkitTouchCallout: 'none', WebkitUserSelect: 'none' }}
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
-                        if (target.dataset.tried === 'original') return;
+                        const currentTried = target.dataset.tried || '';
+                        
+                        if (currentTried === 'statically') return;
+                        
+                        if (currentTried === 'original') {
+                           // 尝试 statically 代理
+                           target.dataset.tried = 'statically';
+                           if ((item as any).fallbackImage) {
+                             target.src = (item as any).fallbackImage;
+                           }
+                           return;
+                        }
                         
                         target.dataset.tried = 'original';
                         const currentUrl = target.src;
