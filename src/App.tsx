@@ -91,7 +91,9 @@ const getVideoThumbnail = (url: string, manualCover?: string) => {
   if (url.includes('youtube.com') || url.includes('youtu.be')) {
     const id = url.includes('youtu.be') 
       ? url.split('/').pop()?.split('?')[0] 
-      : new URLSearchParams(new URL(url).search).get('v');
+      : url.includes('shorts/')
+        ? url.split('shorts/')[1].split('?')[0]
+        : new URLSearchParams(new URL(url).search).get('v');
     if (id) return `https://wsrv.nl/?url=https://img.youtube.com/vi/${id}/maxresdefault.jpg&af&il&w=800&h=450`;
   }
   
@@ -194,7 +196,13 @@ const VideoPlayer = ({ url, fallbackImage, autoPlay = true, loop = true, muted =
   }, [url]);
 
   const isYouTube = url.includes('youtube.com') || url.includes('youtu.be');
-  const youTubeId = isYouTube ? (url.includes('youtu.be') ? url.split('/').pop() : new URLSearchParams(new URL(url).search).get('v')) : '';
+  const youTubeId = isYouTube ? (
+    url.includes('youtu.be') 
+      ? url.split('/').pop()?.split('?')[0] 
+      : url.includes('shorts/')
+        ? url.split('shorts/')[1].split('?')[0]
+        : new URLSearchParams(new URL(url).search).get('v')
+  ) : '';
 
   return (
     <div className="absolute inset-0 w-full h-full pointer-events-none bg-black overflow-hidden select-none">
@@ -283,11 +291,20 @@ const FEATURED_ITEMS: Project[] = [
   { id: 101, title: "Osight SE Adjust Brightness", category: "Life", image: "https://raw.githubusercontent.com/David007-CN/DW/302b80babe660745f95431389997b321af1c495b/Life/Osight%20SE%20Adjust%20Brightness_202601.jpg", time: "2 0 2 6 . 0 1" },
   { id: 102, title: "Osight SE Carry", category: "Life", image: "https://raw.githubusercontent.com/David007-CN/DW/302b80babe660745f95431389997b321af1c495b/Life/Osight%20SE%20Carry_202601.jpg", time: "2 0 2 6 . 0 1" },
   { id: 103, title: "Osight SE Concealed Carry", category: "Life", image: "https://raw.githubusercontent.com/David007-CN/DW/302b80babe660745f95431389997b321af1c495b/Life/Osight%20SE%20Concealed%20Carry_202601.jpg", time: "2 0 2 6 . 0 1" },
-  { id: 104, title: "NRA Show Exhibition", category: "Life", image: "https://raw.githubusercontent.com/David007-CN/DW/302b80babe660745f95431389997b321af1c495b/Life/NRA_202604_DSC_8238.jpg", time: "2 0 2 6 . 0 4" },
+  { id: 104, title: "NRA Show", category: "Life", image: "https://github.com/David007-CN/DW/blob/main/Life/NRA_202604_DSC_8197.JPG?raw=true", time: "2 0 2 6 . 0 4" },
   { id: 105, title: "Osight SE", category: "Life", image: "https://raw.githubusercontent.com/David007-CN/DW/302b80babe660745f95431389997b321af1c495b/Life/Osight%20SE_202604.jpg", time: "2 0 2 6 . 0 4" },
   { id: 106, title: "Osight XR", category: "Life", image: "https://raw.githubusercontent.com/David007-CN/DW/302b80babe660745f95431389997b321af1c495b/Life/Osight%20XR_202601.jpg", time: "2 0 2 6 . 0 1" },
-  { id: 107, title: "Outdoor Shooting", category: "Life", image: "https://raw.githubusercontent.com/David007-CN/DW/302b80babe660745f95431389997b321af1c495b/Life/NRA_202604_DSC_8239.jpg", time: "2 0 2 6 . 0 4" },
-  { id: 108, title: "Product Detail", category: "Life", image: "https://raw.githubusercontent.com/David007-CN/DW/302b80babe660745f95431389997b321af1c495b/Life/NRA_202604_DSC_8240.jpg", time: "2 0 2 6 . 0 4" },
+  { id: 107, title: "NRA Show", category: "Life", image: "https://github.com/David007-CN/DW/blob/main/Life/NRA_202604_DSC_8238.JPG?raw=true", time: "2 0 2 6 . 0 4" },
+  { id: 108, title: "NRA Show", category: "Life", image: "https://github.com/David007-CN/DW/blob/main/Life/NRA_202604_DSC_8303.JPG?raw=true", time: "2 0 2 6 . 0 4" },
+  { id: 109, title: "Xinjiang Travel", category: "Life", image: "https://github.com/David007-CN/DW/blob/main/Life/Xinjiang-13_202501.jpg?raw=true", time: "2 0 2 5 . 0 1" },
+  { id: 110, title: "NRA Show", category: "Life", image: "https://github.com/David007-CN/DW/blob/main/Life/NRA_202604_DSC_8307.JPG?raw=true", time: "2 0 2 6 . 0 4" },
+  { id: 111, title: "Xinjiang Travel", category: "Life", image: "https://github.com/David007-CN/DW/blob/main/Life/Xinjiang-14_202501.jpg?raw=true", time: "2 0 2 5 . 0 1" },
+  { id: 112, title: "Xinjiang Travel", category: "Life", image: "https://github.com/David007-CN/DW/blob/main/Life/Xinjiang-15_202501.jpg?raw=true", time: "2 0 2 5 . 0 1" },
+  { id: 113, title: "NRA Show", category: "Life", image: "https://github.com/David007-CN/DW/blob/main/Life/NRA_202604_DSC_8389.JPG?raw=true", time: "2 0 2 6 . 0 4" },
+  { id: 114, title: "NRA Show", category: "Life", image: "https://github.com/David007-CN/DW/blob/main/Life/NRA_202604_DSC_8390.JPG?raw=true", time: "2 0 2 6 . 0 4" },
+  { id: 115, title: "Xinjiang Travel", category: "Life", image: "https://github.com/David007-CN/DW/blob/main/Life/Xinjiang-1_202501.jpg?raw=true", time: "2 0 2 5 . 0 1" },
+  { id: 116, title: "Xinjiang Travel", category: "Life", image: "https://github.com/David007-CN/DW/blob/main/Life/Xinjiang-3_202501.jpg?raw=true", time: "2 0 2 5 . 0 1" },
+  { id: 117, title: "Xinjiang Travel", category: "Life", image: "https://github.com/David007-CN/DW/blob/main/Life/Xinjiang-4_202501.jpg?raw=true", time: "2 0 2 5 . 0 1" },
 ];
 
 // --- Components ---
@@ -1994,7 +2011,13 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                   handlePrev();
                 }
               }}
-              className="relative w-full max-w-[95vw] max-h-[90vh] shadow-2xl flex items-center justify-center overflow-hidden bg-black"
+              className={`relative shadow-2xl flex items-center justify-center overflow-hidden bg-black ${
+                selectedUrl.includes('bilibili.com') || selectedUrl.includes('youtube.com') || selectedUrl.includes('youtu.be')
+                  ? "w-full max-w-[95vw] aspect-video" 
+                : selectedUrl.match(/\.(mp4|mov|webm)$/i)
+                  ? "w-auto h-auto max-w-[95vw] max-h-[90vh]"
+                : "w-auto h-auto max-w-[min(95vw,1920px)] max-h-[min(90vh,1080px)]"
+              }`}
               onClick={(e) => e.stopPropagation()}
             >
               {selectedUrl.includes('bilibili.com') || selectedUrl.includes('player.bilibili.com') ? (
@@ -2016,7 +2039,9 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                     src={'https://www.youtube.com/embed/' + (
                       selectedUrl.includes('youtu.be') 
                         ? selectedUrl.split('/').pop()?.split('?')[0] 
-                        : (selectedUrl.includes('v=') ? selectedUrl.split('v=')[1].split('&')[0] : '')
+                        : selectedUrl.includes('shorts/')
+                          ? selectedUrl.split('shorts/')[1].split('?')[0]
+                          : (selectedUrl.includes('v=') ? selectedUrl.split('v=')[1].split('&')[0] : '')
                     ) + '?autoplay=1'}
                     className="w-full h-full border-none"
                     allowFullScreen
@@ -2163,6 +2188,10 @@ const INITIAL_ARCHIVE: Project[] = [
         url: "https://www.bilibili.com/video/BV1oNkTBnErQ?t=79.5", 
         cover: "https://raw.githubusercontent.com/David007-CN/DW/main/Cover/03_DSC06797.jpg",
         title: "【双板新手入门】第二课 犁式刹车和拐弯！"
+      },
+      { 
+        url: "https://www.youtube.com/shorts/6mLs_SSOnh4?feature=share", 
+        title: "D-V8"
       },
     ]
   }
