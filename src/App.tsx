@@ -1325,11 +1325,6 @@ const Featured = () => {
               <div key={i} className="w-[300px] md:w-[400px] aspect-square bg-white/5 animate-pulse rounded-sm" />
             ))}
           </div>
-        ) : shuffledItems.length === 0 ? (
-          <div className="w-full py-32 text-center border-y border-white/5 bg-white/[0.02]">
-             <p className="text-white/20 text-[11px] font-bold tracking-[0.3em] uppercase mb-2">Sync Status</p>
-             <p className="text-white/40 text-sm italic font-display">No images found in this folder.</p>
-          </div>
         ) : (
           <motion.div 
             ref={containerRef}
@@ -1394,7 +1389,7 @@ const Featured = () => {
         )}
       </div>
 
-      {shuffledItems.length > 0 && (
+      {shuffledItems.length >= 0 && (
         <div className="mt-16 text-center">
           <motion.button 
             whileHover={{ scale: 1.05 }}
@@ -1922,7 +1917,8 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
             </div>
           ) : (galleryItems.length === 0 && !isLoading) || (error && (error.includes("No images found") || error.includes("not found"))) ? (
             <div className="col-span-full py-24 text-center">
-              <p className="text-white/20 text-[10px] font-bold tracking-widest uppercase">No images found in this folder.</p>
+              <p className="text-white/20 text-[11px] font-bold tracking-[0.3em] uppercase mb-2">Sync Status</p>
+              <p className="text-white/40 text-sm italic font-display">No images found in this folder.</p>
             </div>
           ) : galleryItems.map((item, i) => {
             const isObject = typeof item === 'object';
@@ -2022,7 +2018,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                 selectedUrl.includes('bilibili.com') || (selectedUrl.includes('youtube.com') && !selectedUrl.includes('shorts/')) || selectedUrl.includes('youtu.be')
                   ? "w-full max-w-[95vw] max-h-[90vh] aspect-video" 
                 : selectedUrl.includes('shorts/')
-                  ? "h-[85vh] aspect-[9/16] max-w-[95vw]"
+                  ? "max-h-[85vh] aspect-[9/16] w-auto max-w-[95vw]"
                 : selectedUrl.match(/\.(mp4|mov|webm)$/i)
                   ? "max-w-[100vw] max-h-[100vh] w-auto h-auto"
                 : "max-w-[min(95vw,1920px)] max-h-[min(90vh,1080px)] w-auto h-auto"
