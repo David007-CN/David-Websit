@@ -36,6 +36,7 @@ import { PROJECTS } from './data/projects';
 const GITHUB_USER = "David007-CN";
 const GITHUB_REPO = "DW";
 const GITHUB_REF = "main";
+const GITHUB_FOLDER = "Featured";
 
 // Detection for mobile performance
 const isMobile = typeof window !== 'undefined' ? /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768 : false;
@@ -165,6 +166,7 @@ const VideoPlayer = ({ url, fallbackImage, autoPlay = true, loop = true, muted =
             key={url}
             ref={videoRef}
             src={url}
+            poster={fallbackImage}
             autoPlay={autoPlay}
             muted={true}
             loop={loop}
@@ -183,8 +185,24 @@ const VideoPlayer = ({ url, fallbackImage, autoPlay = true, loop = true, muted =
             className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 z-10 no-save pointer-events-none select-none`}
             style={{ opacity: isReady ? 1 : 0 }}
           />
-          {/* 透明保护层：防止部分浏览器在长按或点击时弹出下载菜单 */}
-          <div className="absolute inset-0 z-20 bg-transparent pointer-events-auto" onContextMenu={(e) => e.preventDefault()} />
+          {/* 透明保护层：防止部分浏览器在长按或点击时弹出下载菜单。
+              增加 width/height 确保完全覆盖且不影响点击穿透（对于某些特殊交互可能需要，但这里我们要屏蔽右键/长按） */}
+          <div 
+            className="absolute inset-0 z-20 bg-transparent" 
+            onContextMenu={(e) => e.preventDefault()}
+            onTouchStart={(e) => {
+              // 某些浏览器长按会出菜单，尝试阻止
+              const target = e.currentTarget;
+              const timer = setTimeout(() => {
+                // 如果长按发生，这里可以做点什么或者不理会以阻止默认行为
+              }, 500);
+              target.setAttribute('data-longpress-timer', timer.toString());
+            }}
+            onTouchEnd={(e) => {
+              const timer = e.currentTarget.getAttribute('data-longpress-timer');
+              if (timer) clearTimeout(parseInt(timer));
+            }}
+          />
         </>
       ) : (
         /* YouTube Embed */
@@ -1054,11 +1072,11 @@ const Archive = ({ archiveProjects }: { archiveProjects: Project[] }) => {
   );
 };
 
-
 const Featured = () => {
   const [featuredItems, setFeaturedItems] = useState<Project[]>(FEATURED_ITEMS);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [shuffleVersion, setShuffleVersion] = useState(0);
 
   const [isHovered, setIsHovered] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -1080,7 +1098,7 @@ const Featured = () => {
     const repeatCount = 12; 
     const items = [];
     for (let i = 0; i < repeatCount; i++) {
-      items.push(...shuffledItems);
+        items.push(...shuffledItems);
     }
     return items;
   }, [shuffledItems]);
@@ -1106,8 +1124,24 @@ const Featured = () => {
 
   // Handle wrapping during drag
   useEffect(() => {
-    return x.on('change', (v) => {
-      if (containerRe  const processFiles = (data: any[]) => {
+    const unsub = x.on('change', (v) => {
+      if (containerRef.current) {
+        const scrollWidth = containerRef.current.scrollWidth;
+        const count = shuffledItems.length;
+        if (count === 0) return;
+        const itemWidth = scrollWidth / (displayItems.length / count);
+        
+        if (v <= -itemWidth) {
+          x.set(v + itemWidth);
+        } else if (v > 0) {
+          x.set(v - itemWidth);
+        }
+      }
+    });
+    return unsub;
+  }, [shuffledItems, displayItems.length, x]);
+
+  const processFiles = (data: any[]) => {
     const githubItems: Project[] = data
       .filter((file: any) => 
         file.type === 'file' && 
@@ -1116,7 +1150,6 @@ const Featured = () => {
       .map((file: any, index: number) => {
         const name = decodeURIComponent(file.name);
         const fileName = name.split('.')[0];
-        const rawName = fileName.toLowerCase().replace(/_/g, ' ');
         let title = "";
         
         // 移除日期部分 (如 202601)
@@ -1199,37 +1232,7 @@ const Featured = () => {
       proxy: `/api/github-proxy?owner=${GITHUB_USER}&repo=${GITHUB_REPO}&path=${GITHUB_FOLDER}&ref=${GITHUB_REF}${isManual ? '&t=' + Date.now() : ''}`
     };
 
-    try {
-      const response = await fetch(controllers.direct);
-      if (response.ok) {
-        const data = await response.json();
-        if (Array.isArray(data)) {
-          localStorage.setItem(`github_images_cache_${GITHUB_REF}`, JSON.stringify(data));
-          processFiles(data);
-          setIsLoading(false);
-          return;
-        }
-      }
-    } catch (e) {}
-
-    try {
-      const response = await fetch(controllers.proxy);
-      if (response.ok) {
-        const data = await response.json();
-        if (Array.isArray(data)) {
-          localStorage.setItem(`github_images_cache_${GITHUB_REF}`, JSON.stringify(data));
-          processFiles(data);
-        }
-      }
-    } catch (err) {
-      console.error("All fetch attempts failed");
-      // 如果彻底失败，加载默认项
-      setFeaturedItems(FEATURED_ITEMS);
-    } finally {
-      setIsLoading(false);
-    }
-  };
- 优先尝试直接访问，失败后回退代理
+    // 优先尝试直接访问，失败后回退代理
     try {
       const response = await fetch(controllers.direct);
       if (response.ok) {
@@ -1256,6 +1259,10 @@ const Featured = () => {
       }
     } catch (err) {
       console.error("All fetch attempts failed");
+      // 如果彻底失败且之前没数据
+      if (featuredItems.length === 0) {
+        setFeaturedItems(FEATURED_ITEMS);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -1321,7 +1328,7 @@ const Featured = () => {
           >
             {displayItems.map((item, index) => (
               <motion.div 
-                key={item.id + "-" + index} 
+                key={item.id + "-" + index + "-" + shuffleVersion} 
                 whileHover={{ scale: 1.02 }}
                 onClick={() => {
                   if (isDragging) return;
