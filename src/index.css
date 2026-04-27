@@ -22,6 +22,11 @@
     @apply font-display tracking-tight;
   }
 
+  /* Hide video controls universally */
+  video::-webkit-media-controls {
+    display: none !important;
+    -webkit-appearance: none;
+  }
   /* Hide video download button in Chrome/Android */
   video::-internal-media-controls-download-button {
     display: none !important;
@@ -32,10 +37,18 @@
   video::-webkit-media-controls-panel {
     display: none !important;
   }
-  /* 针对某些国产浏览器的可能注入 */
-  .BDBrowserVideoHelp, .quark-video-player-controls, #native-video-ui {
+  /* 针对国产移动浏览器的强力屏蔽 */
+  .BDBrowserVideoHelp, 
+  .quark-video-player-controls, 
+  #native-video-ui,
+  .vjs-control-bar,
+  .video-download-btn,
+  .uc-video-toolbar,
+  #uc-video-toolbar,
+  [class*="video-download"] {
     display: none !important;
     visibility: hidden !important;
+    opacity: 0 !important;
     pointer-events: none !important;
   }
 

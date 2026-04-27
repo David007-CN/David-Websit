@@ -36,7 +36,7 @@ import { PROJECTS } from './data/projects';
 const GITHUB_USER = "David007-CN";
 const GITHUB_REPO = "DW";
 const GITHUB_REF = "main";
-const GITHUB_FOLDER = "Featured";
+const GITHUB_FOLDER = "Life";
 
 // Detection for mobile performance
 const isMobile = typeof window !== 'undefined' ? /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768 : false;
@@ -186,21 +186,16 @@ const VideoPlayer = ({ url, fallbackImage, autoPlay = true, loop = true, muted =
             style={{ opacity: isReady ? 1 : 0 }}
           />
           {/* 透明保护层：防止部分浏览器在长按或点击时弹出下载菜单。
-              增加 width/height 确保完全覆盖且不影响点击穿透（对于某些特殊交互可能需要，但这里我们要屏蔽右键/长按） */}
+              增加更强的阻止策略 */}
           <div 
-            className="absolute inset-0 z-20 bg-transparent" 
-            onContextMenu={(e) => e.preventDefault()}
-            onTouchStart={(e) => {
-              // 某些浏览器长按会出菜单，尝试阻止
-              const target = e.currentTarget;
-              const timer = setTimeout(() => {
-                // 如果长按发生，这里可以做点什么或者不理会以阻止默认行为
-              }, 500);
-              target.setAttribute('data-longpress-timer', timer.toString());
+            className="absolute inset-0 z-20 bg-transparent cursor-default touch-none no-save" 
+            onContextMenu={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              return false;
             }}
-            onTouchEnd={(e) => {
-              const timer = e.currentTarget.getAttribute('data-longpress-timer');
-              if (timer) clearTimeout(parseInt(timer));
+            onTouchStart={() => {
+              // 尝试阻止系统长按菜单，通过 CSS 类实现
             }}
           />
         </>
@@ -1152,20 +1147,37 @@ const Featured = () => {
         const fileName = name.split('.')[0];
         let title = "";
         
-        // 移除日期部分 (如 202601)
-        const nameWithoutDate = fileName.replace(/_20\d{4}$/, '').replace(/_20\d{2}$/, '');
-        const parts = nameWithoutDate.split('_');
+        // 更精准的日期/后缀移除: 处理 _202601, _2026, 2026等
+        // 如果文件名中包含 20xx 这种年份，且后面跟着数字或下划线，尝试移除连带的部分
+        let nameWithoutSuffix = fileName.replace(/_20\d{4}.*$/, '').replace(/_20\d{2}.*$/, '');
+        // 移除末尾可能残余的下划线 or 空格 or 某些无意义的后缀如 DSC_xxxx
+        nameWithoutSuffix = nameWithoutSuffix.replace(/_DSC_\d+$/i, '').replace(/[_\s]+$/, '');
+        
+        const parts = nameWithoutSuffix.split('_').filter(p => p);
 
-        if (nameWithoutDate.toLowerCase().includes('xinjiang')) {
+        if (nameWithoutSuffix.toLowerCase().includes('xinjiang')) {
           title = "Xinjiang Travel";
-        } else if (nameWithoutDate.toLowerCase().startsWith('nra')) {
+        } else if (nameWithoutSuffix.toLowerCase().startsWith('nra')) {
           title = "NRA Show";
-        } else if (nameWithoutDate.toLowerCase().startsWith('osight')) {
-          // 保持首字母大写，后续部分也处理
-          title = parts.map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join(' ');
+        } else if (nameWithoutSuffix.toLowerCase().startsWith('osight')) {
+          // 针对 Osight 特殊处理：保留 Osight 字样，后续部分首字母大写
+          title = parts.map((p, i) => {
+            if (i === 0 && p.toLowerCase() === 'osight') return "Osight";
+            // 保持原样如果是大写，否则首字母大写
+            if (/[A-Z]/.test(p) && p !== p.toLowerCase()) return p;
+            return p.charAt(0).toUpperCase() + p.slice(1);
+          }).join(' ');
+          // 特殊处理 Osight AI
           if (title.toLowerCase() === 'osight ai') title = 'Osight AI';
         } else {
-          title = parts.map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join(' ');
+          // 一般情况：每个单词首字母大写，保留原有大小写(如果不全是小写)
+          title = parts.map(p => {
+             if (p.length === 0) return "";
+             // 如果原本就有大写字母且不是全小写，倾向于保留原样
+             if (/[A-Z]/.test(p) && p !== p.toLowerCase()) return p;
+             // 否则首字母大写
+             return p.charAt(0).toUpperCase() + p.slice(1);
+          }).join(' ');
         }
 
         let time = "2 0 2 5";
@@ -1195,9 +1207,15 @@ const Featured = () => {
       });
 
     if (githubItems.length > 0) {
-      const shuffled = [...githubItems].sort(() => Math.random() - 0.5);
+      // 深度随机打乱
+      const shuffled = [...githubItems];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      
       setFeaturedItems(shuffled.slice(0, 48)); 
-      setShuffleVersion(prev => prev + 1);
+      setShuffleVersion(v => v + 1);
       return true;
     }
     return false;
