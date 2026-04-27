@@ -21,6 +21,21 @@
     <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/David007-CN/DW/main/David%20Signature/David%20Signature%20red%20bold.png" />
     
     <title>David | Visual Designer & Brand Strategist Portfolio</title>
+    <script>
+      // Prevent the browser's "Add to Home Screen" prompt which can be annoying on some mobile browsers
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+      });
+
+      // Unregister any leftover service workers that might be causing "Resource available" prompts
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          for(let registration of registrations) {
+            registration.unregister();
+          }
+        });
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -1062,7 +1062,7 @@ const Archive = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                     <VideoPlayer 
                       url={project.videoUrl || `https://www.youtube.com/watch?v=${project.backgroundVideoId}`}
                       fallbackImage={getOptimizedUrl(project.image, 800, 450)}
-                      preload="auto"
+                      preload={isMobile ? "none" : "auto"}
                     />
                   {/* 叠加遮罩层 */}
                   <div className="absolute inset-0 bg-black/50 group-hover:bg-black/10 transition-colors duration-1000" />
@@ -1726,9 +1726,6 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
 
       console.log(`Gallery: Fetching ${folderName} via proxy...`);
       try {
-        // Run diagnostic check in background
-        fetch('/api/github-status').then(r => r.json()).then(d => console.log("Proxy Status:", d)).catch(() => {});
-        
         let response = await fetch(apiPath);
         
         if (!response.ok) {
