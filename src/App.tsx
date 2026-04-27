@@ -99,7 +99,7 @@ const getVideoThumbnail = (url: string, manualCover?: string) => {
 };
 
 // --- Video Player ---
-const VideoPlayer = ({ url, fallbackImage, autoPlay = true, loop = true, muted = true, preload = "metadata" }: { 
+const VideoPlayer = ({ url, fallbackImage, autoPlay = true, loop = true, muted = true, preload = "none" }: { 
   url: string, 
   fallbackImage: string,
   autoPlay?: boolean,
@@ -130,9 +130,15 @@ const VideoPlayer = ({ url, fallbackImage, autoPlay = true, loop = true, muted =
       videoRef.current.setAttribute('disablePictureInPicture', 'true');
       videoRef.current.setAttribute('disableRemotePlayback', 'true');
       // 核心修复：防止手机端系统显示默认下载或浮动按钮
-      videoRef.current.setAttribute('controls', 'false');
+      // 移除 controls 属性，而不是仅设置为 false，有些浏览器只要检测到属性存在就会显示
+      videoRef.current.removeAttribute('controls');
       videoRef.current.controls = false;
       videoRef.current.oncontextmenu = (e) => e.preventDefault();
+      
+      // 对于微信/QQ浏览器的 X5 内核进一步优化
+      videoRef.current.setAttribute('x5-video-player-fullscreen', 'true');
+      videoRef.current.setAttribute('x5-video-orientation', 'portait');
+      videoRef.current.setAttribute('x5-video-player-type', 'h5-page');
       
       // 尝试自动播放以确保视频加载
       videoRef.current.play().catch(() => {
@@ -161,6 +167,7 @@ const VideoPlayer = ({ url, fallbackImage, autoPlay = true, loop = true, muted =
           loop={loop}
           playsInline
           webkit-playsinline="true"
+          x5-playsinline="true"
           preload={preload}
           crossOrigin="anonymous"
           controlsList="nodownload nofullscreen noremoteplayback"
@@ -1008,7 +1015,7 @@ const Archive = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                     <VideoPlayer 
                       url={getOptimizedUrl(project.videoUrl || `https://www.youtube.com/watch?v=${project.backgroundVideoId}`)}
                       fallbackImage={getOptimizedUrl(project.image, 800, 450)}
-                      preload="metadata"
+                      preload="none"
                     />
                   {/* 叠加遮罩层，默认较暗以突出文字，滑过时变透明 */}
                   <div className="absolute inset-0 bg-black/50 group-hover:bg-black/10 transition-colors duration-1000" />
@@ -1269,10 +1276,11 @@ const Featured = () => {
             onMouseLeave={() => setIsHovered(false)}
             style={{ x }}
             drag="x"
+            dragDirectionLock
             dragConstraints={{ left: -Infinity, right: Infinity }}
             onDragStart={() => setIsDragging(true)}
             onDragEnd={() => setIsDragging(false)}
-            className="flex gap-8 whitespace-nowrap cursor-grab active:cursor-grabbing"
+            className="flex gap-8 whitespace-nowrap cursor-grab active:cursor-grabbing touch-pan-y"
           >
             {displayItems.map((item, index) => (
               <motion.div 
@@ -1290,7 +1298,7 @@ const Featured = () => {
                     <img 
                       src={getOptimizedUrl(item.image, window.innerWidth > 768 ? 1000 : 800)} 
                       draggable={false}
-                      className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 select-none touch-none" 
+                      className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 select-none" 
                       referrerPolicy="no-referrer" 
                       crossOrigin="anonymous"
                       loading={index < 3 ? "eager" : "lazy"}

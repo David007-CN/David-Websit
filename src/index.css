@@ -27,10 +27,16 @@
     display: none !important;
   }
   video::-webkit-media-controls-enclosure {
-    overflow: hidden !important;
+    display: none !important;
   }
   video::-webkit-media-controls-panel {
-    width: calc(100% + 30px) !important; /* Hide the overflow menu */
+    display: none !important;
+  }
+  /* 针对某些国产浏览器的可能注入 */
+  .BDBrowserVideoHelp, .quark-video-player-controls, #native-video-ui {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
   }
 
   /* Disable long-press to save image/video on mobile */
