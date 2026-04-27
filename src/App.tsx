@@ -1137,6 +1137,8 @@ const Featured = () => {
   }, [shuffledItems, displayItems.length, x]);
 
   const processFiles = (data: any[]) => {
+    if (!Array.isArray(data)) return false;
+    
     const githubItems: Project[] = data
       .filter((file: any) => 
         file.type === 'file' && 
@@ -1145,39 +1147,39 @@ const Featured = () => {
       .map((file: any, index: number) => {
         const name = decodeURIComponent(file.name);
         const fileName = name.split('.')[0];
-        let title = "";
         
-        // 更精准的日期/后缀移除: 处理 _202601, _2026, 2026等
-        // 如果文件名中包含 20xx 这种年份，且后面跟着数字或下划线，尝试移除连带的部分
-        let nameWithoutSuffix = fileName.replace(/_20\d{4}.*$/, '').replace(/_20\d{2}.*$/, '');
-        // 移除末尾可能残余的下划线 or 空格 or 某些无意义的后缀如 DSC_xxxx
-        nameWithoutSuffix = nameWithoutSuffix.replace(/_DSC_\d+$/i, '').replace(/[_\s]+$/, '');
+        // 尝试更智能地解析标题，尽量保持原样
+        let title = fileName;
         
-        const parts = nameWithoutSuffix.split('_').filter(p => p);
-
-        if (nameWithoutSuffix.toLowerCase().includes('xinjiang')) {
-          title = "Xinjiang Travel";
-        } else if (nameWithoutSuffix.toLowerCase().startsWith('nra')) {
-          title = "NRA Show";
-        } else if (nameWithoutSuffix.toLowerCase().startsWith('osight')) {
-          // 针对 Osight 特殊处理：保留 Osight 字样，后续部分首字母大写
-          title = parts.map((p, i) => {
-            if (i === 0 && p.toLowerCase() === 'osight') return "Osight";
-            // 保持原样如果是大写，否则首字母大写
-            if (/[A-Z]/.test(p) && p !== p.toLowerCase()) return p;
-            return p.charAt(0).toUpperCase() + p.slice(1);
-          }).join(' ');
-          // 特殊处理 Osight AI
-          if (title.toLowerCase() === 'osight ai') title = 'Osight AI';
+        // 1. 移除常见的日期后缀
+        title = title.replace(/_?20\d{4}.*$/, '').replace(/_?20\d{2}.*$/, '');
+        // 2. 移除常见的 DSC 后缀
+        title = title.replace(/_?DSC_\d+$/i, '');
+        // 3. 处理下划线为格
+        title = title.replace(/_/g, ' ').trim();
+        
+        // 4. 如果全小写，做首字母大写转换；如果有大写，尝试保持原样
+        if (title === title.toLowerCase()) {
+          title = title.split(' ').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ');
         } else {
-          // 一般情况：每个单词首字母大写，保留原有大小写(如果不全是小写)
-          title = parts.map(p => {
-             if (p.length === 0) return "";
-             // 如果原本就有大写字母且不是全小写，倾向于保留原样
-             if (/[A-Z]/.test(p) && p !== p.toLowerCase()) return p;
-             // 否则首字母大写
-             return p.charAt(0).toUpperCase() + p.slice(1);
+          // 稍微修正：每个单词首字母大写，但如果单词本身是大写的缩写（如 AI），则保持
+          title = title.split(' ').map(s => {
+            if (s.length <= 1) return s.toUpperCase();
+            if (/[A-Z]/.test(s) && s !== s.toLowerCase()) return s; // 包含大写且不全等小写，保持
+            return s.charAt(0).toUpperCase() + s.slice(1);
           }).join(' ');
+        }
+
+        // 针对 Osight 的特殊微调
+        if (title.toLowerCase().startsWith('osight')) {
+          const parts = title.split(' ');
+          if (parts[0].toLowerCase() === 'osight') parts[0] = 'Osight';
+          if (parts[1]?.toLowerCase() === 'ai') parts[1] = 'AI';
+          title = parts.join(' ');
+        } else if (title.toLowerCase().includes('xinjiang')) {
+          title = "Xinjiang Travel";
+        } else if (title.toLowerCase().startsWith('nra')) {
+          title = "NRA Show";
         }
 
         let time = "2 0 2 5";
@@ -1246,42 +1248,43 @@ const Featured = () => {
     }
 
     const controllers = {
-      direct: `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${GITHUB_FOLDER}?ref=${GITHUB_REF}${isManual ? '&t=' + Date.now() : ''}`,
-      proxy: `/api/github-proxy?owner=${GITHUB_USER}&repo=${GITHUB_REPO}&path=${GITHUB_FOLDER}&ref=${GITHUB_REF}${isManual ? '&t=' + Date.now() : ''}`
+      direct: `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${GITHUB_FOLDER}?ref=${GITHUB_REF}&nocache=${Date.now()}`,
+      proxy: `/api/github-proxy?owner=${GITHUB_USER}&repo=${GITHUB_REPO}&path=${GITHUB_FOLDER}&ref=${GITHUB_REF}&t=${Date.now()}`
     };
 
-    // 优先尝试直接访问，失败后回退代理
+    // 优先尝试从 API 获取最新数据
     try {
       const response = await fetch(controllers.direct);
       if (response.ok) {
         const data = await response.json();
-        if (Array.isArray(data)) {
+        if (Array.isArray(data) && data.length > 0) {
           localStorage.setItem(`github_images_cache_${GITHUB_REF}`, JSON.stringify(data));
-          processFiles(data);
-          setIsLoading(false);
-          return;
+          if (processFiles(data)) {
+            setIsLoading(false);
+            return;
+          }
         }
       }
     } catch (e) {
-      console.warn("Direct fetch failed, falling back to proxy...");
+      console.warn("Direct fetch skipped or failed, trying proxy...");
     }
 
     try {
       const response = await fetch(controllers.proxy);
       if (response.ok) {
         const data = await response.json();
-        if (Array.isArray(data)) {
+        if (Array.isArray(data) && data.length > 0) {
           localStorage.setItem(`github_images_cache_${GITHUB_REF}`, JSON.stringify(data));
           processFiles(data);
         }
       }
     } catch (err) {
       console.error("All fetch attempts failed");
-      // 如果彻底失败且之前没数据
+    } finally {
+      // 无论如何都要允许展示
       if (featuredItems.length === 0) {
         setFeaturedItems(FEATURED_ITEMS);
       }
-    } finally {
       setIsLoading(false);
     }
   };
@@ -1318,7 +1321,7 @@ const Featured = () => {
   const selectedItem = selectedIndex !== null ? shuffledItems[selectedIndex] : null;
 
   return (
-    <section id="featured" className="py-16 md:py-24 lg:py-32 bg-[#0A0A0A] overflow-hidden relative">
+    <section id="work-life-section" className="py-16 md:py-24 lg:py-32 bg-[#0A0A0A] overflow-hidden relative min-h-[500px]">
       <div className="max-w-7xl mx-auto px-6 mb-10 md:mb-16 text-center relative">
         <h2 className="text-3xl md:text-5xl font-display font-bold mb-4 tracking-tighter text-white">Work & Life</h2>
         <div className="w-12 h-[1px] bg-brand-red mx-auto mb-6" />
