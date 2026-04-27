@@ -99,7 +99,41 @@ const getVideoThumbnail = (url: string, manualCover?: string) => {
   return `https://wsrv.nl/?url=${encodeURIComponent(placeholder)}&af&il&w=800&h=450`;
 };
 
-// --- Video Player ---
+const formatTitle = (fileName: string) => {
+  if (!fileName) return "";
+  // Handle URLs by taking the last segment
+  let title = fileName.split('/').pop() || fileName;
+  // Remove query parameters
+  title = title.split('?')[0];
+  // Remove extension
+  title = title.replace(/\.[^/.]+$/, "");
+  
+  // 1. Remove year suffixes like _2025 or _202601
+  title = title.replace(/_?20\d{2,4}.*$/, '');
+  // 2. Remove common camera artifacts
+  title = title.replace(/_?DSC_\d+$/i, '');
+  // 3. Replace underscores/hyphens with spaces
+  title = title.replace(/[_-]/g, ' ').trim();
+  
+  // Specific case mappings
+  const testTitle = title.toLowerCase();
+  if (testTitle.includes('xinjiang')) return "Xinjiang Travel";
+  if (testTitle.startsWith('nra')) return "NRA Show";
+  if (testTitle.startsWith('osight')) {
+    title = title.replace(/^osight/i, 'Osight');
+    if (testTitle.includes('ai')) title = title.replace(/ai/i, ' AI');
+    return title;
+  }
+  
+  // Formatting: Capitalize if it's all lowercase
+  if (title === title.toLowerCase()) {
+    title = title.split(' ').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ');
+  }
+  
+  return title || "Project Asset";
+};
+
+// --- Navbar ---
 const VideoPlayer = ({ url, fallbackImage, autoPlay = true, loop = true, muted = true, preload = "none" }: { 
   url: string, 
   fallbackImage: string,
@@ -127,32 +161,18 @@ const VideoPlayer = ({ url, fallbackImage, autoPlay = true, loop = true, muted =
       videoRef.current.setAttribute('webkit-playsinline', 'true');
       videoRef.current.setAttribute('x5-playsinline', 'true');
       videoRef.current.setAttribute('x5-video-player-type', 'h5');
-      videoRef.current.setAttribute('controlsList', 'nodownload nofullscreen noremoteplayback');
-      videoRef.current.setAttribute('disablePictureInPicture', 'true');
-      videoRef.current.setAttribute('disableRemotePlayback', 'true');
-      videoRef.current.setAttribute('x-webkit-airplay', 'deny');
-      // 核心修复：防止手机端系统显示默认下载或浮动按钮
-      // 移除 controls 属性，而不是仅设置为 false，有些浏览器只要检测到属性存在就会显示
-      videoRef.current.removeAttribute('controls');
       videoRef.current.controls = false;
       videoRef.current.oncontextmenu = (e) => e.preventDefault();
       
-      // 对于微信/QQ浏览器的 X5 内核进一步优化
-      videoRef.current.setAttribute('x5-video-player-fullscreen', 'true');
-      videoRef.current.setAttribute('x5-video-orientation', 'portrait');
-      videoRef.current.setAttribute('x5-video-player-type', 'h5-page');
-      videoRef.current.setAttribute('x5-video-ignore-video-orientation', 'true');
-      
-      // 尝试自动播放以确保视频加载
-      videoRef.current.play().catch(() => {
-        // Silent catch for autoplay blocks
-      });
+      videoRef.current.play().catch(() => {});
     }
   }, [url]);
 
+  const isYouTube = url.includes('youtube.com') || url.includes('youtu.be');
+  const youTubeId = isYouTube ? (url.includes('youtu.be') ? url.split('/').pop() : new URLSearchParams(new URL(url).search).get('v')) : '';
+
   return (
     <div className="absolute inset-0 w-full h-full pointer-events-none bg-black overflow-hidden select-none">
-      {/* 始终显示封面图作为占位，直到视频准备就绪 */}
       <img
         src={fallbackImage}
         alt=""
@@ -160,49 +180,24 @@ const VideoPlayer = ({ url, fallbackImage, autoPlay = true, loop = true, muted =
         referrerPolicy="no-referrer"
       />
       
-      {!url.includes('youtube.com') && !url.includes('youtu.be') ? (
-        <>
-          <video
-            key={url}
-            ref={videoRef}
-            src={url}
-            poster={fallbackImage}
-            autoPlay={autoPlay}
-            muted={true}
-            loop={loop}
-            playsInline
-            webkit-playsinline="true"
-            x5-playsinline="true"
-            preload={preload}
-            crossOrigin="anonymous"
-            controlsList="nodownload nofullscreen noremoteplayback"
-            disablePictureInPicture
-            disableRemotePlayback
-            onContextMenu={(e) => e.preventDefault()}
-            onLoadedData={handleReady}
-            onCanPlay={handleReady}
-            onPlaying={handleReady}
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 z-10 no-save pointer-events-none select-none`}
-            style={{ opacity: isReady ? 1 : 0 }}
-          />
-          {/* 透明保护层：防止部分浏览器在长按或点击时弹出下载菜单。
-              增加更强的阻止策略 */}
-          <div 
-            className="absolute inset-0 z-20 bg-transparent cursor-default touch-none no-save" 
-            onContextMenu={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              return false;
-            }}
-            onTouchStart={() => {
-              // 尝试阻止系统长按菜单，通过 CSS 类实现
-            }}
-          />
-        </>
+      {!isYouTube ? (
+        <video
+          key={url}
+          ref={videoRef}
+          src={url}
+          poster={fallbackImage}
+          autoPlay={autoPlay}
+          muted={true}
+          loop={loop}
+          playsInline
+          preload={preload}
+          onLoadedData={handleReady}
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 z-10 pointer-events-none`}
+          style={{ opacity: isReady ? 1 : 0 }}
+        />
       ) : (
-        /* YouTube Embed */
         <iframe
-          src={`https://www.youtube.com/embed/${url.includes('youtu.be') ? url.split('/').pop() : new URLSearchParams(new URL(url).search).get('v')}?autoplay=1&mute=1&loop=1&playlist=${url.includes('youtu.be') ? url.split('/').pop() : new URLSearchParams(new URL(url).search).get('v')}&controls=0&showinfo=0&rel=0&modestbranding=1&iv_load_policy=3&enablejsapi=1`}
+          src={`https://www.youtube.com/embed/${youTubeId}?autoplay=1&mute=1&loop=1&playlist=${youTubeId}&controls=0&modestbranding=1&iv_load_policy=3&enablejsapi=1`}
           className={`absolute inset-0 w-full h-full border-none transition-opacity duration-1000 z-10 ${isReady ? 'opacity-100' : 'opacity-0'}`}
           onLoad={handleReady}
           allow="autoplay; encrypted-media"
@@ -859,22 +854,13 @@ const Spotlight = () => {
                   className="w-full aspect-video mt-14 mb-14 lg:mt-0 lg:mb-0 border border-white/10 p-1 bg-white/5 backdrop-blur-sm cursor-zoom-in group-hover:border-white/30 transition-colors overflow-hidden"
                   onClick={() => setIsZoomed(true)}
                 >
-                  {project.category === 'Video' ? (
-                    <VideoPlayer 
-                      url={getOptimizedUrl(project.videoUrl || `https://www.youtube.com/watch?v=${project.backgroundVideoId}`)}
-                      fallbackImage={getOptimizedUrl(project.image, 1280, 720)}
-                      autoPlay={true}
-                      loop={true}
-                    />
-                  ) : (
-                    <img 
-                      src={getOptimizedUrl(currentImage, window.innerWidth > 768 ? 1280 : 800, window.innerWidth > 768 ? 720 : 450)} 
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
-                      referrerPolicy="no-referrer" 
-                      loading={selectedIndex === 0 ? "eager" : "lazy"}
-                      fetchPriority={selectedIndex === 0 ? "high" : "auto"}
-                    />
-                  )}
+                  <img 
+                    src={getOptimizedUrl(currentImage, window.innerWidth > 768 ? 1280 : 800, window.innerWidth > 768 ? 720 : 450)} 
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+                    referrerPolicy="no-referrer" 
+                    loading={selectedIndex === 0 ? "eager" : "lazy"}
+                    fetchPriority={selectedIndex === 0 ? "high" : "auto"}
+                  />
                   
                   {/* Zoom Icon Hint */}
                   <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 pointer-events-none">
@@ -1032,11 +1018,11 @@ const Archive = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                   className="absolute inset-0 w-full h-full grayscale group-hover:grayscale-0 brightness-[0.7] group-hover:brightness-100 transition-all duration-1000 overflow-hidden pointer-events-none bg-black"
                 >
                     <VideoPlayer 
-                      url={getOptimizedUrl(project.videoUrl || `https://www.youtube.com/watch?v=${project.backgroundVideoId}`)}
+                      url={project.videoUrl || `https://www.youtube.com/watch?v=${project.backgroundVideoId}`}
                       fallbackImage={getOptimizedUrl(project.image, 800, 450)}
-                      preload="none"
+                      preload="auto"
                     />
-                  {/* 叠加遮罩层，默认较暗以突出文字，滑过时变透明 */}
+                  {/* 叠加遮罩层 */}
                   <div className="absolute inset-0 bg-black/50 group-hover:bg-black/10 transition-colors duration-1000" />
                 </div>
               ) : (
@@ -1142,69 +1128,32 @@ const Featured = () => {
     const githubItems: Project[] = data
       .filter((file: any) => 
         file.type === 'file' && 
-        ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif'].some(ext => file.name.toLowerCase().endsWith('.' + ext))
+        ['jpg', 'jpeg', 'png', 'gif', 'webp'].some(ext => file.name.toLowerCase().endsWith('.' + ext))
       )
       .map((file: any, index: number) => {
-        const name = decodeURIComponent(file.name);
-        const fileName = name.split('.')[0];
+        const name = file.name; // Keep original name for URL
+        const title = formatTitle(name);
         
-        // 尝试更智能地解析标题，尽量保持原样
-        let title = fileName;
-        
-        // 1. 移除常见的日期后缀
-        title = title.replace(/_?20\d{4}.*$/, '').replace(/_?20\d{2}.*$/, '');
-        // 2. 移除常见的 DSC 后缀
-        title = title.replace(/_?DSC_\d+$/i, '');
-        // 3. 处理下划线为格
-        title = title.replace(/_/g, ' ').trim();
-        
-        // 4. 如果全小写，做首字母大写转换；如果有大写，尝试保持原样
-        if (title === title.toLowerCase()) {
-          title = title.split(' ').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ');
-        } else {
-          // 稍微修正：每个单词首字母大写，但如果单词本身是大写的缩写（如 AI），则保持
-          title = title.split(' ').map(s => {
-            if (s.length <= 1) return s.toUpperCase();
-            if (/[A-Z]/.test(s) && s !== s.toLowerCase()) return s; // 包含大写且不全等小写，保持
-            return s.charAt(0).toUpperCase() + s.slice(1);
-          }).join(' ');
-        }
-
-        // 针对 Osight 的特殊微调
-        if (title.toLowerCase().startsWith('osight')) {
-          const parts = title.split(' ');
-          if (parts[0].toLowerCase() === 'osight') parts[0] = 'Osight';
-          if (parts[1]?.toLowerCase() === 'ai') parts[1] = 'AI';
-          title = parts.join(' ');
-        } else if (title.toLowerCase().includes('xinjiang')) {
-          title = "Xinjiang Travel";
-        } else if (title.toLowerCase().startsWith('nra')) {
-          title = "NRA Show";
-        }
-
         let time = "2 0 2 5";
-        const dateMatch = fileName.match(/20\d{4}/);
+        const dateMatch = name.match(/20(\d{2,4})/);
         if (dateMatch) {
-           const dateStr = dateMatch[0];
+           const dateStr = dateMatch[0].length === 4 ? dateMatch[0] : `20${dateMatch[1]}`;
            time = dateStr.split('').map((char, i) => i === 3 ? char + ' . ' : char).join(' ');
         }
 
-        // GitHub 原始地址
-        const imageUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_REF}/${GITHUB_FOLDER}/${encodeURIComponent(file.name)}`;
-        // Statically CDN (对中国用户较友好)
-        const staticallyUrl = `https://cdn.statically.io/gh/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_REF}/${GITHUB_FOLDER}/${file.name}`;
-        // jsDelivr CDN
+        // Use jsDelivr as primary mirror for stability, fallback to Statically then Raw
         const jsdelivrUrl = `https://cdn.jsdelivr.net/gh/${GITHUB_USER}/${GITHUB_REPO}@${GITHUB_REF}/${GITHUB_FOLDER}/${file.name}`;
+        const staticallyUrl = `https://cdn.statically.io/gh/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_REF}/${GITHUB_FOLDER}/${file.name}`;
+        const rawUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_REF}/${GITHUB_FOLDER}/${encodeURIComponent(file.name)}`;
 
         return {
           id: 2000 + index,
           title: title, 
           category: "Life",
-          image: imageUrl,
+          image: jsdelivrUrl, // Try jsDelivr first
           fallbackImage: staticallyUrl,
           time: time,
-          // 记录所有备选地址
-          altImages: [jsdelivrUrl, staticallyUrl, imageUrl]
+          altImages: [jsdelivrUrl, staticallyUrl, rawUrl]
         } as Project & { altImages: string[] };
       });
 
@@ -1377,11 +1326,10 @@ const Featured = () => {
                         
                         if (nextIdx < altImages.length) {
                           target.dataset.altIdx = nextIdx.toString();
-                          target.src = altImages[nextIdx];
-                        } else if (!target.dataset.triedOriginal) {
-                          // 最后尝试一次原始链接（如果不带优化参数）
-                          target.dataset.triedOriginal = "true";
-                          target.src = item.image;
+                          target.src = getOptimizedUrl(altImages[nextIdx], window.innerWidth > 768 ? 1000 : 800);
+                        } else {
+                          // Final fallback
+                          target.src = `https://picsum.photos/seed/${item.id}/800/800`;
                         }
                       }}
                     />
@@ -1960,8 +1908,8 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                   )}
                 </div>
                 <div className="flex justify-between items-start gap-2">
-                  <h3 className={`${project.title === "Video" ? "text-base font-bold" : "text-[12px] font-medium text-white/50"} font-display leading-tight flex-grow`}>
-                    {isObject && item.title ? item.title : `${project.category} Case ${i + 1}`}
+                  <h3 className={`${project.title === "Video" || (isObject && item.title) ? "text-base font-bold" : "text-[12px] font-medium text-white/50"} font-display leading-tight flex-grow`}>
+                    {isObject && item.title ? item.title : formatTitle(videoUrl)}
                   </h3>
                   <span className="text-[9px] font-bold text-white/10 tracking-widest shrink-0 mt-0.5">{i + 1}</span>
                 </div>
@@ -2176,16 +2124,16 @@ const INITIAL_ARCHIVE: Project[] = [
     galleryImages: [
       { 
         url: "https://youtu.be/bLBBiNbUMQ4", 
-        title: "D-V8 Concept Reel"
+        title: "Osight X GN — Charge Fast. See Clear. Strike True. ⚡🟢"
       },
       { 
         url: "https://youtu.be/A_TdfLXRKCQ", 
-        title: "Osight Launch Event"
+        title: "We Made OSIGHT SE Green Again"
       },
        { 
         url: "https://www.bilibili.com/video/BV1oNkTBnErQ?t=79.5", 
         cover: "https://raw.githubusercontent.com/David007-CN/DW/main/Cover/03_DSC06797.jpg",
-        title: "Studio Showcase"
+        title: "【双板新手入门】第二课 犁式刹车和拐弯！"
       },
     ]
   }

@@ -73,6 +73,6 @@ export const PROJECTS: Project[] = Array.from({ length: 12 }).map((_, i) => {
     subtitle: "Visual Excellence & Creative Impact",
     category: category,
     description: SPECIAL_DATA[i]?.description || `Professional ${category.toLowerCase()} services tailored for high-stakes visual impact and creative excellence in the modern digital landscape.`,
-    image: SPECIAL_DATA[i]?.image || `https://picsum.photos/seed/work-${i + 1}/1280/720`,
+    image: SPECIAL_DATA[i]?.image || `https://picsum.photos/seed/work-${i + 1}/1280/720`
   };
 });
