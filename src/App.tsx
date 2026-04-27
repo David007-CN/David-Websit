@@ -1217,8 +1217,7 @@ const Featured = () => {
   const fetchGitHubImages = async (isManual = false) => {
     if (isManual) {
       setIsLoading(true);
-      // 先清空展示，形成点击后的视觉回馈
-      setFeaturedItems([]);
+      // Keep existing items until fetch completes for a smooth transition
       localStorage.removeItem(`github_images_cache_${GITHUB_REF}`);
     }
 
@@ -1272,11 +1271,22 @@ const Featured = () => {
     } catch (err) {
       console.error("All fetch attempts failed");
     } finally {
-      // 无论如何都要允许展示，如果获取失败则使用本地默认数据
-      if (featuredItems.length === 0) {
-        setFeaturedItems(FEATURED_ITEMS);
-      }
       setIsLoading(false);
+      // Fallback if fetch failed
+      setFeaturedItems(prev => {
+        if (prev.length === 0) return FEATURED_ITEMS;
+        if (isManual) {
+          // Re-shuffle existing items locally if shuffle was requested but fetch failed
+          const shuffled = [...prev];
+          for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+          }
+          return shuffled;
+        }
+        return prev;
+      });
+      if (isManual) setShuffleVersion(v => v + 1);
     }
   };
 
@@ -1883,7 +1893,11 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
               <div className="animate-spin w-8 h-8 border-2 border-brand-red border-t-transparent rounded-full mx-auto mb-4" />
               <p className="text-white/20 text-[10px] font-bold tracking-widest uppercase">Connecting to GitHub Source...</p>
             </div>
-          ) : error && !error.toLowerCase().includes("no images found") && !error.toLowerCase().includes("not found") ? (
+          ) : galleryItems.length === 0 && !isLoading ? (
+            <div className="col-span-full py-48 text-center border-y border-white/5 bg-white/[0.01]">
+              <p className="text-white/40 text-[13px] italic font-display tracking-wide">No images found in this folder.</p>
+            </div>
+          ) : error && galleryItems.length === 0 ? (
             <div className="col-span-full py-24 text-center">
               <p className="text-brand-red text-[10px] font-bold tracking-widest uppercase mb-2">Sync Status</p>
               <p className="text-white/40 text-xs italic mb-8 mx-auto max-w-sm">{error}</p>
@@ -1912,10 +1926,6 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                   Check Server Token Status
                 </button>
               </div>
-            </div>
-          ) : (galleryItems.length === 0 && !isLoading) || (error && (error.toLowerCase().includes("no images found") || error.toLowerCase().includes("not found"))) ? (
-            <div className="col-span-full py-48 text-center border-y border-white/5 bg-white/[0.01]">
-              <p className="text-white/40 text-[13px] italic font-display tracking-wide">No images found in this folder.</p>
             </div>
           ) : galleryItems.map((item, i) => {
             const isObject = typeof item === 'object';
