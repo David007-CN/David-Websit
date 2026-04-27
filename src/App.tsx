@@ -1994,42 +1994,46 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                   handlePrev();
                 }
               }}
-              className="relative w-full max-w-[90vw] lg:max-w-6xl aspect-video shadow-2xl flex items-center justify-center overflow-hidden bg-black"
+              className="relative w-full max-w-[95vw] max-h-[90vh] shadow-2xl flex items-center justify-center overflow-hidden bg-black"
               onClick={(e) => e.stopPropagation()}
             >
               {selectedUrl.includes('bilibili.com') || selectedUrl.includes('player.bilibili.com') ? (
-                <iframe 
-                  src={
-                    selectedUrl.includes('player.bilibili.com') 
-                      ? selectedUrl 
-                      : 'https://player.bilibili.com/player.html?bvid=' + (selectedUrl.includes('BV') ? 'BV' + selectedUrl.split('BV')[1].split(/[?&/]/)[0] : '') + '&page=1&high_quality=1&autoplay=1'
-                  }
-                  className="w-full h-full border-none"
-                  allowFullScreen
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                />
+                <div className="w-full h-full aspect-video">
+                  <iframe 
+                    src={
+                      selectedUrl.includes('player.bilibili.com') 
+                        ? selectedUrl 
+                        : 'https://player.bilibili.com/player.html?bvid=' + (selectedUrl.includes('BV') ? 'BV' + selectedUrl.split('BV')[1].split(/[?&/]/)[0] : '') + '&page=1&high_quality=1&autoplay=1'
+                    }
+                    className="w-full h-full border-none"
+                    allowFullScreen
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  />
+                </div>
               ) : selectedUrl.includes('youtube.com') || selectedUrl.includes('youtu.be') ? (
-                <iframe 
-                  src={'https://www.youtube.com/embed/' + (
-                    selectedUrl.includes('youtu.be') 
-                      ? selectedUrl.split('/').pop()?.split('?')[0] 
-                      : (selectedUrl.includes('v=') ? selectedUrl.split('v=')[1].split('&')[0] : '')
-                  ) + '?autoplay=1'}
-                  className="w-full h-full border-none"
-                  allowFullScreen
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                />
+                <div className="w-full h-full aspect-video">
+                  <iframe 
+                    src={'https://www.youtube.com/embed/' + (
+                      selectedUrl.includes('youtu.be') 
+                        ? selectedUrl.split('/').pop()?.split('?')[0] 
+                        : (selectedUrl.includes('v=') ? selectedUrl.split('v=')[1].split('&')[0] : '')
+                    ) + '?autoplay=1'}
+                    className="w-full h-full border-none"
+                    allowFullScreen
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  />
+                </div>
               ) : selectedUrl.match(/\.(mp4|mov|webm)$/i) ? (
                 <video 
                   src={selectedUrl}
                   controls
                   autoPlay
-                  className="w-full h-full object-contain"
+                  className="max-w-full max-h-full object-contain"
                 />
               ) : (
                 <img 
                   src={getOptimizedUrl(selectedUrl, 1920, 1080, true)} 
-                  className="w-full h-full object-contain pointer-events-none"
+                  className="max-w-full max-h-full object-contain pointer-events-none"
                   referrerPolicy="no-referrer"
                 />
               )}
