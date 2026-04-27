@@ -2176,7 +2176,7 @@ const INITIAL_ARCHIVE: Project[] = [
       },
       { 
         url: "https://www.youtube.com/shorts/6mLs_SSOnh4?feature=share", 
-        title: "D-V8"
+        title: "Day 1 of NRA Houston!"
       },
     ]
   }
