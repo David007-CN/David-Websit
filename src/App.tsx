@@ -225,6 +225,8 @@ const VideoPlayer = ({ url, fallbackImage, autoPlay = true, loop = true, muted =
           muted={true}
           loop={loop}
           playsInline
+          disablePictureInPicture
+          controlsList="nodownload"
           preload={preload}
           onLoadedData={handleReady}
           className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 z-10 pointer-events-none`}
@@ -338,8 +340,8 @@ const Navbar = () => {
   return (
     <div className="fixed top-0 left-0 w-full z-50">
       <nav className={`w-full transition-all duration-300 relative z-10 bg-brand-dark border-b border-white/5 ${scrolled ? 'py-1' : 'py-2'}`}>
-        <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
-          <div className="flex items-center gap-12">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 flex justify-between items-center">
+          <div className="flex items-center gap-6 lg:gap-12">
             <button 
               onClick={() => {
                 if (isHomePage) {
@@ -367,7 +369,7 @@ const Navbar = () => {
             </button>
 
             {/* Desktop Nav */}
-            <div className="hidden md:flex items-center gap-8">
+            <div className="hidden md:flex items-center gap-4 lg:gap-8">
               {navLinks.map((link) => (
                 <button
                   key={link.name}
@@ -383,7 +385,7 @@ const Navbar = () => {
                       }, 200);
                     }
                   }}
-                  className="text-[15px] font-bold text-white/70 hover:text-white transition-colors tracking-wide"
+                  className="text-[14px] lg:text-[15px] font-bold text-white/70 hover:text-white transition-colors tracking-wide whitespace-nowrap"
                 >
                   {link.name}
                 </button>
@@ -391,7 +393,7 @@ const Navbar = () => {
             </div>
           </div>
 
-          <div className="hidden md:flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-3 lg:gap-4">
             <button 
               onClick={() => {
                 if (isHomePage) {
@@ -403,7 +405,7 @@ const Navbar = () => {
                   }, 100);
                 }
               }}
-              className="w-40 py-2 bg-brand-red text-white text-[15px] font-bold tracking-normal hover:bg-white hover:text-brand-dark transition-all duration-300 text-center"
+              className="w-32 lg:w-40 h-[38px] lg:h-[42px] bg-brand-red text-white text-[13px] lg:text-[15px] font-bold tracking-normal hover:bg-white hover:text-brand-dark transition-all duration-300 text-center flex items-center justify-center pointer-events-auto"
             >
               Contact Me
             </button>
@@ -411,9 +413,13 @@ const Navbar = () => {
               href={EXTERNAL_LINK.url} 
               target="_blank" 
               rel="noopener noreferrer"
-              className="w-40 py-2 bg-transparent border border-white/20 text-white text-[15px] font-bold tracking-normal hover:bg-brand-red hover:border-brand-red transition-all duration-300 flex items-center justify-center gap-2"
+              className="w-32 lg:w-40 h-[38px] lg:h-[42px] bg-transparent border border-white/20 text-white hover:bg-brand-red hover:border-brand-red transition-all duration-300 flex flex-col items-center justify-center group pointer-events-auto"
             >
-              {EXTERNAL_LINK.label} <ArrowRight size={16} />
+              <div className="flex items-center gap-1 lg:gap-2">
+                <span className="text-[12px] lg:text-[14px] font-bold leading-none">{EXTERNAL_LINK.label}</span>
+                <ArrowRight size={12} className="transition-transform group-hover:translate-x-1 lg:w-[14px] lg:h-[14px]" />
+              </div>
+              <span className="text-[8px] lg:text-[9px] text-white/40 lowercase leading-none mt-0.5 lg:mt-1">company website</span>
             </a>
           </div>
 
@@ -457,10 +463,13 @@ const Navbar = () => {
                 href={EXTERNAL_LINK.url} 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="text-2xl font-display font-bold hover:text-brand-red transition-colors text-left flex items-center gap-3"
+                className="flex flex-col group"
                 onClick={() => setIsOpen(false)}
               >
-                {EXTERNAL_LINK.label} <ArrowRight size={20} />
+                <div className="flex items-center gap-3 text-2xl font-display font-bold group-hover:text-brand-red transition-colors">
+                  {EXTERNAL_LINK.label} <ArrowRight size={20} className="transition-transform group-hover:translate-x-1" />
+                </div>
+                <span className="text-xs text-white/40 lowercase tracking-wider mt-0.5">company website</span>
               </a>
               <div className="mt-8 pt-8 border-t border-white/10">
                 <button 
@@ -519,7 +528,7 @@ const Hero = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => document.getElementById('works')?.scrollIntoView({ behavior: 'smooth' })}
-                className="w-48 md:w-48 py-2.5 border border-white/20 bg-white/5 backdrop-blur-sm text-white font-bold tracking-normal text-sm md:text-base transition-all"
+                className="w-48 md:w-40 lg:w-48 py-2 md:py-2 lg:py-2.5 border border-white/20 bg-white/5 backdrop-blur-sm text-white font-bold tracking-normal text-sm md:text-xs lg:text-base transition-all"
               >
                 Learn More
               </motion.button>
@@ -527,7 +536,7 @@ const Hero = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
-                className="w-48 md:w-48 py-2.5 bg-brand-red text-white font-bold tracking-normal text-sm md:text-base transition-all"
+                className="w-48 md:w-40 lg:w-48 py-2 md:py-2 lg:py-2.5 bg-brand-red text-white font-bold tracking-normal text-sm md:text-xs lg:text-base transition-all"
               >
                 Contact Now
               </motion.button>
@@ -1123,7 +1132,7 @@ const Archive = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                 <h3 className="text-2xl md:text-4xl font-display font-bold mb-4 group-hover:scale-110 transition-transform duration-500">{project.title}</h3>
                 <div className="flex flex-col items-center">
                   <button 
-                    className="px-4 md:px-10 py-1 md:py-2 bg-brand-red text-white text-[11px] md:text-[15px] font-bold tracking-normal border border-brand-red hover:bg-brand-dark hover:text-white hover:border-white transition-all duration-300 shadow-lg"
+                    className="px-4 md:px-6 lg:px-10 py-1 md:py-1.5 lg:py-2 bg-brand-red text-white text-[11px] md:text-[13px] lg:text-[15px] font-bold tracking-normal border border-brand-red hover:bg-brand-dark hover:text-white hover:border-white transition-all duration-300 shadow-lg"
                   >
                     Learn More
                   </button>
