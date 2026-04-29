@@ -383,7 +383,7 @@ const Navbar = () => {
                       }, 200);
                     }
                   }}
-                  className="text-[15px] font-bold text-white/70 hover:text-white transition-colors tracking-[0.2em]"
+                  className="text-[15px] font-bold text-white/70 hover:text-white transition-colors tracking-wide"
                 >
                   {link.name}
                 </button>
@@ -403,7 +403,7 @@ const Navbar = () => {
                   }, 100);
                 }
               }}
-              className="w-40 py-2 bg-brand-red text-white text-[15px] font-bold tracking-widest hover:bg-white hover:text-brand-dark transition-all duration-300 text-center"
+              className="w-40 py-2 bg-brand-red text-white text-[15px] font-bold tracking-normal hover:bg-white hover:text-brand-dark transition-all duration-300 text-center"
             >
               Contact Me
             </button>
@@ -411,7 +411,7 @@ const Navbar = () => {
               href={EXTERNAL_LINK.url} 
               target="_blank" 
               rel="noopener noreferrer"
-              className="w-40 py-2 bg-transparent border border-white/20 text-white text-[15px] font-bold tracking-widest hover:bg-brand-red hover:border-brand-red transition-all duration-300 flex items-center justify-center gap-2"
+              className="w-40 py-2 bg-transparent border border-white/20 text-white text-[15px] font-bold tracking-normal hover:bg-brand-red hover:border-brand-red transition-all duration-300 flex items-center justify-center gap-2"
             >
               {EXTERNAL_LINK.label} <ArrowRight size={16} />
             </a>
@@ -475,7 +475,7 @@ const Navbar = () => {
                       }, 100);
                     }
                   }}
-                  className="w-full px-8 py-4 bg-brand-red text-white text-[15px] font-bold tracking-widest shadow-lg shadow-brand-red/20 active:scale-[0.98] transition-all"
+                  className="w-full px-8 py-4 bg-brand-red text-white text-[15px] font-bold tracking-normal shadow-lg shadow-brand-red/20 active:scale-[0.98] transition-all"
                 >
                   Contact Me
                 </button>
@@ -519,7 +519,7 @@ const Hero = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => document.getElementById('works')?.scrollIntoView({ behavior: 'smooth' })}
-                className="w-48 md:w-48 py-2.5 border border-white/20 bg-white/5 backdrop-blur-sm text-white font-bold tracking-widest text-sm md:text-base transition-all"
+                className="w-48 md:w-48 py-2.5 border border-white/20 bg-white/5 backdrop-blur-sm text-white font-bold tracking-normal text-sm md:text-base transition-all"
               >
                 Learn More
               </motion.button>
@@ -527,7 +527,7 @@ const Hero = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
-                className="w-48 md:w-48 py-2.5 bg-brand-red text-white font-bold tracking-widest text-sm md:text-base transition-all"
+                className="w-48 md:w-48 py-2.5 bg-brand-red text-white font-bold tracking-normal text-sm md:text-base transition-all"
               >
                 Contact Now
               </motion.button>
@@ -992,7 +992,7 @@ const Spotlight = () => {
               aria-label="Rotate"
             >
               <RotateCcw size={28} />
-              <span className="text-[12px] font-bold tracking-widest opacity-60">Rotate</span>
+              <span className="text-[12px] font-bold tracking-normal opacity-60">Rotate</span>
             </button>
 
             <button 
@@ -1123,7 +1123,7 @@ const Archive = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                 <h3 className="text-2xl md:text-4xl font-display font-bold mb-4 group-hover:scale-110 transition-transform duration-500">{project.title}</h3>
                 <div className="flex flex-col items-center">
                   <button 
-                    className="px-4 md:px-10 py-1 md:py-2 bg-brand-red text-white text-[11px] md:text-[15px] font-bold tracking-widest border border-brand-red hover:bg-brand-dark hover:text-white hover:border-white transition-all duration-300 shadow-lg"
+                    className="px-4 md:px-10 py-1 md:py-2 bg-brand-red text-white text-[11px] md:text-[15px] font-bold tracking-normal border border-brand-red hover:bg-brand-dark hover:text-white hover:border-white transition-all duration-300 shadow-lg"
                   >
                     Learn More
                   </button>
@@ -1448,7 +1448,7 @@ const Featured = () => {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => fetchGitHubImages(true)}
-            className="inline-flex items-center px-10 py-3 bg-white/5 border border-white/10 text-white/50 hover:text-white hover:bg-white/10 hover:border-white/20 rounded-full transition-all duration-300 font-display text-base tracking-widest group"
+            className="inline-flex items-center px-10 py-3 bg-white/5 border border-white/10 text-white/50 hover:text-white hover:bg-white/10 hover:border-white/20 rounded-full transition-all duration-300 font-display text-base tracking-normal group"
           >
             <div className="relative mr-3">
               <RefreshCw className={`w-5 h-5 transition-transform duration-700 ${isLoading ? 'animate-spin' : 'group-hover:rotate-180'}`} />
@@ -1624,7 +1624,7 @@ const Newsletter = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               disabled={status !== 'idle'}
-              className="px-20 py-2.5 bg-brand-red text-white font-bold tracking-widest text-base disabled:opacity-50 disabled:cursor-not-allowed border-none outline-none focus:ring-0"
+              className="px-20 py-2.5 bg-brand-red text-white font-bold tracking-normal text-base disabled:opacity-50 disabled:cursor-not-allowed border-none outline-none focus:ring-0"
             >
               {status === 'idle' ? 'Submit' : status === 'submitting' ? 'Sending...' : 'Success!'}
             </motion.button>
@@ -1906,7 +1906,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
       <div className="max-w-7xl mx-auto px-6">
         <div className="mb-16 flex flex-col md:flex-row md:items-end justify-between gap-8">
           <div>
-            <Link to="/" className="text-brand-red flex items-center gap-2 text-base font-bold tracking-widest hover:text-white transition-colors mb-8">
+            <Link to="/" className="text-brand-red flex items-center gap-2 text-base font-bold tracking-normal hover:text-white transition-colors mb-8">
               <ChevronLeft size={16} /> Back to Home
             </Link>
             <h1 className="text-4xl md:text-7xl font-display font-bold mb-6">{project.title}</h1>
@@ -1919,7 +1919,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
               <Link 
                 key={otherProject.id}
                 to={'/gallery/' + otherProject.id}
-                className="px-4 py-2 border border-white/10 bg-white/5 text-[10px] font-bold tracking-widest hover:border-brand-red hover:text-brand-red transition-all duration-300"
+                className="px-4 py-2 border border-white/10 bg-white/5 text-[10px] font-bold tracking-normal hover:border-brand-red hover:text-brand-red transition-all duration-300"
               >
                 {otherProject.title}
               </Link>
