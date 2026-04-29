@@ -27,7 +27,9 @@ import {
   Eye,
   Maximize,
   RotateCcw,
-  RefreshCw
+  RefreshCw,
+  ArrowUpRight,
+  ArrowRight
 } from 'lucide-react';
 import { Project } from './types';
 import { PROJECTS } from './data/projects';
@@ -244,7 +246,7 @@ const VideoPlayer = ({ url, fallbackImage, autoPlay = true, loop = true, muted =
 // --- Experience Data ---
 const EXPERIENCE = [
   {
-    year: "2024.12 - PRESENT",
+    year: "2024.12 - Present",
     brand: "Osight",
     role: "1000+ Employees",
     logo: "https://raw.githubusercontent.com/David007-CN/DW/refs/heads/main/Logo/LOGO_OS.jpg",
@@ -308,6 +310,11 @@ const FEATURED_ITEMS: Project[] = [
 ];
 
 // --- Components ---
+
+const EXTERNAL_LINK = {
+  url: "https://osight.com",
+  label: "osight.com"
+};
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -376,7 +383,7 @@ const Navbar = () => {
                       }, 200);
                     }
                   }}
-                  className="text-[11px] font-bold text-white/70 hover:text-white transition-colors uppercase tracking-[0.2em]"
+                  className="text-[15px] font-bold text-white/70 hover:text-white transition-colors tracking-[0.2em]"
                 >
                   {link.name}
                 </button>
@@ -384,7 +391,7 @@ const Navbar = () => {
             </div>
           </div>
 
-          <div className="hidden md:flex items-center gap-6">
+          <div className="hidden md:flex items-center gap-4">
             <button 
               onClick={() => {
                 if (isHomePage) {
@@ -396,10 +403,18 @@ const Navbar = () => {
                   }, 100);
                 }
               }}
-              className="px-6 py-2 bg-brand-red text-white text-[11px] font-bold uppercase tracking-widest hover:bg-white hover:text-brand-dark transition-all duration-300"
+              className="w-40 py-2 bg-brand-red text-white text-[15px] font-bold tracking-widest hover:bg-white hover:text-brand-dark transition-all duration-300 text-center"
             >
               Contact Me
             </button>
+            <a 
+              href={EXTERNAL_LINK.url} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="w-40 py-2 bg-transparent border border-white/20 text-white text-[15px] font-bold tracking-widest hover:bg-brand-red hover:border-brand-red transition-all duration-300 flex items-center justify-center gap-2"
+            >
+              {EXTERNAL_LINK.label} <ArrowRight size={16} />
+            </a>
           </div>
 
           {/* Mobile Toggle */}
@@ -438,6 +453,33 @@ const Navbar = () => {
                   {link.name}
                 </button>
               ))}
+              <a 
+                href={EXTERNAL_LINK.url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-2xl font-display font-bold hover:text-brand-red transition-colors text-left flex items-center gap-3"
+                onClick={() => setIsOpen(false)}
+              >
+                {EXTERNAL_LINK.label} <ArrowRight size={20} />
+              </a>
+              <div className="mt-8 pt-8 border-t border-white/10">
+                <button 
+                  onClick={() => {
+                    setIsOpen(false);
+                    if (isHomePage) {
+                      document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
+                    } else {
+                      navigate('/');
+                      setTimeout(() => {
+                        document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
+                      }, 100);
+                    }
+                  }}
+                  className="w-full px-8 py-4 bg-brand-red text-white text-[15px] font-bold tracking-widest shadow-lg shadow-brand-red/20 active:scale-[0.98] transition-all"
+                >
+                  Contact Me
+                </button>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -472,22 +514,22 @@ const Hero = () => {
               </div>
             </h1>
             
-            <div className="flex flex-wrap justify-center gap-6">
+            <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-6">
               <motion.button 
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => document.getElementById('works')?.scrollIntoView({ behavior: 'smooth' })}
-                className="w-48 py-4 border border-white/20 bg-white/5 backdrop-blur-sm text-white font-bold uppercase tracking-widest text-xs"
+                className="w-48 md:w-48 py-2.5 border border-white/20 bg-white/5 backdrop-blur-sm text-white font-bold tracking-widest text-sm md:text-base transition-all"
               >
-                LEARN MORE
+                Learn More
               </motion.button>
               <motion.button 
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
-                className="w-48 py-4 bg-brand-red text-white font-bold uppercase tracking-widest text-xs"
+                className="w-48 md:w-48 py-2.5 bg-brand-red text-white font-bold tracking-widest text-sm md:text-base transition-all"
               >
-                CONTACT NOW
+                Contact Now
               </motion.button>
             </div>
           </motion.div>
@@ -950,7 +992,7 @@ const Spotlight = () => {
               aria-label="Rotate"
             >
               <RotateCcw size={28} />
-              <span className="text-[10px] font-bold uppercase tracking-widest opacity-60">Rotate</span>
+              <span className="text-[12px] font-bold tracking-widest opacity-60">Rotate</span>
             </button>
 
             <button 
@@ -1081,7 +1123,7 @@ const Archive = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                 <h3 className="text-2xl md:text-4xl font-display font-bold mb-4 group-hover:scale-110 transition-transform duration-500">{project.title}</h3>
                 <div className="flex flex-col items-center">
                   <button 
-                    className="px-8 py-3 bg-brand-red text-white text-[10px] font-bold uppercase tracking-widest border border-brand-red hover:bg-brand-dark hover:text-white hover:border-white transition-all duration-300 shadow-lg"
+                    className="px-4 md:px-10 py-1 md:py-2 bg-brand-red text-white text-[11px] md:text-[15px] font-bold tracking-widest border border-brand-red hover:bg-brand-dark hover:text-white hover:border-white transition-all duration-300 shadow-lg"
                   >
                     Learn More
                   </button>
@@ -1406,14 +1448,14 @@ const Featured = () => {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => fetchGitHubImages(true)}
-            className="inline-flex items-center px-6 py-3 bg-white/5 border border-white/10 text-white/50 hover:text-white hover:bg-white/10 hover:border-white/20 rounded-full transition-all duration-300 font-display text-sm tracking-widest uppercase group"
+            className="inline-flex items-center px-10 py-3 bg-white/5 border border-white/10 text-white/50 hover:text-white hover:bg-white/10 hover:border-white/20 rounded-full transition-all duration-300 font-display text-base tracking-widest group"
           >
             <div className="relative mr-3">
-              <RefreshCw className={`w-4 h-4 transition-transform duration-700 ${isLoading ? 'animate-spin' : 'group-hover:rotate-180'}`} />
+              <RefreshCw className={`w-5 h-5 transition-transform duration-700 ${isLoading ? 'animate-spin' : 'group-hover:rotate-180'}`} />
             </div>
             {isLoading ? 'Shuffling...' : 'Shuffle Random Batch'}
           </motion.button>
-          <p className="mt-4 text-[10px] text-white/20 tracking-[0.2em] uppercase font-light">
+          <p className="mt-4 text-[12px] text-white/20 tracking-[0.2em] font-light">
             Click to explore other moments from the archive
           </p>
         </div>
@@ -1582,9 +1624,9 @@ const Newsletter = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               disabled={status !== 'idle'}
-              className="px-16 py-4 bg-brand-red text-white font-bold uppercase tracking-widest text-xs disabled:opacity-50 disabled:cursor-not-allowed border-none outline-none focus:ring-0"
+              className="px-20 py-2.5 bg-brand-red text-white font-bold tracking-widest text-base disabled:opacity-50 disabled:cursor-not-allowed border-none outline-none focus:ring-0"
             >
-              {status === 'idle' ? 'SUBMIT' : status === 'submitting' ? 'SENDING...' : 'SUCCESS!'}
+              {status === 'idle' ? 'Submit' : status === 'submitting' ? 'Sending...' : 'Success!'}
             </motion.button>
             <p className="mt-8 text-[10px] text-white/30 tracking-widest text-center">
               Your information is confidential. I’ll respond as soon as possible.
@@ -1864,7 +1906,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
       <div className="max-w-7xl mx-auto px-6">
         <div className="mb-16 flex flex-col md:flex-row md:items-end justify-between gap-8">
           <div>
-            <Link to="/" className="text-brand-red flex items-center gap-2 text-sm font-bold uppercase tracking-widest hover:text-white transition-colors mb-8">
+            <Link to="/" className="text-brand-red flex items-center gap-2 text-base font-bold tracking-widest hover:text-white transition-colors mb-8">
               <ChevronLeft size={16} /> Back to Home
             </Link>
             <h1 className="text-4xl md:text-7xl font-display font-bold mb-6">{project.title}</h1>
@@ -1889,7 +1931,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
           {isLoading && galleryItems.length === 0 ? (
             <div className="col-span-full py-24 text-center">
               <div className="animate-spin w-8 h-8 border-2 border-brand-red border-t-transparent rounded-full mx-auto mb-4" />
-              <p className="text-white/20 text-[10px] font-bold tracking-widest uppercase">Connecting to GitHub Source...</p>
+              <p className="text-white/20 text-[10px] font-bold tracking-widest">Connecting to GitHub Source...</p>
             </div>
           ) : (galleryItems.length === 0 && !isLoading) || (error && galleryItems.length === 0 && (error.toLowerCase().includes("not found") || error.toLowerCase().includes("no images found"))) ? (
             <div className="col-span-full py-48 text-center border-y border-white/5 bg-white/[0.01]">
