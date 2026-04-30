@@ -313,11 +313,6 @@ const FEATURED_ITEMS: Project[] = [
 
 // --- Components ---
 
-const EXTERNAL_LINK = {
-  url: "https://osight.com",
-  label: "osight.com"
-};
-
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -409,18 +404,6 @@ const Navbar = () => {
             >
               Contact Me
             </button>
-            <a 
-              href={EXTERNAL_LINK.url} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="w-32 lg:w-40 h-[38px] lg:h-[42px] bg-transparent border border-white/20 text-white hover:bg-brand-red hover:border-brand-red transition-all duration-300 flex flex-col items-center justify-center group pointer-events-auto"
-            >
-              <div className="flex items-center gap-1 lg:gap-2">
-                <span className="text-[12px] lg:text-[14px] font-bold leading-none">{EXTERNAL_LINK.label}</span>
-                <ArrowRight size={12} className="transition-transform group-hover:translate-x-1 lg:w-[14px] lg:h-[14px]" />
-              </div>
-              <span className="text-[8px] lg:text-[9px] text-white/40 lowercase leading-none mt-0.5 lg:mt-1">company website</span>
-            </a>
           </div>
 
           {/* Mobile Toggle */}
@@ -459,18 +442,6 @@ const Navbar = () => {
                   {link.name}
                 </button>
               ))}
-              <a 
-                href={EXTERNAL_LINK.url} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex flex-col group"
-                onClick={() => setIsOpen(false)}
-              >
-                <div className="flex items-center gap-3 text-2xl font-display font-bold group-hover:text-brand-red transition-colors">
-                  {EXTERNAL_LINK.label} <ArrowRight size={20} className="transition-transform group-hover:translate-x-1" />
-                </div>
-                <span className="text-xs text-white/40 lowercase tracking-wider mt-0.5">company website</span>
-              </a>
               <div className="mt-8 pt-8 border-t border-white/10">
                 <button 
                   onClick={() => {
