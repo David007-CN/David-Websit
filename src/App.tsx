@@ -1092,13 +1092,13 @@ const Archive = ({ archiveProjects }: { archiveProjects: Project[] }) => {
               ) : (
                 <img 
                   src={getOptimizedUrl(project.image, window.innerWidth > 768 ? 1200 : 800, window.innerWidth > 768 ? 675 : 450)} 
-                  className="w-full h-full object-cover grayscale group-hover:grayscale-0 brightness-50 group-hover:brightness-100 transition-all duration-700" 
+                  className="w-full h-full object-cover grayscale group-hover:grayscale-0 brightness-[0.45] group-hover:brightness-100 transition-all duration-700" 
                   referrerPolicy="no-referrer"
                   loading={index < 2 ? "eager" : "lazy"}
                   fetchPriority={index < 2 ? "high" : "auto"}
                 />
               )}
-              <div className="absolute inset-0 flex flex-col justify-center items-center text-center p-12 bg-black/20 group-hover:bg-transparent transition-colors duration-500">
+              <div className="absolute inset-0 flex flex-col justify-center items-center text-center p-12 bg-black/25 group-hover:bg-transparent transition-colors duration-500">
                 <p className="text-[11px] font-bold tracking-[0.1em] opacity-60 mb-2">{project.subtitle}</p>
                 <h3 className="text-2xl md:text-4xl font-display font-bold mb-4 group-hover:scale-110 transition-transform duration-500">{project.title}</h3>
                 <div className="flex flex-col items-center">
@@ -1622,55 +1622,34 @@ const Footer = () => {
   return (
     <footer className="py-24 bg-brand-dark border-t border-white/5">
       <div className="max-w-7xl mx-auto px-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-20">
-          <div className="col-span-1 md:col-span-1">
-            <div className="flex flex-col items-start">
-              <img 
-                src={getOptimizedUrl("https://github.com/David007-CN/DW/blob/main/David%20Signature/David%20Signature%20red%20bold.png?raw=true")}
-                alt="David Signature"
-                className="h-16 md:h-20 w-auto object-contain mb-6"
-                referrerPolicy="no-referrer"
-              />
-              <div className="flex gap-6 pl-1">
-                <a href="https://www.instagram.com/osight_david/" target="_blank" rel="noopener noreferrer">
-                  <Twitter size={20} className="opacity-40 hover:opacity-100 cursor-pointer transition-opacity" />
-                </a>
-                <a href="https://www.instagram.com/osight_david/" target="_blank" rel="noopener noreferrer">
-                  <Facebook size={20} className="opacity-40 hover:opacity-100 cursor-pointer transition-opacity" />
-                </a>
-                <a href="https://www.instagram.com/osight_david/" target="_blank" rel="noopener noreferrer">
-                  <Instagram size={20} className="opacity-40 hover:opacity-100 cursor-pointer transition-opacity" />
-                </a>
-                <a href="https://www.instagram.com/osight_david/" target="_blank" rel="noopener noreferrer">
-                  <Youtube size={20} className="opacity-40 hover:opacity-100 cursor-pointer transition-opacity" />
-                </a>
-              </div>
+        <div className="flex flex-col md:flex-row md:items-center gap-12 md:gap-16 lg:gap-24 mb-20">
+          <div className="flex flex-col items-start shrink-0">
+            <img 
+              src={getOptimizedUrl("https://github.com/David007-CN/DW/blob/main/David%20Signature/David%20Signature%20red%20bold.png?raw=true")}
+              alt="David Signature"
+              className="h-16 md:h-20 w-auto object-contain mb-6"
+              referrerPolicy="no-referrer"
+            />
+            <div className="flex gap-6 pl-1">
+              <a href="https://www.instagram.com/osight_david/" target="_blank" rel="noopener noreferrer">
+                <Twitter size={20} className="opacity-40 hover:opacity-100 cursor-pointer transition-opacity" />
+              </a>
+              <a href="https://www.instagram.com/osight_david/" target="_blank" rel="noopener noreferrer">
+                <Facebook size={20} className="opacity-40 hover:opacity-100 cursor-pointer transition-opacity" />
+              </a>
+              <a href="https://www.instagram.com/osight_david/" target="_blank" rel="noopener noreferrer">
+                <Instagram size={20} className="opacity-40 hover:opacity-100 cursor-pointer transition-opacity" />
+              </a>
+              <a href="https://www.instagram.com/osight_david/" target="_blank" rel="noopener noreferrer">
+                <Youtube size={20} className="opacity-40 hover:opacity-100 cursor-pointer transition-opacity" />
+              </a>
             </div>
           </div>
           
-          <div>
-            <h5 className="text-[10px] font-bold tracking-widest opacity-30 mb-6">Legal</h5>
-            <ul className="space-y-3 text-xs opacity-60">
-              <li className="hover:text-brand-red cursor-pointer">Terms of Service</li>
-              <li className="hover:text-brand-red cursor-pointer">Privacy</li>
-              <li className="hover:text-brand-red cursor-pointer">Imprint</li>
-            </ul>
-          </div>
-          
-          <div>
-            <h5 className="text-[10px] font-bold tracking-widest opacity-30 mb-6">Press</h5>
-            <ul className="space-y-3 text-xs opacity-60">
-              <li className="hover:text-brand-red cursor-pointer">Code of Conduct</li>
-              <li className="hover:text-brand-red cursor-pointer">Media Assets</li>
-            </ul>
-          </div>
-          
-          <div>
-            <h5 className="text-[10px] font-bold tracking-widest opacity-30 mb-6">Data policy</h5>
-            <ul className="space-y-3 text-xs opacity-60">
-              <li className="hover:text-brand-red cursor-pointer">Partners</li>
-              <li className="hover:text-brand-red cursor-pointer">Cookie Settings</li>
-            </ul>
+          <div className="md:pt-0">
+            <p className="font-handwriting text-2xl md:text-3xl text-brand-red leading-tight">
+              Focused on product launch and conversion design. Built to perform, not just to impress.
+            </p>
           </div>
         </div>
         
@@ -2163,7 +2142,7 @@ const INITIAL_ARCHIVE: Project[] = [
     title: "Rendering",
     subtitle: "Visualized in detail.",
     category: "Rendering",
-    image: "https://picsum.photos/seed/render/1280/720",
+    image: "https://github.com/David007-CN/DW/blob/main/Cover/Scene%20and%20White%20model_2560x1440.jpg?raw=true",
     galleryImages: []
   },
   {
@@ -2171,7 +2150,7 @@ const INITIAL_ARCHIVE: Project[] = [
     title: "AI Studio",
     subtitle: "Where ideas take form.",
     category: "AI Studio",
-    image: "https://picsum.photos/seed/ai/1280/720",
+    image: "https://github.com/David007-CN/DW/blob/main/Cover/Retro%20pistol_2560x1440.jpg?raw=true",
     galleryImages: []
   },
   {
