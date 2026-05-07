@@ -1056,6 +1056,7 @@ const Spotlight = () => {
 
 const Archive = ({ archiveProjects }: { archiveProjects: Project[] }) => {
   const navigate = useNavigate();
+  const [activeTouchId, setActiveTouchId] = useState<number | null>(null);
   
   return (
     <section id="works" className="py-16 md:py-24 lg:py-32 bg-brand-dark">
@@ -1073,13 +1074,16 @@ const Archive = ({ archiveProjects }: { archiveProjects: Project[] }) => {
             <div 
               key={project.id} 
               onClick={() => navigate('/gallery/' + project.id)}
+              onTouchStart={() => setActiveTouchId(project.id)}
+              onTouchEnd={() => setActiveTouchId(null)}
+              onTouchCancel={() => setActiveTouchId(null)}
               className={`relative group overflow-hidden aspect-video cursor-pointer bg-white/5 ${
                 index === archiveProjects.length - 1 && archiveProjects.length % 2 !== 0 ? 'md:col-span-2' : ''
               }`}
             >
               {project.category === 'Video' ? (
                 <div 
-                  className="absolute inset-0 w-full h-full grayscale group-hover:grayscale-0 brightness-[0.7] group-hover:brightness-100 transition-all duration-1000 overflow-hidden pointer-events-none bg-black"
+                  className={`absolute inset-0 w-full h-full ${activeTouchId === project.id ? 'grayscale-0 brightness-100' : 'grayscale group-hover:grayscale-0 brightness-[0.7] group-hover:brightness-100'} transition-all duration-1000 overflow-hidden pointer-events-none bg-black`}
                 >
                     <VideoPlayer 
                       url={project.videoUrl || `https://www.youtube.com/watch?v=${project.backgroundVideoId}`}
@@ -1087,12 +1091,12 @@ const Archive = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                       preload={isMobile ? "none" : "auto"}
                     />
                   {/* 叠加遮罩层 */}
-                  <div className="absolute inset-0 bg-black/50 group-hover:bg-black/10 transition-colors duration-1000" />
+                  <div className={`absolute inset-0 ${activeTouchId === project.id ? 'bg-black/10' : 'bg-black/50 group-hover:bg-black/10'} transition-colors duration-1000`} />
                 </div>
               ) : (
                 <img 
                   src={getOptimizedUrl(project.image, window.innerWidth > 768 ? 1200 : 800, window.innerWidth > 768 ? 675 : 450)} 
-                  className="w-full h-full object-cover grayscale group-hover:grayscale-0 brightness-[0.45] group-hover:brightness-100 transition-all duration-700" 
+                  className={`w-full h-full object-cover ${activeTouchId === project.id ? 'grayscale-0 brightness-100' : 'grayscale group-hover:grayscale-0 brightness-[0.45] group-hover:brightness-100'} transition-all duration-700`} 
                   referrerPolicy="no-referrer"
                   loading={index < 2 ? "eager" : "lazy"}
                   fetchPriority={index < 2 ? "high" : "auto"}
@@ -1886,7 +1890,62 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
             </div>
           ) : (
             (() => {
-              // Group items from galleryItems (maintaining their 1,2,3... order inside groups)
+              const isRetouching = project.title === "Retouching";
+              const isVideo = project.title === "Video";
+
+              // 检查是否有分组（文件夹）
+              const hasGroups = galleryItems.some(item => typeof item === 'object' && 'group' in item);
+
+              // 如果不是 Retouching 且没有分组，使用最简单的渲染逻辑，确保样式和顺序完全恢复
+              if (!isRetouching && !hasGroups) {
+                return (
+                  <div className={isVideo ? "space-y-16" : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8 mb-16"}>
+                    {galleryItems.map((item, i) => {
+                      const isObject = typeof item === 'object';
+                      const videoUrl = isObject ? item.url : item;
+                      const imageUrl = isVideo 
+                        ? getVideoThumbnail(videoUrl, isObject ? item.cover : undefined)
+                        : (isObject ? item.cover : item);
+
+                      return (
+                        <motion.div 
+                          key={i}
+                          initial={{ opacity: 0, y: 20 }}
+                          whileInView={{ opacity: 1, y: 0 }}
+                          viewport={{ once: true }}
+                          transition={{ delay: i * 0.05 }}
+                          className="group cursor-pointer"
+                          onClick={() => setSelectedIndex(i)}
+                        >
+                          <div className={`relative ${isVideo ? "aspect-video" : "min-h-[200px] h-auto"} overflow-hidden bg-white/5 border border-white/10 p-1 mb-3`}>
+                            <img 
+                              src={getOptimizedUrl(imageUrl, isVideo ? 1600 : 1200)} 
+                              className={`w-full ${isVideo ? "h-full object-cover" : "h-auto object-contain"} transition-all duration-700 group-hover:scale-105`}
+                              referrerPolicy="no-referrer"
+                              loading="lazy"
+                            />
+                            {(isVideo || videoUrl.includes('bilibili.com') || videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be') || videoUrl.match(/\.(mp4|mov|webm)$/i)) && (
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <div className="w-12 h-12 rounded-full bg-brand-red/90 flex items-center justify-center text-white shadow-2xl transform group-hover:scale-110 transition-transform duration-500">
+                                  <Play size={20} fill="currentColor" className="ml-1" />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex justify-between items-start gap-2">
+                            <h3 className={`${isVideo || (isObject && item.title) ? "text-base font-bold" : "text-[12px] font-medium text-white/50"} font-display leading-tight flex-grow`}>
+                              {isObject && item.title ? item.title : formatTitle(videoUrl)}
+                            </h3>
+                            <span className="text-[9px] font-bold text-white/10 tracking-widest shrink-0 mt-0.5">{i + 1}</span>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                );
+              }
+
+              // 对于 Retouching 或有分组的页面，执行分组逻辑
               const groups: Record<string, any[]> = {};
               const rootItems: any[] = [];
               const groupOrder: string[] = [];
@@ -1904,22 +1963,21 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                 }
               });
 
-              // Reverse the group order so the newest/last-found folders appear first
-              groupOrder.reverse();
-              // Also reverse root items if we want newest root items first
-              rootItems.reverse();
+              // 仅在 Retouching 时反转文件夹和根项目顺序
+              if (isRetouching) {
+                groupOrder.reverse();
+                rootItems.reverse();
+              }
 
               const renderGrid = (items: any[], startIndex: number) => (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8 mb-16">
+                <div className={isVideo ? "space-y-16 mb-24" : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8 mb-16"}>
                   {items.map((item, i) => {
                     const globalIndex = startIndex + i;
                     const isObject = typeof item === 'object';
                     const videoUrl = isObject ? item.url : item;
-                    const imageUrl = project.title === "Video" 
+                    const imageUrl = isVideo 
                       ? getVideoThumbnail(videoUrl, isObject ? item.cover : undefined)
                       : (isObject ? item.cover : item);
-
-                    const isRetouching = project.title === "Retouching";
 
                     return (
                       <motion.div 
@@ -1931,14 +1989,14 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                         className="group cursor-pointer"
                         onClick={() => setSelectedIndex(globalIndex)}
                       >
-                        <div className={`relative ${project.title === "Video" ? "aspect-video" : isRetouching ? "aspect-square" : "min-h-[200px] h-auto"} overflow-hidden bg-white/5 border border-white/10 p-1 mb-3`}>
+                        <div className={`relative ${isVideo ? "aspect-video" : isRetouching ? "aspect-square" : "min-h-[200px] h-auto"} overflow-hidden bg-white/5 border border-white/10 p-1 mb-3`}>
                           <img 
-                            src={getOptimizedUrl(imageUrl, 1200)} 
-                            className={`w-full ${project.title === "Video" || isRetouching ? "h-full object-cover" : "h-auto object-contain"} transition-all duration-700 group-hover:scale-105`}
+                            src={getOptimizedUrl(imageUrl, isVideo || isRetouching ? 1600 : 1200)} 
+                            className={`w-full ${isVideo || isRetouching ? "h-full object-cover" : "h-auto object-contain"} transition-all duration-700 group-hover:scale-105`}
                             referrerPolicy="no-referrer"
                             loading="lazy"
                           />
-                          {(project.title === "Video" || videoUrl.includes('bilibili.com') || videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be') || videoUrl.match(/\.(mp4|mov|webm)$/i)) && (
+                          {(isVideo || videoUrl.includes('bilibili.com') || videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be') || videoUrl.match(/\.(mp4|mov|webm)$/i)) && (
                             <div className="absolute inset-0 flex items-center justify-center">
                               <div className="w-12 h-12 rounded-full bg-brand-red/90 flex items-center justify-center text-white shadow-2xl transform group-hover:scale-110 transition-transform duration-500">
                                 <Play size={20} fill="currentColor" className="ml-1" />
@@ -1947,7 +2005,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                           )}
                         </div>
                         <div className="flex justify-between items-start gap-2">
-                          <h3 className={`${project.title === "Video" || (isObject && item.title) ? "text-base font-bold" : "text-[12px] font-medium text-white/50"} font-display leading-tight flex-grow`}>
+                          <h3 className={`${isVideo || (isObject && item.title) ? "text-base font-bold" : "text-[12px] font-medium text-white/50"} font-display leading-tight flex-grow`}>
                             {isObject && item.title ? item.title : formatTitle(videoUrl)}
                           </h3>
                           <span className="text-[9px] font-bold text-white/10 tracking-widest shrink-0 mt-0.5">{globalIndex + 1}</span>
@@ -1959,16 +2017,16 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
               );
 
               let currentIndex = 0;
-              const result = [];
+              const resultArr = [];
 
               if (rootItems.length > 0) {
-                result.push(<div key="root-grid">{renderGrid(rootItems, currentIndex)}</div>);
+                resultArr.push(<div key="root-grid">{renderGrid(rootItems, currentIndex)}</div>);
                 currentIndex += rootItems.length;
               }
 
               groupOrder.forEach((groupName) => {
                 const items = groups[groupName];
-                result.push(
+                resultArr.push(
                   <div key={groupName} className="mb-24">
                     <div className="flex items-center gap-6 mb-10">
                       <h2 className="text-2xl md:text-3xl font-display font-bold text-white whitespace-nowrap">{groupName}</h2>
@@ -1980,7 +2038,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                 currentIndex += items.length;
               });
 
-              return result;
+              return resultArr;
             })()
           )}
         </div>
