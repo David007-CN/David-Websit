@@ -3,9 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useMemo, useRef, useCallback } from 'react';
 import { Routes, Route, Link, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { motion, AnimatePresence, useMotionValue, useAnimationFrame } from 'motion/react';
+import QuickPinchZoom from 'react-quick-pinch-zoom';
 import { 
   Twitter, 
   Menu, 
@@ -2092,14 +2093,13 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              drag
-              dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
-              dragElastic={0.2}
+              drag={!selectedUrl.match(/\.(mp4|mov|webm)$/i) && !selectedUrl.includes('youtube.com') && !selectedUrl.includes('bilibili.com') ? false : "x"} // Only drag on video/frame for simple nav, or disable if we use pinch
+              dragConstraints={{ left: 0, right: 0 }}
               onDragEnd={(_, info) => {
                 const threshold = 50;
-                if (info.offset.x < -threshold || info.offset.y < -threshold) {
+                if (info.offset.x < -threshold) {
                   handleNext();
-                } else if (info.offset.x > threshold || info.offset.y > threshold) {
+                } else if (info.offset.x > threshold) {
                   handlePrev();
                 }
               }}
@@ -2152,11 +2152,25 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                   className="max-w-full max-h-full object-contain"
                 />
               ) : (
-                <img 
-                  src={getOptimizedUrl(selectedUrl, 2560, 2560, true)} 
-                  className={`max-w-full max-h-full ${project.title === "Retouching" || (typeof displayList[selectedIndex] === 'object' && (displayList[selectedIndex] as any).group) ? "w-full h-full object-cover" : "object-contain"} pointer-events-none`}
-                  referrerPolicy="no-referrer"
-                />
+                <QuickPinchZoom
+                  onUpdate={({ x, y, scale }) => {
+                    const el = document.getElementById('pinch-zoom-image');
+                    if (el) {
+                      el.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scale})`;
+                    }
+                  }}
+                  draggableUnZoomed={true}
+                  tapZoomFactor={2}
+                  doubleTapZoomOut={true}
+                >
+                  <img 
+                    id="pinch-zoom-image"
+                    src={getOptimizedUrl(selectedUrl, 2560, 2560, true)} 
+                    className={`max-w-full max-h-full ${project.title === "Retouching" || (typeof displayList[selectedIndex] === 'object' && (displayList[selectedIndex] as any).group) ? "w-full h-full object-cover" : "object-contain"}`}
+                    referrerPolicy="no-referrer"
+                    style={{ willChange: 'transform', transformOrigin: '0 0' }}
+                  />
+                </QuickPinchZoom>
               )}
             </motion.div>
             
