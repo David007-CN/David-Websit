@@ -1626,12 +1626,12 @@ const Footer = () => {
   return (
     <footer className="py-24 bg-brand-dark border-t border-white/5">
       <div className="max-w-7xl mx-auto px-6">
-        <div className="flex items-center justify-center gap-6 md:gap-16 lg:gap-24 mb-20">
+        <div className="flex items-center justify-center gap-5 md:gap-16 lg:gap-24 mb-20">
           <div className="flex flex-col items-center shrink-0">
             <img 
               src={getOptimizedUrl("https://github.com/David007-CN/DW/blob/main/David%20Signature/David%20Signature%20red%20bold.png?raw=true")}
               alt="David Signature" 
-              className="h-8 md:h-20 w-auto object-contain mb-3 md:mb-6"
+              className="h-10 md:h-20 w-auto object-contain mb-3 md:mb-6"
               referrerPolicy="no-referrer"
             />
             <div className="flex gap-1.5 md:gap-6">
@@ -1650,8 +1650,8 @@ const Footer = () => {
             </div>
           </div>
           
-          <div className="text-center max-w-[65%] md:max-w-none">
-            <p className="font-handwriting text-[11px] sm:text-sm md:text-2xl lg:text-3xl text-brand-red leading-tight">
+          <div className="text-left max-w-[70%] md:max-w-none">
+            <p className="font-handwriting text-xs sm:text-base md:text-2xl lg:text-3xl text-brand-red leading-tight whitespace-normal md:whitespace-nowrap">
               Focused on product launch and conversion design. Built to perform, not just to impress.
             </p>
           </div>
@@ -1777,10 +1777,17 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
       try {
         let response = await fetch(apiPath);
         
+        // If the proxy returns 404 (common on static production sites), try fetching directly from GitHub API
+        if (!response.ok && response.status === 404) {
+          console.warn(`Gallery Proxy not found at ${apiPath}, falling back to direct GitHub API`);
+          const directUrl = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${folderName}?ref=${ref}`;
+          response = await fetch(directUrl);
+        }
+        
         if (response.ok) {
           try {
             const data = await response.json();
-            console.log(`Gallery fetch success for ${project.title}:`, data.length, "items");
+            console.log(`Gallery fetch success for ${project.title}:`, Array.isArray(data) ? data.length : "one", "items");
             const dynamicGallery: any[] = [];
             
             if (Array.isArray(data)) {
@@ -1798,7 +1805,14 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                   const subPath = item.path;
                   const subApi = `/api/github-proxy?owner=${GITHUB_USER}&repo=${GITHUB_REPO}&path=${encodeURIComponent(subPath)}&ref=${ref}&t=${Date.now()}`;
                   try {
-                    const subRes = await fetch(subApi);
+                    let subRes = await fetch(subApi);
+                    
+                    // Fallback for subfolders too
+                    if (!subRes.ok && subRes.status === 404) {
+                      const directSubUrl = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${subPath}?ref=${ref}`;
+                      subRes = await fetch(directSubUrl);
+                    }
+                    
                     if (subRes.ok) {
                       const subItems = await subRes.json();
                       if (Array.isArray(subItems)) {
