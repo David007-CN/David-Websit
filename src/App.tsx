@@ -1676,6 +1676,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
 
   // Synchronize state with URL changes
   useEffect(() => {
@@ -2154,21 +2155,34 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
               ) : (
                 <QuickPinchZoom
                   onUpdate={({ x, y, scale }) => {
-                    const el = document.getElementById('pinch-zoom-image');
-                    if (el) {
-                      el.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scale})`;
+                    if (imgRef.current) {
+                      imgRef.current.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scale})`;
                     }
                   }}
-                  draggableUnZoomed={true}
+                  draggableUnZoomed={false}
+                  enforceBounds={true}
                   tapZoomFactor={2}
                   doubleTapZoomOut={true}
+                  containerProps={{
+                    style: {
+                      width: '100%',
+                      height: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }
+                  }}
                 >
                   <img 
-                    id="pinch-zoom-image"
+                    ref={imgRef}
                     src={getOptimizedUrl(selectedUrl, 2560, 2560, true)} 
                     className={`max-w-full max-h-full ${project.title === "Retouching" || (typeof displayList[selectedIndex] === 'object' && (displayList[selectedIndex] as any).group) ? "w-full h-full object-cover" : "object-contain"}`}
                     referrerPolicy="no-referrer"
-                    style={{ willChange: 'transform', transformOrigin: '0 0' }}
+                    style={{ 
+                      willChange: 'transform', 
+                      transformOrigin: 'center',
+                      transition: 'none' // Prevent conflict with pinch-zoom's own management
+                    }}
                   />
                 </QuickPinchZoom>
               )}
