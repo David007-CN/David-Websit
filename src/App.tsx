@@ -1693,9 +1693,15 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
       return prev;
     });
 
-    const fetchGalleryContent = async () => {
+      const fetchGalleryContent = async () => {
       // 1. First check if we already have it in localStorage to avoid API calls
       const cacheKey = `github_gallery_${project.title}_${project.id}`;
+      
+      // Force clear cache for Retouching to ensure fresh state as requested
+      if (project.title === 'Retouching') {
+        localStorage.removeItem(cacheKey);
+      }
+      
       const cachedData = localStorage.getItem(cacheKey);
       
       if (cachedData) {
@@ -1704,7 +1710,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
           const isExpired = Date.now() - timestamp > 1000 * 60 * 60; // 1 hour expiration
           
           if (!isExpired && data && data.length > 0) {
-            setProject(prev => ({ ...prev, galleryImages: data }));
+            setProject(prev => prev ? ({ ...prev, galleryImages: data }) : null);
             return;
           }
         } catch (e) {
@@ -1712,8 +1718,8 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
         }
       }
 
-      // Avoid refetching if already loaded in current state
-      if (galleryItems.length > 5) return;
+      // Avoid refetching if already loaded in current state (unless it's Retouching)
+      if (galleryItems.length > 5 && project.title !== 'Retouching') return;
 
       setIsLoading(true);
       setError(null);
@@ -1723,107 +1729,89 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
       const ref = config.ref || GITHUB_REF;
       
       const apiPath = `/api/github-proxy?owner=${GITHUB_USER}&repo=${GITHUB_REPO}&path=${encodeURIComponent(folderName)}&ref=${ref}&t=${Date.now()}`;
-      const directApiPath = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${encodeURIComponent(folderName)}?ref=${ref}&t=${Date.now()}`;
-
-      console.log(`Gallery: Fetching ${folderName} via proxy...`);
+      
       try {
         let response = await fetch(apiPath);
         
-        if (!response.ok) {
-          const errorBody = await response.clone().text().catch(() => "N/A");
-          console.error(`Gallery: Proxy returned ${response.status}`, errorBody);
-        }
-        if (!response.ok && response.status === 404) {
-          console.warn("Proxy returned 404, attempting direct GitHub fetch...");
-          response = await fetch(directApiPath);
-        }
-
         if (response.ok) {
           try {
-            const files = await response.json();
-            if (Array.isArray(files)) {
-              const dynamicGallery = files
-                .filter(file => {
-                  const name = file.name.toLowerCase();
-                  if (name === '.ds_store' || name === 'readme.md') return false;
-                  const ext = name.split('.').pop();
-                  return ['jpg', 'jpeg', 'png', 'webp', 'mp4', 'mov', 'webm'].includes(ext || '');
-                })
-                .map(file => {
-                const rawUrl = file.download_url || `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${ref}/${file.path}`;
-                return {
-                  url: rawUrl,
-                  cover: file.name.toLowerCase().match(/\.(mp4|mov|webm)$/) ? rawUrl.replace(/\.(mp4|mov|webm)$/i, '.jpg') : rawUrl,
-                  title: cleanFileNameToTitle(file.name)
-                };
-              });
+            const data = await response.json();
+            const dynamicGallery: any[] = [];
             
-            if (dynamicGallery.length > 0) {
-              setProject(prev => ({ ...prev, galleryImages: dynamicGallery }));
-              // Cache the result
-              localStorage.setItem(cacheKey, JSON.stringify({
-                data: dynamicGallery,
-                timestamp: Date.now()
-              }));
-            } else {
-              setError("No images found in this folder.");
+            if (Array.isArray(data)) {
+              // Process root items
+              for (const item of data) {
+                if (item.type === 'file' && item.name.toLowerCase().match(/\.(jpg|jpeg|png|webp|mp4|mov|webm)$/i)) {
+                  const rawUrl = item.download_url || `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${ref}/${item.path}`;
+                  dynamicGallery.push({
+                    url: rawUrl,
+                    cover: item.name.toLowerCase().match(/\.(mp4|mov|webm)$/) ? rawUrl.replace(/\.(mp4|mov|webm)$/i, '.jpg') : rawUrl,
+                    title: item.name.replace(/\.[^/.]+$/, "")
+                  });
+                } else if (item.type === 'dir') {
+                  // For subdirectories, fetch their contents too
+                  const subPath = item.path;
+                  const subApi = `/api/github-proxy?owner=${GITHUB_USER}&repo=${GITHUB_REPO}&path=${encodeURIComponent(subPath)}&ref=${ref}&t=${Date.now()}`;
+                  try {
+                    const subRes = await fetch(subApi);
+                    if (subRes.ok) {
+                      const subItems = await subRes.json();
+                      if (Array.isArray(subItems)) {
+                        subItems.forEach((subItem: any) => {
+                          if (subItem.type === 'file' && subItem.name.toLowerCase().match(/\.(jpg|jpeg|png|webp|mp4|mov|webm)$/i)) {
+                            const rawUrl = subItem.download_url || `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${ref}/${subItem.path}`;
+                            dynamicGallery.push({
+                              url: rawUrl,
+                              cover: subItem.name.toLowerCase().match(/\.(mp4|mov|webm)$/) ? rawUrl.replace(/\.(mp4|mov|webm)$/i, '.jpg') : rawUrl,
+                              title: subItem.name.replace(/\.[^/.]+$/, ""),
+                              group: item.name // Keep track of parent folder name
+                            });
+                          }
+                        });
+                      }
+                    }
+                  } catch (e) {
+                    console.error(`Failed to fetch subfolder ${subPath}:`, e);
+                  }
+                }
+              }
+            
+              // Set gallery state
+              setProject(prev => prev ? ({ ...prev, galleryImages: dynamicGallery }) : null);
+              
+              if (dynamicGallery.length > 0) {
+                // Cache the result
+                localStorage.setItem(cacheKey, JSON.stringify({
+                  data: dynamicGallery,
+                  timestamp: Date.now()
+                }));
+              } else {
+                localStorage.removeItem(cacheKey);
+                setError("No images found in this folder or its subfolders.");
+              }
             }
-          }
-        } catch (jsonErr) {
+          } catch (jsonErr) {
             console.error("Gallery JSON Parsing Error:", jsonErr);
-            setError("The response from GitHub source was invalid. Please check your folder structure.");
+            setError("The response from GitHub source was invalid.");
           }
         } else {
-          const errorData = await response.json().catch(() => ({}));
-          console.error("GitHub API Error Details:", errorData);
-
-          if (response.status === 403) {
-            const hasToken = errorData.debugInfo?.tokenUsed;
-            const message = errorData.message || '';
-            const statusMsg = hasToken 
-              ? "GitHub Token used but limit reached. Check token permissions." 
-              : "No GitHub Token detected by server. Please add GITHUB_TOKEN to Settings.";
-            
-            // Check if we have OLD cache we can show as fallback even if expired
-            if (cachedData) {
-              try {
-                const { data } = JSON.parse(cachedData);
-                setProject(prev => ({ ...prev, galleryImages: data }));
-                setError(`Note: Displaying cached content. ${statusMsg}`);
-                // Automatic cache cleanup if error persists
-                if (localStorage.getItem('github_error_count')) {
-                  const count = parseInt(localStorage.getItem('github_error_count') || '0');
-                  if (count > 3) localStorage.clear();
-                  localStorage.setItem('github_error_count', (count + 1).toString());
-                } else {
-                  localStorage.setItem('github_error_count', '1');
-                }
-                return;
-              } catch(e) {}
-            }
-            setError(`GitHub API rate limit reached. ${statusMsg} ${message}. Please check if GITHUB_TOKEN is correct in project Secrets.`);
-          } else if (response.status === 404) {
+          // ... error handling ...
+          if (response.status === 404) {
+            setProject(prev => prev ? ({ ...prev, galleryImages: [] }) : null);
+            localStorage.removeItem(cacheKey);
             setError(`Folder '${folderName}' not found in the repository.`);
           } else {
-            setError(`Error fetching content: ${errorData.message || response.statusText}`);
+            setError(`GitHub API Error: ${response.status}`);
           }
         }
       } catch (err) {
         console.error("Gallery Fetch Error:", err);
-        // Fallback to cache on network error
-        if (cachedData) {
-           try {
-            const { data } = JSON.parse(cachedData);
-            setProject(prev => ({ ...prev, galleryImages: data }));
-            setError("Displaying offline cache content.");
-            return;
-          } catch(e) {}
-        }
-        setError("Failed to connect to GitHub. Please check your connection.");
+        setError("Failed to connect to GitHub.");
       } finally {
         setIsLoading(false);
       }
     };
+
 
     fetchGalleryContent();
   }, [project.title, project.id]);
@@ -1886,62 +1874,117 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
           </div>
         </div>
 
-        <div className={project.title === "Video" ? "space-y-16" : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8"}>
+        <div className={project.title === "Video" ? "space-y-16" : ""}>
           {isLoading && galleryItems.length === 0 ? (
-            <div className="col-span-full py-24 text-center">
+            <div className="py-24 text-center">
               <div className="animate-spin w-8 h-8 border-2 border-brand-red border-t-transparent rounded-full mx-auto mb-4" />
               <p className="text-white/20 text-[10px] font-bold tracking-widest">Connecting to GitHub Source...</p>
             </div>
-          ) : (galleryItems.length === 0 && !isLoading) || (error && galleryItems.length === 0 && (error.toLowerCase().includes("not found") || error.toLowerCase().includes("no images found"))) ? (
-            <div className="col-span-full py-48 text-center border-y border-white/5 bg-white/[0.01]">
+          ) : galleryItems.length === 0 ? (
+            <div className="py-48 text-center border-y border-white/5 bg-white/[0.01]">
               <p className="text-white/40 text-[13px] italic font-display tracking-wide">No images found in this folder.</p>
             </div>
-          ) : error && galleryItems.length === 0 ? (
-            <div className="col-span-full py-48 text-center border-y border-white/5 bg-white/[0.01]">
-              <p className="text-white/40 text-[13px] italic font-display tracking-wide">No images found in this folder.</p>
-            </div>
-          ) : galleryItems.map((item, i) => {
-            const isObject = typeof item === 'object';
-            const videoUrl = isObject ? item.url : item;
-            const imageUrl = project.title === "Video" 
-              ? getVideoThumbnail(videoUrl, isObject ? item.cover : undefined)
-              : (isObject ? item.cover : item);
+          ) : (
+            (() => {
+              // Group items from galleryItems (maintaining their 1,2,3... order inside groups)
+              const groups: Record<string, any[]> = {};
+              const rootItems: any[] = [];
+              const groupOrder: string[] = [];
+              
+              galleryItems.forEach(item => {
+                if (typeof item === 'object' && 'group' in item && item.group) {
+                  const g = item.group as string;
+                  if (!groups[g]) {
+                    groups[g] = [];
+                    groupOrder.push(g);
+                  }
+                  groups[g].push(item);
+                } else {
+                  rootItems.push(item);
+                }
+              });
 
-            return (
-              <motion.div 
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.05 }}
-                className="group cursor-pointer"
-                onClick={() => setSelectedIndex(i)}
-              >
-                <div className="relative aspect-video overflow-hidden bg-white/5 border border-white/10 p-1 mb-3">
-                  <img 
-                    src={getOptimizedUrl(imageUrl, 600, 338)} 
-                    className="w-full h-full object-cover transition-all duration-700 group-hover:scale-105"
-                    referrerPolicy="no-referrer"
-                    loading="lazy"
-                  />
-                  {(project.title === "Video" || videoUrl.includes('bilibili.com') || videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be') || videoUrl.match(/\.(mp4|mov|webm)$/i)) && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-12 h-12 rounded-full bg-brand-red/90 flex items-center justify-center text-white shadow-2xl transform group-hover:scale-110 transition-transform duration-500">
-                        <Play size={20} fill="currentColor" className="ml-1" />
-                      </div>
+              // Reverse the group order so the newest/last-found folders appear first
+              groupOrder.reverse();
+              // Also reverse root items if we want newest root items first
+              rootItems.reverse();
+
+              const renderGrid = (items: any[], startIndex: number) => (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8 mb-16">
+                  {items.map((item, i) => {
+                    const globalIndex = startIndex + i;
+                    const isObject = typeof item === 'object';
+                    const videoUrl = isObject ? item.url : item;
+                    const imageUrl = project.title === "Video" 
+                      ? getVideoThumbnail(videoUrl, isObject ? item.cover : undefined)
+                      : (isObject ? item.cover : item);
+
+                    const isRetouching = project.title === "Retouching";
+
+                    return (
+                      <motion.div 
+                        key={globalIndex}
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: i * 0.05 }}
+                        className="group cursor-pointer"
+                        onClick={() => setSelectedIndex(globalIndex)}
+                      >
+                        <div className={`relative ${project.title === "Video" ? "aspect-video" : isRetouching ? "aspect-square" : "min-h-[200px] h-auto"} overflow-hidden bg-white/5 border border-white/10 p-1 mb-3`}>
+                          <img 
+                            src={getOptimizedUrl(imageUrl, 1200)} 
+                            className={`w-full ${project.title === "Video" || isRetouching ? "h-full object-cover" : "h-auto object-contain"} transition-all duration-700 group-hover:scale-105`}
+                            referrerPolicy="no-referrer"
+                            loading="lazy"
+                          />
+                          {(project.title === "Video" || videoUrl.includes('bilibili.com') || videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be') || videoUrl.match(/\.(mp4|mov|webm)$/i)) && (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="w-12 h-12 rounded-full bg-brand-red/90 flex items-center justify-center text-white shadow-2xl transform group-hover:scale-110 transition-transform duration-500">
+                                <Play size={20} fill="currentColor" className="ml-1" />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex justify-between items-start gap-2">
+                          <h3 className={`${project.title === "Video" || (isObject && item.title) ? "text-base font-bold" : "text-[12px] font-medium text-white/50"} font-display leading-tight flex-grow`}>
+                            {isObject && item.title ? item.title : formatTitle(videoUrl)}
+                          </h3>
+                          <span className="text-[9px] font-bold text-white/10 tracking-widest shrink-0 mt-0.5">{globalIndex + 1}</span>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              );
+
+              let currentIndex = 0;
+              const result = [];
+
+              if (rootItems.length > 0) {
+                result.push(<div key="root-grid">{renderGrid(rootItems, currentIndex)}</div>);
+                currentIndex += rootItems.length;
+              }
+
+              groupOrder.forEach((groupName) => {
+                const items = groups[groupName];
+                result.push(
+                  <div key={groupName} className="mb-24">
+                    <div className="flex items-center gap-6 mb-10">
+                      <h2 className="text-2xl md:text-3xl font-display font-bold text-white whitespace-nowrap">{groupName}</h2>
+                      <div className="h-[1px] bg-white/20 flex-grow" />
                     </div>
-                  )}
-                </div>
-                <div className="flex justify-between items-start gap-2">
-                  <h3 className={`${project.title === "Video" || (isObject && item.title) ? "text-base font-bold" : "text-[12px] font-medium text-white/50"} font-display leading-tight flex-grow`}>
-                    {isObject && item.title ? item.title : formatTitle(videoUrl)}
-                  </h3>
-                  <span className="text-[9px] font-bold text-white/10 tracking-widest shrink-0 mt-0.5">{i + 1}</span>
-                </div>
-              </motion.div>
-            );
-          })}
+                    {renderGrid(items, currentIndex)}
+                  </div>
+                );
+                currentIndex += items.length;
+              });
+
+              return result;
+            })()
+          )}
         </div>
+
       </div>
 
       {/* Lightbox */}
@@ -2001,6 +2044,8 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                   ? "max-h-[85vh] aspect-[9/16] w-auto max-w-[95vw]"
                 : selectedUrl.match(/\.(mp4|mov|webm)$/i)
                   ? "max-w-[100vw] max-h-[100vh] w-auto h-auto"
+                : project.title === "Retouching"
+                  ? "w-full max-w-[min(90vw,1000px)] aspect-square"
                 : "max-w-[min(95vw,1920px)] max-h-[min(90vh,1080px)] w-auto h-auto"
               }`}
               onClick={(e) => e.stopPropagation()}
@@ -2043,7 +2088,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
               ) : (
                 <img 
                   src={getOptimizedUrl(selectedUrl, 1920, 1080, true)} 
-                  className="max-w-full max-h-full object-contain pointer-events-none"
+                  className={`max-w-full max-h-full ${project.title === "Retouching" ? "w-full h-full object-cover" : "object-contain"} pointer-events-none`}
                   referrerPolicy="no-referrer"
                 />
               )}
@@ -2070,30 +2115,13 @@ const HomePage = ({ archiveProjects }: { archiveProjects: Project[] }) => (
 
 const cleanFileNameToTitle = (filename: string) => {
   // Remove extension
-  let name = filename.replace(/\.[^/.]+$/, "");
-  
-  // Find the first underscore
-  const firstIdx = name.indexOf('_');
-  if (firstIdx !== -1) {
-    // Keep everything after the first _
-    name = name.substring(firstIdx + 1);
-    
-    // Find the 'second' underscore (which is the first one in the remaining string)
-    // The user mentioned "second slash", which usually corresponds to the second separator in this context
-    const secondIdx = name.indexOf('_');
-    if (secondIdx !== -1) {
-      name = name.substring(0, secondIdx);
-    }
-  }
-  
-  // Keep original casing as requested
-  return name;
+  return filename.replace(/\.[^/.]+$/, "");
 };
 
 const CATEGORY_CONFIGS: Record<string, { folder: string, ref?: string }> = {
   "Design": { folder: "Expertise Showcase" },
   "Photography": { folder: "Photography" },
-  "Retouching": { folder: "Retouching" },
+  "Retouching": { folder: "Retouching", ref: "bfb077e391046a418e835dcb6c5ec176752e7d55" },
   "Rendering": { folder: "Rendering" },
   "AI Studio": { folder: "AI Studio" },
   "Video": { folder: "Video" }
@@ -2134,7 +2162,7 @@ const INITIAL_ARCHIVE: Project[] = [
     title: "Retouching",
     subtitle: "Nothing left unnoticed.",
     category: "Retouching",
-    image: "https://picsum.photos/seed/retouching/1280/720",
+    image: "https://github.com/David007-CN/DW/blob/main/Cover/SE%20White%20background_2.jpg?raw=true",
     galleryImages: []
   },
   {
