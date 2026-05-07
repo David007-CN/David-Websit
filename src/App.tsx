@@ -1626,32 +1626,32 @@ const Footer = () => {
   return (
     <footer className="py-24 bg-brand-dark border-t border-white/5">
       <div className="max-w-7xl mx-auto px-6">
-        <div className="flex flex-col md:flex-row md:items-center gap-12 md:gap-16 lg:gap-24 mb-20">
-          <div className="flex flex-col items-start shrink-0">
+        <div className="flex items-center justify-center gap-6 md:gap-16 lg:gap-24 mb-20">
+          <div className="flex flex-col items-center shrink-0">
             <img 
               src={getOptimizedUrl("https://github.com/David007-CN/DW/blob/main/David%20Signature/David%20Signature%20red%20bold.png?raw=true")}
-              alt="David Signature"
-              className="h-16 md:h-20 w-auto object-contain mb-6"
+              alt="David Signature" 
+              className="h-8 md:h-20 w-auto object-contain mb-3 md:mb-6"
               referrerPolicy="no-referrer"
             />
-            <div className="flex gap-6 pl-1">
+            <div className="flex gap-1.5 md:gap-6">
               <a href="https://www.instagram.com/osight_david/" target="_blank" rel="noopener noreferrer">
-                <Twitter size={20} className="opacity-40 hover:opacity-100 cursor-pointer transition-opacity" />
+                <Twitter size={12} className="opacity-40 hover:opacity-100 cursor-pointer transition-opacity md:w-5 md:h-5" />
               </a>
               <a href="https://www.instagram.com/osight_david/" target="_blank" rel="noopener noreferrer">
-                <Facebook size={20} className="opacity-40 hover:opacity-100 cursor-pointer transition-opacity" />
+                <Facebook size={12} className="opacity-40 hover:opacity-100 cursor-pointer transition-opacity md:w-5 md:h-5" />
               </a>
               <a href="https://www.instagram.com/osight_david/" target="_blank" rel="noopener noreferrer">
-                <Instagram size={20} className="opacity-40 hover:opacity-100 cursor-pointer transition-opacity" />
+                <Instagram size={12} className="opacity-40 hover:opacity-100 cursor-pointer transition-opacity md:w-5 md:h-5" />
               </a>
               <a href="https://www.instagram.com/osight_david/" target="_blank" rel="noopener noreferrer">
-                <Youtube size={20} className="opacity-40 hover:opacity-100 cursor-pointer transition-opacity" />
+                <Youtube size={12} className="opacity-40 hover:opacity-100 cursor-pointer transition-opacity md:w-5 md:h-5" />
               </a>
             </div>
           </div>
           
-          <div className="md:pt-0">
-            <p className="font-handwriting text-2xl md:text-3xl text-brand-red leading-tight">
+          <div className="text-center max-w-[65%] md:max-w-none">
+            <p className="font-handwriting text-[11px] sm:text-sm md:text-2xl lg:text-3xl text-brand-red leading-tight">
               Focused on product launch and conversion design. Built to perform, not just to impress.
             </p>
           </div>
@@ -1686,11 +1686,13 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
 
   const galleryItems = project?.galleryImages || [];
 
-  // 统一计算显示列表，确保 UI 和 Modal 索引一致
+  // 【核心修复】统一计算显示列表，确保 UI 和 Modal 索引一致
+  // 无论是渲染网格还是弹窗翻页，都必须使用这个 displayList
   const displayList = useMemo(() => {
     if (!project) return [];
     const isRetouching = project.title === "Retouching";
     
+    // 分组逻辑
     const groups: Record<string, any[]> = {};
     const rootItems: any[] = [];
     const groupOrder: string[] = [];
@@ -1710,13 +1712,13 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
 
     const list: any[] = [];
     if (isRetouching) {
-      // Retouching: 文件夹顺序反向，根项目顺序反向
+      // Retouching: 文件夹顺序反向（最新在前），根项目（文件夹外的散图）顺序也反向
       const reversedRootItems = [...rootItems].reverse();
       const reversedGroupOrder = [...groupOrder].reverse();
       
       reversedRootItems.forEach(item => list.push(item));
       reversedGroupOrder.forEach(gName => {
-        // 文件夹内部保持原有顺序
+        // 文件夹内部保持原有逻辑（通常文件夹内已经是按顺序排列的）
         groups[gName].forEach(item => list.push(item));
       });
     } else {
@@ -1743,11 +1745,6 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
       const fetchGalleryContent = async () => {
       // 1. First check if we already have it in localStorage to avoid API calls
       const cacheKey = `github_gallery_${project.title}_${project.id}`;
-      
-      // Force clear cache for Retouching to ensure fresh state as requested
-      if (project.title === 'Retouching') {
-        localStorage.removeItem(cacheKey);
-      }
       
       const cachedData = localStorage.getItem(cacheKey);
       
@@ -1976,7 +1973,6 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                         className="group cursor-pointer"
                         onClick={() => {
                           setSelectedIndex(globalIndex);
-                          setSelectedUrl(videoUrl);
                         }}
                       >
                         <div className={`relative ${isVideo ? "aspect-video" : isRetouching ? "aspect-square" : "min-h-[200px] h-auto"} overflow-hidden bg-white/5 border border-white/10 p-1 mb-3`}>
