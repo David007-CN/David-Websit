@@ -1967,7 +1967,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
               });
 
               const renderGrid = (items: any[]) => (
-                <div className={isVideo ? "space-y-16 mb-24" : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8 mb-16"}>
+                <div className={isVideo ? "space-y-16 mb-24" : `grid ${isRetouching ? "grid-cols-4 gap-1.5 sm:gap-4 md:gap-6 lg:gap-8" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8"} mb-16`}>
                   {items.map((item, idx) => {
                     // 获取在统一列表中的全局索引
                     const globalIndex = displayList.indexOf(item);
@@ -1989,7 +1989,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                           setSelectedIndex(globalIndex);
                         }}
                       >
-                        <div className={`relative ${isVideo ? "aspect-video" : isRetouching ? "aspect-square" : "min-h-[200px] h-auto"} overflow-hidden bg-white/5 border border-white/10 p-1 mb-3`}>
+                        <div className={`relative ${isVideo ? "aspect-video" : isRetouching ? "aspect-square" : "min-h-[200px] h-auto"} overflow-hidden bg-white/5 border border-white/10 ${isRetouching ? "p-0.5 md:p-1" : "p-1"} mb-1 md:mb-3`}>
                           <img 
                             src={getOptimizedUrl(imageUrl, isVideo || isRetouching ? 1600 : 1200)} 
                             className={`w-full ${isVideo || isRetouching ? "h-full object-cover" : "h-auto object-contain"} transition-all duration-700 group-hover:scale-105`}
@@ -2004,11 +2004,11 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                             </div>
                           )}
                         </div>
-                        <div className="flex justify-between items-start gap-2">
-                          <h3 className={`${isVideo || (isObject && item.title) ? "text-base font-bold" : "text-[12px] font-medium text-white/50"} font-display leading-tight flex-grow`}>
+                        <div className="flex justify-between items-start gap-1">
+                          <h3 className={`${isVideo || (isObject && item.title) ? "text-[8px] md:text-base font-bold" : "text-[8px] md:text-[12px] font-medium text-white/50"} font-display leading-tight flex-grow truncate md:whitespace-normal`}>
                             {isObject && item.title ? item.title : formatTitle(videoUrl)}
                           </h3>
-                          <span className="text-[9px] font-bold text-white/10 tracking-widest shrink-0 mt-0.5">{globalIndex + 1}</span>
+                          <span className="text-[7px] md:text-[9px] font-bold text-white/10 tracking-widest shrink-0 mt-0.5">{globalIndex + 1}</span>
                         </div>
                       </motion.div>
                     );
