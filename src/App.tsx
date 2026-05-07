@@ -1684,7 +1684,50 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
     setError(null);
   }, [id, archiveProjects]);
 
-  const galleryItems = project.galleryImages || [];
+  const galleryItems = project?.galleryImages || [];
+
+  // 统一计算显示列表，确保 UI 和 Modal 索引一致
+  const displayList = useMemo(() => {
+    if (!project) return [];
+    const isRetouching = project.title === "Retouching";
+    
+    const groups: Record<string, any[]> = {};
+    const rootItems: any[] = [];
+    const groupOrder: string[] = [];
+    
+    galleryItems.forEach(item => {
+      if (typeof item === 'object' && 'group' in item && item.group) {
+        const g = item.group as string;
+        if (!groups[g]) {
+          groups[g] = [];
+          groupOrder.push(g);
+        }
+        groups[g].push(item);
+      } else {
+        rootItems.push(item);
+      }
+    });
+
+    const list: any[] = [];
+    if (isRetouching) {
+      // Retouching: 文件夹顺序反向，根项目顺序反向
+      const reversedRootItems = [...rootItems].reverse();
+      const reversedGroupOrder = [...groupOrder].reverse();
+      
+      reversedRootItems.forEach(item => list.push(item));
+      reversedGroupOrder.forEach(gName => {
+        // 文件夹内部保持原有顺序
+        groups[gName].forEach(item => list.push(item));
+      });
+    } else {
+      // 其他分页：保持自然顺序
+      rootItems.forEach(item => list.push(item));
+      groupOrder.forEach(gName => {
+        groups[gName].forEach(item => list.push(item));
+      });
+    }
+    return list;
+  }, [galleryItems, project?.title]);
 
   useEffect(() => {
     if (!project || project.title === 'Video') return;
@@ -1828,14 +1871,14 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
   const handleNext = (e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (selectedIndex !== null) {
-      setSelectedIndex((selectedIndex + 1) % galleryItems.length);
+      setSelectedIndex((selectedIndex + 1) % displayList.length);
     }
   };
 
   const handlePrev = (e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (selectedIndex !== null) {
-      setSelectedIndex((selectedIndex - 1 + galleryItems.length) % galleryItems.length);
+      setSelectedIndex((selectedIndex - 1 + displayList.length) % displayList.length);
     }
   };
 
@@ -1848,9 +1891,9 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedIndex, galleryItems.length]);
+  }, [selectedIndex, displayList.length]);
 
-  const selectedItem = selectedIndex !== null ? galleryItems[selectedIndex] : null;
+  const selectedItem = selectedIndex !== null ? displayList[selectedIndex] : null;
   const selectedUrl = selectedItem ? (typeof selectedItem === 'object' ? selectedItem.url : selectedItem) : null;
 
   return (
@@ -1894,59 +1937,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
               const isRetouching = project.title === "Retouching";
               const isVideo = project.title === "Video";
 
-              // 检查是否有分组（文件夹）
-              const hasGroups = galleryItems.some(item => typeof item === 'object' && 'group' in item);
-
-              // 如果不是 Retouching 且没有分组，使用最简单的渲染逻辑，确保样式和顺序完全恢复
-              if (!isRetouching && !hasGroups) {
-                return (
-                  <div className={isVideo ? "space-y-16" : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8 mb-16"}>
-                    {galleryItems.map((item, i) => {
-                      const isObject = typeof item === 'object';
-                      const videoUrl = isObject ? item.url : item;
-                      const imageUrl = isVideo 
-                        ? getVideoThumbnail(videoUrl, isObject ? item.cover : undefined)
-                        : (isObject ? item.cover : item);
-
-                      return (
-                        <motion.div 
-                          key={i}
-                          initial={{ opacity: 0, y: 20 }}
-                          whileInView={{ opacity: 1, y: 0 }}
-                          viewport={{ once: true }}
-                          transition={{ delay: i * 0.05 }}
-                          className="group cursor-pointer"
-                          onClick={() => setSelectedIndex(i)}
-                        >
-                          <div className={`relative ${isVideo ? "aspect-video" : "min-h-[200px] h-auto"} overflow-hidden bg-white/5 border border-white/10 p-1 mb-3`}>
-                            <img 
-                              src={getOptimizedUrl(imageUrl, isVideo ? 1600 : 1200)} 
-                              className={`w-full ${isVideo ? "h-full object-cover" : "h-auto object-contain"} transition-all duration-700 group-hover:scale-105`}
-                              referrerPolicy="no-referrer"
-                              loading="lazy"
-                            />
-                            {(isVideo || videoUrl.includes('bilibili.com') || videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be') || videoUrl.match(/\.(mp4|mov|webm)$/i)) && (
-                              <div className="absolute inset-0 flex items-center justify-center">
-                                <div className="w-12 h-12 rounded-full bg-brand-red/90 flex items-center justify-center text-white shadow-2xl transform group-hover:scale-110 transition-transform duration-500">
-                                  <Play size={20} fill="currentColor" className="ml-1" />
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex justify-between items-start gap-2">
-                            <h3 className={`${isVideo || (isObject && item.title) ? "text-base font-bold" : "text-[12px] font-medium text-white/50"} font-display leading-tight flex-grow`}>
-                              {isObject && item.title ? item.title : formatTitle(videoUrl)}
-                            </h3>
-                            <span className="text-[9px] font-bold text-white/10 tracking-widest shrink-0 mt-0.5">{i + 1}</span>
-                          </div>
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-                );
-              }
-
-              // 对于 Retouching 或有分组的页面，执行分组逻辑
+              // 对数据重新分组（用于 UI 分板块渲染，但顺序参考 displayList）
               const groups: Record<string, any[]> = {};
               const rootItems: any[] = [];
               const groupOrder: string[] = [];
@@ -1964,19 +1955,11 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                 }
               });
 
-              // 仅在 Retouching 时反转文件夹和根项目顺序
-              if (isRetouching) {
-                if (groupOrder.length === 0 && rootItems.length === 0) {
-                  console.warn("Retouching: No items found to sort.");
-                }
-                groupOrder.reverse();
-                rootItems.reverse();
-              }
-
-              const renderGrid = (items: any[], startIndex: number) => (
+              const renderGrid = (items: any[]) => (
                 <div className={isVideo ? "space-y-16 mb-24" : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8 mb-16"}>
-                  {items.map((item, i) => {
-                    const globalIndex = startIndex + i;
+                  {items.map((item, idx) => {
+                    // 获取在统一列表中的全局索引
+                    const globalIndex = displayList.indexOf(item);
                     const isObject = typeof item === 'object';
                     const videoUrl = isObject ? item.url : item;
                     const imageUrl = isVideo 
@@ -1985,13 +1968,16 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
 
                     return (
                       <motion.div 
-                        key={globalIndex}
+                        key={`${globalIndex}-${idx}`}
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
-                        transition={{ delay: i * 0.05 }}
+                        transition={{ delay: 0.05 }}
                         className="group cursor-pointer"
-                        onClick={() => setSelectedIndex(globalIndex)}
+                        onClick={() => {
+                          setSelectedIndex(globalIndex);
+                          setSelectedUrl(videoUrl);
+                        }}
                       >
                         <div className={`relative ${isVideo ? "aspect-video" : isRetouching ? "aspect-square" : "min-h-[200px] h-auto"} overflow-hidden bg-white/5 border border-white/10 p-1 mb-3`}>
                           <img 
@@ -2020,30 +2006,38 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                 </div>
               );
 
-              let currentIndex = 0;
-              const resultArr = [];
-
-              if (rootItems.length > 0) {
-                resultArr.push(<div key="root-grid">{renderGrid(rootItems, currentIndex)}</div>);
-                currentIndex += rootItems.length;
-              }
-
-              groupOrder.forEach((groupName) => {
-                const items = groups[groupName];
-                resultArr.push(
-                  <div key={groupName} className="mb-24">
-                    <div className="flex items-center gap-6 mb-10">
-                      <h2 className="text-2xl md:text-3xl font-display font-bold text-white whitespace-nowrap">{groupName}</h2>
-                      <div className="h-[1px] bg-white/20 flex-grow" />
+              const elements = [];
+              if (isRetouching) {
+                const reversedRootItems = [...rootItems].reverse();
+                if (reversedRootItems.length > 0) elements.push(<div key="root-grid">{renderGrid(reversedRootItems)}</div>);
+                [...groupOrder].reverse().forEach(gName => {
+                  elements.push(
+                    <div key={gName} className="mb-24">
+                      <div className="flex items-center gap-6 mb-10">
+                        <h2 className="text-2xl md:text-3xl font-display font-bold text-white whitespace-nowrap">{gName}</h2>
+                        <div className="h-[1px] bg-white/20 flex-grow" />
+                      </div>
+                      {renderGrid(groups[gName])}
                     </div>
-                    {renderGrid(items, currentIndex)}
-                  </div>
-                );
-                currentIndex += items.length;
-              });
-
-              return resultArr;
+                  );
+                });
+              } else {
+                if (rootItems.length > 0) elements.push(<div key="root-grid">{renderGrid(rootItems)}</div>);
+                groupOrder.forEach(gName => {
+                  elements.push(
+                    <div key={gName} className="mb-24">
+                      <div className="flex items-center gap-6 mb-10">
+                        <h2 className="text-2xl md:text-3xl font-display font-bold text-white whitespace-nowrap">{gName}</h2>
+                        <div className="h-[1px] bg-white/20 flex-grow" />
+                      </div>
+                      {renderGrid(groups[gName])}
+                    </div>
+                  );
+                });
+              }
+              return elements;
             })()
+
           )}
         </div>
 
@@ -2149,12 +2143,24 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                 />
               ) : (
                 <img 
-                  src={getOptimizedUrl(selectedUrl, 1920, 1080, true)} 
-                  className={`max-w-full max-h-full ${project.title === "Retouching" || (typeof galleryItems[selectedIndex] === 'object' && (galleryItems[selectedIndex] as any).group) ? "w-full h-full object-cover" : "object-contain"} pointer-events-none`}
+                  src={getOptimizedUrl(selectedUrl, 2560, 2560, true)} 
+                  className={`max-w-full max-h-full ${project.title === "Retouching" || (typeof displayList[selectedIndex] === 'object' && (displayList[selectedIndex] as any).group) ? "w-full h-full object-cover" : "object-contain"} pointer-events-none`}
                   referrerPolicy="no-referrer"
                 />
               )}
             </motion.div>
+            
+            {/* 描述信息移入弹窗内部并添加安全检查 */}
+            {selectedIndex !== null && (
+              <div className="absolute bottom-6 md:bottom-12 left-0 right-0 text-center pointer-events-none z-[110]">
+                <p className="text-white font-display text-lg md:text-xl font-medium drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
+                  {typeof displayList[selectedIndex] === 'object' && (displayList[selectedIndex] as any).title 
+                    ? (displayList[selectedIndex] as any).title 
+                    : formatTitle(selectedUrl)}
+                </p>
+                <p className="text-white/40 text-xs md:text-sm mt-2 drop-shadow-md">{selectedIndex + 1} / {displayList.length}</p>
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
