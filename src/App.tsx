@@ -1740,6 +1740,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
         if (response.ok) {
           try {
             const data = await response.json();
+            console.log(`Gallery fetch success for ${project.title}:`, data.length, "items");
             const dynamicGallery: any[] = [];
             
             if (Array.isArray(data)) {
@@ -1965,6 +1966,9 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
 
               // 仅在 Retouching 时反转文件夹和根项目顺序
               if (isRetouching) {
+                if (groupOrder.length === 0 && rootItems.length === 0) {
+                  console.warn("Retouching: No items found to sort.");
+                }
                 groupOrder.reverse();
                 rootItems.reverse();
               }
@@ -2146,7 +2150,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
               ) : (
                 <img 
                   src={getOptimizedUrl(selectedUrl, 1920, 1080, true)} 
-                  className={`max-w-full max-h-full ${project.title === "Retouching" ? "w-full h-full object-cover" : "object-contain"} pointer-events-none`}
+                  className={`max-w-full max-h-full ${project.title === "Retouching" || (typeof galleryItems[selectedIndex] === 'object' && (galleryItems[selectedIndex] as any).group) ? "w-full h-full object-cover" : "object-contain"} pointer-events-none`}
                   referrerPolicy="no-referrer"
                 />
               )}
@@ -2179,7 +2183,7 @@ const cleanFileNameToTitle = (filename: string) => {
 const CATEGORY_CONFIGS: Record<string, { folder: string, ref?: string }> = {
   "Design": { folder: "Expertise Showcase" },
   "Photography": { folder: "Photography" },
-  "Retouching": { folder: "Retouching", ref: "bfb077e391046a418e835dcb6c5ec176752e7d55" },
+  "Retouching": { folder: "Retouching" },
   "Rendering": { folder: "Rendering" },
   "AI Studio": { folder: "AI Studio" },
   "Video": { folder: "Video" }
