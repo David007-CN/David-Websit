@@ -6,7 +6,7 @@
 import React, { useState, useEffect, useLayoutEffect, useMemo, useRef, useCallback } from 'react';
 import { Routes, Route, Link, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { motion, AnimatePresence, useMotionValue, useAnimationFrame } from 'motion/react';
-import QuickPinchZoom from 'react-quick-pinch-zoom';
+import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import { 
   Twitter, 
   Menu, 
@@ -2153,38 +2153,37 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                   className="max-w-full max-h-full object-contain"
                 />
               ) : (
-                <QuickPinchZoom
-                  onUpdate={({ x, y, scale }) => {
-                    if (imgRef.current) {
-                      imgRef.current.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scale})`;
-                    }
-                  }}
-                  draggableUnZoomed={false}
-                  enforceBounds={true}
-                  tapZoomFactor={2}
-                  doubleTapZoomOut={true}
-                  containerProps={{
-                    style: {
-                      width: '100%',
-                      height: '100%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }
-                  }}
+                <TransformWrapper
+                  initialScale={1}
+                  minScale={0.5}
+                  maxScale={8}
+                  centerOnInit={true}
+                  wheel={{ step: 0.1 }}
+                  pinch={{ step: 5 }}
+                  panning={{ velocityDisabled: false }}
                 >
-                  <img 
-                    ref={imgRef}
-                    src={getOptimizedUrl(selectedUrl, 2560, 2560, true)} 
-                    className={`max-w-full max-h-full ${project.title === "Retouching" || (typeof displayList[selectedIndex] === 'object' && (displayList[selectedIndex] as any).group) ? "w-full h-full object-cover" : "object-contain"}`}
-                    referrerPolicy="no-referrer"
-                    style={{ 
-                      willChange: 'transform', 
-                      transformOrigin: 'center',
-                      transition: 'none' // Prevent conflict with pinch-zoom's own management
+                  <TransformComponent
+                    wrapperStyle={{
+                      width: "100%",
+                      height: "100%",
+                      cursor: "grab"
                     }}
-                  />
-                </QuickPinchZoom>
+                    contentStyle={{
+                      width: "100%",
+                      height: "100%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center"
+                    }}
+                  >
+                    <img 
+                      src={getOptimizedUrl(selectedUrl, 2560, 2560, true)} 
+                      className={`max-w-full max-h-full ${project.title === "Retouching" || (typeof displayList[selectedIndex] === 'object' && (displayList[selectedIndex] as any).group) ? "w-full h-full object-cover" : "object-contain"}`}
+                      referrerPolicy="no-referrer"
+                      style={{ willChange: 'transform' }}
+                    />
+                  </TransformComponent>
+                </TransformWrapper>
               )}
             </motion.div>
             
