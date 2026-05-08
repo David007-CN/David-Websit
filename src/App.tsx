@@ -1670,9 +1670,19 @@ const Footer = () => {
 
 const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
   const { id } = useParams<{ id: string }>();
-  const [project, setProject] = useState<Project>(() => 
-    archiveProjects.find(p => p.id === Number(id)) || archiveProjects[0]
-  );
+  
+  // 核心优化：确保初始化时能正确匹配项目，即使 ID 是非数字
+  const getInitialProject = () => {
+    if (!id) return archiveProjects[0];
+    const numericId = parseInt(id);
+    if (!isNaN(numericId)) {
+      return archiveProjects.find(p => p.id === numericId) || archiveProjects[0];
+    }
+    // 允许通过标题匹配
+    return archiveProjects.find(p => p.title.toLowerCase() === id.toLowerCase()) || archiveProjects[0];
+  };
+
+  const [project, setProject] = useState<Project>(getInitialProject);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -1680,8 +1690,16 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
 
   // Synchronize state with URL changes
   useEffect(() => {
-    const freshProject = archiveProjects.find(p => p.id === Number(id)) || archiveProjects[0];
-    setProject(freshProject);
+    const numericId = parseInt(id || "");
+    let freshProject: Project | undefined;
+    
+    if (!isNaN(numericId)) {
+      freshProject = archiveProjects.find(p => p.id === numericId);
+    } else if (id) {
+      freshProject = archiveProjects.find(p => p.title.toLowerCase() === id.toLowerCase());
+    }
+    
+    setProject(freshProject || archiveProjects[0]);
     setSelectedIndex(null);
     setError(null);
   }, [id, archiveProjects]);
