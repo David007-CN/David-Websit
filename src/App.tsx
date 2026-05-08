@@ -1777,12 +1777,19 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
       const apiPath = `/api/github-proxy?owner=${GITHUB_USER}&repo=${GITHUB_REPO}&path=${encodeURIComponent(folderName)}&ref=${ref}&t=${Date.now()}`;
       
       try {
-        let response = await fetch(apiPath);
+        let response: Response;
+        try {
+          response = await fetch(apiPath);
+        } catch (e) {
+          console.warn("Proxy fetch failed, attempting direct GitHub API fallback");
+          const directUrl = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${folderName}?ref=${ref}&t=${Date.now()}`;
+          response = await fetch(directUrl);
+        }
         
-        // If the proxy returns 404 (common on static production sites), try fetching directly from GitHub API
-        if (!response.ok && response.status === 404) {
-          console.warn(`Gallery Proxy not found at ${apiPath}, falling back to direct GitHub API`);
-          const directUrl = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${folderName}?ref=${ref}`;
+        // If the response is not OK (any error status), try fallback
+        if (!response.ok) {
+          console.warn(`Initial fetch failed (${response.status}), falling back to direct GitHub API`);
+          const directUrl = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${folderName}?ref=${ref}&t=${Date.now()}`;
           response = await fetch(directUrl);
         }
         
@@ -1807,11 +1814,17 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                   const subPath = item.path;
                   const subApi = `/api/github-proxy?owner=${GITHUB_USER}&repo=${GITHUB_REPO}&path=${encodeURIComponent(subPath)}&ref=${ref}&t=${Date.now()}`;
                   try {
-                    let subRes = await fetch(subApi);
+                    let subRes: Response;
+                    try {
+                      subRes = await fetch(subApi);
+                    } catch (e) {
+                      const directSubUrl = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${subPath}?ref=${ref}&t=${Date.now()}`;
+                      subRes = await fetch(directSubUrl);
+                    }
                     
                     // Fallback for subfolders too
-                    if (!subRes.ok && subRes.status === 404) {
-                      const directSubUrl = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${subPath}?ref=${ref}`;
+                    if (!subRes.ok) {
+                      const directSubUrl = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${subPath}?ref=${ref}&t=${Date.now()}`;
                       subRes = await fetch(directSubUrl);
                     }
                     
