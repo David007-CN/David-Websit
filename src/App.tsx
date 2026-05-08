@@ -117,12 +117,12 @@ const formatTitle = (fileName: string) => {
   
   // 1. Precise Mapping Table (High Priority)
   const mapping: { [key: string]: string } = {
-    "nra_202604_dsc_8238": "NRA Show Exhibition",
-    "nra_202604_dsc_8239": "Outdoor Shooting",
-    "nra_202604_dsc_8240": "Product Detail",
     "osight_se_adjust_brightness": "Osight SE Adjust Brightness",
     "osight_se_carry": "Osight SE Carry",
     "osight_se_concealed_carry": "Osight SE Concealed Carry",
+    "nra_202604_dsc_8238": "NRA Show Exhibition",
+    "nra_202604_dsc_8239": "Outdoor Shooting",
+    "nra_202604_dsc_8240": "Product Detail",
     "xinjiang": "Xinjiang Travel"
   };
 
@@ -131,19 +131,16 @@ const formatTitle = (fileName: string) => {
     if (normalizedKey.includes(key)) return mapping[key];
   }
 
-  // 2. Smart Parsing based on user's rule: skip prefix and suffix
-  // Rule: skip part before first _, keep content between 1st and 2nd _
-  // BUT: If the 1st part is descriptive (not a number), we might want it.
-  // HOWEVER: User specifically asked to "skip 前面的数字".
+  // 2. Smart Parsing
   const parts = name.split('_');
   
   if (parts.length >= 2) {
-    // If the first part is numeric (e.g. "01"), skip it and take the title part
+    // Case A: Skip leading index numbers
     if (/^\d+$/.test(parts[0])) {
       return parts[1].trim();
     }
     
-    // If the second part looks like a date/ID (all digits), maybe the first part was the title?
+    // Case B: If 2nd part is a number/date, take the 1st part (Brand/Project)
     if (/^\d+$/.test(parts[1]) && parts[1].length >= 4) {
       return parts[0].trim();
     }
@@ -151,7 +148,6 @@ const formatTitle = (fileName: string) => {
     return parts[1].trim();
   }
   
-  // Fallback
   return name.replace(/[_-]/g, ' ').trim() || "Project Asset";
 };
 
@@ -1795,7 +1791,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
     const currentProjectTitle = project.title;
 
     const fetchGalleryContent = async (isManualRefresh = false) => {
-      const cacheKey = `github_gallery_v5_${currentProjectTitle}_${currentProjectId}`;
+      const cacheKey = `github_gallery_v6_${currentProjectTitle}_${currentProjectId}`;
       const cachedData = localStorage.getItem(cacheKey);
       
       if (cachedData && !isManualRefresh) {
@@ -1897,7 +1893,10 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
       } catch (err: any) {
         console.error("Gallery Fetch Error:", err);
         if (!isCancelled) {
-          setError(`Connection failed: ${err.message || 'Unknown error'}. This usually happens due to GitHub API rate limits if no token is configured.`);
+          const isRateLimit = err.message?.includes('403') || JSON.stringify(err).includes('rate limit');
+          setError(isRateLimit 
+            ? "GitHub API Rate Limit Exceeded. On your personal domain, please configure a VITE_GITHUB_TOKEN to avoid limits." 
+            : `Connection failed: ${err.message || 'Unknown error'}. Please check if the folder exists in your GitHub repo.`);
         }
       } finally {
         if (!isCancelled) setIsLoading(false);
@@ -2261,10 +2260,10 @@ const STABLE_REF = "bfb077e391046a418e835dcb6c5ec176752e7d55";
 
 const CATEGORY_CONFIGS: Record<string, { folder: string, ref?: string }> = {
   "Design": { folder: "Design", ref: STABLE_REF },
-  "Photography": { folder: "Life/Photography", ref: STABLE_REF },
-  "Retouching": { folder: "Life/Retouching", ref: STABLE_REF },
-  "Rendering": { folder: "Life/Rendering", ref: STABLE_REF },
-  "AI Studio": { folder: "Life/AI Studio", ref: STABLE_REF },
+  "Photography": { folder: "Photography", ref: STABLE_REF },
+  "Retouching": { folder: "Retouching", ref: STABLE_REF },
+  "Rendering": { folder: "Rendering", ref: STABLE_REF },
+  "AI Studio": { folder: "AI Studio", ref: STABLE_REF },
   "Video": { folder: "Video", ref: "main" }
 };
 
