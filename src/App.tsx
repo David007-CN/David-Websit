@@ -1838,12 +1838,18 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
         const t = Date.now();
         const headers = token ? { 'Authorization': `token ${token}` } : {};
         try {
-          const path = url.replace(/.*\/contents\//, '').split('?')[0];
-          const proxyUrl = `/api/github-proxy?owner=${GITHUB_USER}&repo=${GITHUB_REPO}&path=${encodeURIComponent(path)}&ref=${ref}&t=${t}`;
+          const pathParam = url.replace(/.*\/contents\//, '').split('?')[0];
+          const proxyUrl = `/api/github-proxy?owner=${GITHUB_USER}&repo=${GITHUB_REPO}&path=${encodeURIComponent(pathParam)}&ref=${ref}&t=${t}`;
+          
+          console.log(`Fetching from: ${proxyUrl}`);
           const res = await fetch(proxyUrl);
           if (res.ok) return res;
+          
+          // If proxy fails, try direct
+          console.warn(`Proxy failed (${res.status}), trying direct fetch to GitHub API...`);
           return await fetch(`${url}${url.includes('?') ? '&' : '?' }t=${t}`, { headers });
         } catch (e) {
+          console.error("Fetch error:", e);
           return await fetch(`${url}${url.includes('?') ? '&' : '?' }t=${t}`, { headers });
         }
       };
@@ -1895,15 +1901,17 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
             setProject(prev => (prev && prev.id === currentProjectId) ? { ...prev, galleryImages: dynamicGallery } : prev);
             localStorage.setItem(cacheKey, JSON.stringify({ data: dynamicGallery, timestamp: Date.now() }));
           } else {
-            console.warn(`No items found for category: ${currentProjectTitle}`);
-            setError(`No items found in folder: ${folderName}`);
+            console.warn(`No items found for category: ${currentProjectTitle} in folder: ${folderName}`);
+            setError(`No items found in folder: ${folderName}. Please check your GitHub repository structure.`);
             // If empty, clear cache to force retry next time
             localStorage.removeItem(cacheKey);
           }
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("Gallery Fetch Error:", err);
-        if (!isCancelled) setError("Connection failed. Please check your network.");
+        if (!isCancelled) {
+          setError(`Connection failed: ${err.message || 'Unknown error'}. This usually happens due to GitHub API rate limits if no token is configured.`);
+        }
       } finally {
         if (!isCancelled) setIsLoading(false);
       }
@@ -2261,7 +2269,7 @@ const cleanFileNameToTitle = (filename: string) => {
 };
 
 const CATEGORY_CONFIGS: Record<string, { folder: string, ref?: string }> = {
-  "Design": { folder: "Expertise Showcase" },
+  "Design": { folder: "Design", ref: "bfb077e391046a418e835dcb6c5ec176752e7d55" },
   "Photography": { folder: "Photography" },
   "Retouching": { folder: "Retouching" },
   "Rendering": { folder: "Rendering" },
@@ -2275,20 +2283,20 @@ const INITIAL_ARCHIVE: Project[] = [
     title: "Design",
     subtitle: "Not decoration. Problem solving.",
     category: "Design",
-    image: "https://picsum.photos/seed/design/1280/720",
+    image: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/01_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg",
     galleryImages: [
-      { url: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/04_Osight%20C%20launch%20banner_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/04_Osight%20C%20launch%20banner_1920x1080.jpg", title: "Osight C Launch Banner" },
-      { url: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/01_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/01_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg", title: "Osight SE Launch Banner" },
-      { url: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/06_Osight%20C%20Teaser_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/06_Osight%20C%20Teaser_1920x1080.jpg", title: "Osight C Teaser" },
-      { url: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/03_C%20and%20K%20Teaser_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/03_C%20and%20K%20Teaser_1920x1080.jpg", title: "C and K Teaser" },
-      { url: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/02_SE%20GN%206%20MOA%20Trial%20sales_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/02_SE%20GN%206%20MOA%20Trial%20sales_1920x1080.jpg", title: "SE GN Trial Sales" },
-      { url: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/05_Osight%20C%20launch%20banner_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/05_Osight%20C%20launch%20banner_1920x1080.jpg", title: "Osight C Banner Without Gun" },
-      { url: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/07_Osight%20C%20GN%20launch%20banner_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/07_Osight%20C%20GN%20launch%20banner_1920x1080.jpg", title: "Osight C GN Launch Banner" },
-      { url: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/08_XR%20banner10_1200x628_AZ.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/08_XR%20banner10_1200x628_AZ.jpg", title: "XR Ads Banner" },
-      { url: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/09_C%20GN%20banner2_1200x628_SN.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/09_C%20GN%20banner2_1200x628_SN.jpg", title: "C GN Ads Banner" },
-      { url: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/10_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/10_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg", title: "Osight SE 6MOA GN alternative banner" },
-      { url: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/11_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/11_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg", title: "Osight SE 6MOA GN banner without gun" },
-      { url: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/12_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/main/Expertise%20Showcase/12_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg", title: "Osight SE 6MOA GN alternative banner without gun" },
+      { url: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/04_Osight%20C%20launch%20banner_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/04_Osight%20C%20launch%20banner_1920x1080.jpg", title: "Osight C Launch Banner" },
+      { url: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/01_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/01_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg", title: "Osight SE Launch Banner" },
+      { url: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/06_Osight%20C%20Teaser_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/06_Osight%20C%20Teaser_1920x1080.jpg", title: "Osight C Teaser" },
+      { url: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/03_C%20and%20K%20Teaser_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/03_C%20and%20K%20Teaser_1920x1080.jpg", title: "C and K Teaser" },
+      { url: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/02_SE%20GN%206%20MOA%20Trial%20sales_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/02_SE%20GN%206%20MOA%20Trial%20sales_1920x1080.jpg", title: "SE GN Trial Sales" },
+      { url: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/05_Osight%20C%20launch%20banner_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/05_Osight%20C%20launch%20banner_1920x1080.jpg", title: "Osight C Banner Without Gun" },
+      { url: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/07_Osight%20C%20GN%20launch%20banner_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/07_Osight%20C%20GN%20launch%20banner_1920x1080.jpg", title: "Osight C GN Launch Banner" },
+      { url: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/08_XR%20banner10_1200x628_AZ.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/08_XR%20banner10_1200x628_AZ.jpg", title: "XR Ads Banner" },
+      { url: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/09_C%20GN%20banner2_1200x628_SN.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/09_C%20GN%20banner2_1200x628_SN.jpg", title: "C GN Ads Banner" },
+      { url: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/10_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/10_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg", title: "Osight SE 6MOA GN alternative banner" },
+      { url: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/11_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/11_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg", title: "Osight SE 6MOA GN banner without gun" },
+      { url: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/12_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/12_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg", title: "Osight SE 6MOA GN alternative banner without gun" },
     ]
   },
   {
@@ -2304,7 +2312,7 @@ const INITIAL_ARCHIVE: Project[] = [
     title: "Retouching",
     subtitle: "Nothing left unnoticed.",
     category: "Retouching",
-    image: "https://github.com/David007-CN/DW/blob/main/Cover/SE%20White%20background_2.jpg?raw=true",
+    image: "https://raw.githubusercontent.com/David007-CN/DW/main/Cover/SE%20White%20background_2.jpg",
     galleryImages: []
   },
   {
@@ -2312,7 +2320,7 @@ const INITIAL_ARCHIVE: Project[] = [
     title: "Rendering",
     subtitle: "Visualized in detail.",
     category: "Rendering",
-    image: "https://github.com/David007-CN/DW/blob/main/Cover/Scene%20and%20White%20model_2560x1440.jpg?raw=true",
+    image: "https://raw.githubusercontent.com/David007-CN/DW/main/Cover/Scene%20and%20White%20model_2560x1440.jpg",
     galleryImages: []
   },
   {
@@ -2320,7 +2328,7 @@ const INITIAL_ARCHIVE: Project[] = [
     title: "AI Studio",
     subtitle: "Where ideas take form.",
     category: "AI Studio",
-    image: "https://github.com/David007-CN/DW/blob/main/Cover/Retro%20pistol_2560x1440.jpg?raw=true",
+    image: "https://raw.githubusercontent.com/David007-CN/DW/main/Cover/Retro%20pistol_2560x1440.jpg",
     galleryImages: []
   },
   {
