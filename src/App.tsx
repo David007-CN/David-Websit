@@ -2090,10 +2090,10 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                           setSelectedIndex(globalIndex);
                         }}
                       >
-                        <div className={`relative ${isVideo ? "aspect-video" : isRetouching ? "aspect-square" : "aspect-square sm:aspect-auto sm:min-h-[200px] h-auto"} overflow-hidden bg-white/5 border border-white/10 ${isRetouching ? "p-0.5 md:p-1" : "p-0.5 sm:p-1"} mb-1 md:mb-3`}>
+                        <div className={`relative ${isVideo ? "aspect-video" : "h-auto"} overflow-hidden bg-white/5 border border-white/10 ${isRetouching ? "p-0.5 md:p-1" : "p-0.5 sm:p-1"} mb-1 md:mb-3`}>
                           <img 
-                            src={getOptimizedUrl(imageUrl, isVideo || isRetouching ? 1600 : 1200)} 
-                            className={`w-full ${isVideo || isRetouching || !isObject ? "h-full object-cover" : "h-auto object-contain"} transition-all duration-700 group-hover:scale-105`}
+                            src={getOptimizedUrl(imageUrl, isVideo ? 1600 : 1200)} 
+                            className={`w-full h-auto object-contain transition-all duration-700 group-hover:scale-105`}
                             referrerPolicy="no-referrer"
                             loading="lazy"
                           />
