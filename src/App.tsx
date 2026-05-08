@@ -1730,23 +1730,24 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
     
     const finalProject = freshProject || archiveProjects[0];
     
-    // CRITICAL: Immediately update project and clear gallery if dynamic
-    setProject({ 
-      ...finalProject, 
-      galleryImages: finalProject.title === 'Video' ? finalProject.galleryImages : [] 
-    });
-    
+    // Reset state for new project
+    setProject(finalProject);
     setSelectedIndex(null);
     setError(null);
-    setIsLoading(finalProject.title !== 'Video');
+    
+    // Video is local only, others are dynamic (even if they have some initial static images)
+    const isDynamic = finalProject.title !== 'Video';
+    setIsLoading(isDynamic);
+
   }, [id, archiveProjects]);
 
   const galleryItems = project?.galleryImages || [];
 
   // 【核心修复】统一计算显示列表，确保 UI 和 Modal 索引一致
-  // 无论是渲染网格还是弹窗翻页，都必须使用这个 displayList
   const displayList = useMemo(() => {
     if (!project) return [];
+    
+    const gallery = project.galleryImages || [];
     const isRetouching = project.title === "Retouching";
     
     // 分组逻辑
@@ -1754,7 +1755,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
     const rootItems: any[] = [];
     const groupOrder: string[] = [];
     
-    galleryItems.forEach(item => {
+    gallery.forEach(item => {
       if (typeof item === 'object' && 'group' in item && item.group) {
         const g = item.group as string;
         if (!groups[g]) {
@@ -1780,37 +1781,43 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
       });
     }
     return list;
-  }, [project?.galleryImages, project?.title]);
+  }, [project.id, project.galleryImages]);
 
   // Enhanced scroll lock management
   useEffect(() => {
     if (selectedIndex !== null) {
-      document.body.style.overflow = 'hidden';
+      document.body.classList.add('overflow-hidden');
     } else {
-      document.body.style.overflow = '';
+      document.body.classList.remove('overflow-hidden');
     }
-    
-    return () => {
-      document.body.style.overflow = '';
-    };
+    return () => document.body.classList.remove('overflow-hidden');
   }, [selectedIndex]);
 
+  // Fetch effect based on project ID and Title
   useEffect(() => {
+    // Only fetch for non-Video pages
     if (!project || project.title === 'Video') {
       setIsLoading(false);
       return;
     }
-    
+
+    let isCancelled = false;
+    const currentProjectId = project.id;
+    const currentProjectTitle = project.title;
+
     const fetchGalleryContent = async (isManualRefresh = false) => {
-      const cacheKey = `github_gallery_${project.title}_${project.id}`;
+      const cacheKey = `github_gallery_${currentProjectTitle}_${currentProjectId}`;
       const cachedData = localStorage.getItem(cacheKey);
       
       if (cachedData && !isManualRefresh) {
         try {
           const { data, timestamp } = JSON.parse(cachedData);
+          // Cache lasts 1 hour
           if (Date.now() - timestamp < 1000 * 60 * 60 && data?.length > 0) {
-            setProject(prev => prev && prev.id === project.id ? ({ ...prev, galleryImages: data }) : prev);
-            setIsLoading(false);
+            if (!isCancelled) {
+              setProject(prev => prev.id === currentProjectId ? ({ ...prev, galleryImages: data }) : prev);
+              setIsLoading(false);
+            }
             return;
           }
         } catch (e) {
@@ -1819,7 +1826,9 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
       }
 
       setIsLoading(true);
-      const config = CATEGORY_CONFIGS[project.title] || { folder: project.title };
+      setError(null);
+      
+      const config = CATEGORY_CONFIGS[currentProjectTitle] || { folder: currentProjectTitle };
       const folderName = config.folder;
       const ref = config.ref || GITHUB_REF;
       const token = GET_GITHUB_TOKEN();
@@ -1828,61 +1837,83 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
         const t = Date.now();
         const headers = token ? { 'Authorization': `token ${token}` } : {};
         try {
-          const proxyUrl = `/api/github-proxy?owner=${GITHUB_USER}&repo=${GITHUB_REPO}&path=${encodeURIComponent(url.replace(/.*\/contents\//, '').split('?')[0])}&ref=${ref}&t=${t}`;
+          // Use proxy first
+          const path = url.replace(/.*\/contents\//, '').split('?')[0];
+          const proxyUrl = `/api/github-proxy?owner=${GITHUB_USER}&repo=${GITHUB_REPO}&path=${encodeURIComponent(path)}&ref=${ref}&t=${t}`;
           const res = await fetch(proxyUrl);
           if (res.ok) return res;
+          
+          // Fallback to direct fetch
           return await fetch(`${url}${url.includes('?') ? '&' : '?' }t=${t}`, { headers });
         } catch (e) {
+          // Final fallback
           return await fetch(`${url}${url.includes('?') ? '&' : '?' }t=${t}`, { headers });
         }
       };
 
       try {
         const response = await safeFetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${folderName}?ref=${ref}`);
+        
+        if (isCancelled) return;
+
         if (response.ok) {
           const data = await response.json();
           if (Array.isArray(data)) {
             const results = await Promise.all(data.map(async item => {
               if (item.type === 'file' && item.name.toLowerCase().match(/\.(jpg|jpeg|png|webp|mp4|mov|webm)$/i)) {
+                const downloadUrl = item.download_url || `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${ref}/${item.path}`;
                 return {
-                  url: item.download_url,
-                  cover: item.name.toLowerCase().match(/\.(mp4|mov|webm)$/) ? item.download_url.replace(/\.(mp4|mov|webm)$/i, '.jpg') : item.download_url,
+                  url: downloadUrl,
+                  cover: item.name.toLowerCase().match(/\.(mp4|mov|webm)$/) ? downloadUrl.replace(/\.(mp4|mov|webm)$/i, '.jpg') : downloadUrl,
                   title: item.name.replace(/\.[^/.]+$/, "")
                 };
               } else if (item.type === 'dir') {
-                const sub = await safeFetch(item.url);
-                if (sub.ok) {
-                  const subItems = await sub.json();
-                  return Array.isArray(subItems) ? subItems
-                    .filter(si => si.type === 'file' && si.name.toLowerCase().match(/\.(jpg|jpeg|png|webp|mp4|mov|webm)$/i))
-                    .map(si => ({
-                      url: si.download_url,
-                      cover: si.name.toLowerCase().match(/\.(mp4|mov|webm)$/i) ? si.download_url.replace(/\.(mp4|mov|webm)$/i, '.jpg') : si.download_url,
-                      title: si.name.replace(/\.[^/.]+$/, ""),
-                      group: item.name
-                    })) : null;
+                const subRes = await safeFetch(item.url);
+                if (subRes.ok) {
+                  const subItems = await subRes.json();
+                  if (Array.isArray(subItems)) {
+                    return subItems
+                      .filter(si => si.type === 'file' && si.name.toLowerCase().match(/\.(jpg|jpeg|png|webp|mp4|mov|webm)$/i))
+                      .map(si => {
+                        const dUrl = si.download_url || `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${ref}/${si.path}`;
+                        return {
+                          url: dUrl,
+                          cover: si.name.toLowerCase().match(/\.(mp4|mov|webm)$/i) ? dUrl.replace(/\.(mp4|mov|webm)$/i, '.jpg') : dUrl,
+                          title: si.name.replace(/\.[^/.]+$/, ""),
+                          group: item.name
+                        };
+                      });
+                  }
                 }
               }
               return null;
             }));
 
             const dynamicGallery = results.flat().filter(Boolean);
-            // Only update if still on matching project
-            setProject(prev => (prev && prev.id === project.id) ? { ...prev, galleryImages: dynamicGallery } : prev);
-            if (dynamicGallery.length > 0) {
-              localStorage.setItem(cacheKey, JSON.stringify({ data: dynamicGallery, timestamp: Date.now() }));
+            
+            if (!isCancelled) {
+              setProject(prev => prev.id === currentProjectId ? ({ ...prev, galleryImages: dynamicGallery }) : prev);
+              if (dynamicGallery.length > 0) {
+                localStorage.setItem(cacheKey, JSON.stringify({ data: dynamicGallery, timestamp: Date.now() }));
+              } else {
+                setError("No images found in this folder.");
+              }
             }
           }
+        } else {
+          if (!isCancelled) setError(`Failed to load content (Status: ${response.status})`);
         }
       } catch (err) {
         console.error("Gallery Fetch Error:", err);
+        if (!isCancelled) setError("Connection failed. Please check your internet or retry.");
       } finally {
-        setIsLoading(false);
+        if (!isCancelled) setIsLoading(false);
       }
     };
 
     fetchGalleryContent();
-  }, [project.id]); // Only re-run when actual project ID changes
+    return () => { isCancelled = true; };
+  }, [project.id]);
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [id]);
