@@ -127,6 +127,11 @@ const formatTitle = (fileName: string) => {
   };
 
   const normalizedKey = name.toLowerCase().replace(/[ -]/g, '_');
+  
+  // Direct match in mapping
+  if (mapping[normalizedKey]) return mapping[normalizedKey];
+  
+  // Partial mapping check
   for (const key in mapping) {
     if (normalizedKey.includes(key)) return mapping[key];
   }
@@ -135,19 +140,25 @@ const formatTitle = (fileName: string) => {
   const parts = name.split('_');
   
   if (parts.length >= 2) {
-    // Case A: Skip leading index numbers
+    // Case A: Skip leading indices (e.g., "01_Title")
     if (/^\d+$/.test(parts[0])) {
-      return parts[1].trim();
+      const candidate = parts[1].trim();
+      // Only return if it's not a pure number/date
+      if (!/^\d{4,}$/.test(candidate)) return candidate;
     }
     
-    // Case B: If 2nd part is a number/date, take the 1st part (Brand/Project)
-    if (/^\d+$/.test(parts[1]) && parts[1].length >= 4) {
-      return parts[0].trim();
+    // Case B: If 2nd part looks like a date/ID (4+ digits), take 1st part if it's descriptive
+    if (/^\d{4,}$/.test(parts[1])) {
+      if (!/^\d+$/.test(parts[0])) return parts[0].trim();
+      // If both are numbers, try to find the first non-numeric part
+      const descriptivePart = parts.find(p => !/^\d+$/.test(p) && p.length > 2);
+      if (descriptivePart) return descriptivePart.trim();
     }
 
-    return parts[1].trim();
+    return parts[1].trim() || parts[0].trim();
   }
   
+  // Fallback: Clean up separators
   return name.replace(/[_-]/g, ' ').trim() || "Project Asset";
 };
 
@@ -1791,7 +1802,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
     const currentProjectTitle = project.title;
 
     const fetchGalleryContent = async (isManualRefresh = false) => {
-      const cacheKey = `github_gallery_v6_${currentProjectTitle}_${currentProjectId}`;
+      const cacheKey = `github_gallery_v7_${currentProjectTitle}_${currentProjectId}`;
       const cachedData = localStorage.getItem(cacheKey);
       
       if (cachedData && !isManualRefresh) {
@@ -1820,31 +1831,52 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
       const safeFetch = async (url: string) => {
         const t = Date.now();
         const headers = token ? { 'Authorization': `token ${token}` } : {};
+        
+        // Detect AI Studio environment - proxy only works there
+        const isPreview = typeof window !== 'undefined' && 
+          (window.location.hostname.includes('ais-dev') || 
+           window.location.hostname.includes('ais-pre') ||
+           window.location.hostname.includes('googleusercontent.com'));
+
         try {
-          const pathParam = url.replace(/.*\/contents\//, '').split('?')[0];
-          const proxyUrl = `/api/github-proxy?owner=${GITHUB_USER}&repo=${GITHUB_REPO}&path=${encodeURIComponent(pathParam)}&ref=${ref}&t=${t}`;
+          if (isPreview) {
+            const pathParam = url.replace(/.*\/contents\//, '').split('?')[0];
+            const proxyUrl = `/api/github-proxy?owner=${GITHUB_USER}&repo=${GITHUB_REPO}&path=${encodeURIComponent(pathParam)}&ref=${ref}&t=${t}`;
+            
+            console.log(`[Preview] Fetching via proxy: ${proxyUrl}`);
+            const res = await fetch(proxyUrl);
+            if (res.ok) return res;
+            console.warn(`[Preview] Proxy failed (${res.status}), falling back to direct...`);
+          }
           
-          console.log(`Fetching from: ${proxyUrl}`);
-          const res = await fetch(proxyUrl);
-          if (res.ok) return res;
-          
-          // If proxy fails, try direct
-          console.warn(`Proxy failed (${res.status}), trying direct fetch to GitHub API...`);
-          return await fetch(`${url}${url.includes('?') ? '&' : '?' }t=${t}`, { headers });
+          // Direct fetch to GitHub API
+          const directUrl = `${url}${url.includes('?') ? '&' : '?' }t=${t}`;
+          console.log(`[Production] Fetching direct: ${directUrl}`);
+          return await fetch(directUrl, { headers });
         } catch (e) {
           console.error("Fetch error:", e);
-          return await fetch(`${url}${url.includes('?') ? '&' : '?' }t=${t}`, { headers });
+          const directUrl = `${url}${url.includes('?') ? '&' : '?' }t=${t}`;
+          return await fetch(directUrl, { headers });
         }
       };
 
       const fetchAllContents = async (path: string, groupName?: string): Promise<any[]> => {
         try {
           const url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${path}?ref=${ref}`;
-          const response = await safeFetch(url);
+          let response = await safeFetch(url);
+          
+          // Fallback logic: if we tried root, try Life/ prefix if 404
+          if (!response.ok && response.status === 404 && !path.startsWith('Life/') && path !== 'Video') {
+            console.log(`Folder ${path} not found at root, trying Life/${path}...`);
+            const fallbackUrl = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/Life/${path}?ref=${ref}`;
+            const fallbackResponse = await safeFetch(fallbackUrl);
+            if (fallbackResponse.ok) {
+                response = fallbackResponse;
+            }
+          }
           
           if (!response.ok) {
-            console.error(`Fetch failed for ${path}: ${response.status}`);
-            return [];
+            throw new Error(`GitHub API Error (${response.status}) on ${path}`);
           }
           
           const items = await response.json();
