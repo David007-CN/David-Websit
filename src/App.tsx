@@ -128,38 +128,63 @@ const formatTitle = (fileName: string) => {
 
   const normalizedKey = name.toLowerCase().replace(/[ -]/g, '_');
   
+  let result = "";
+
   // Direct match in mapping
-  if (mapping[normalizedKey]) return mapping[normalizedKey];
-  
-  // Partial mapping check
-  for (const key in mapping) {
-    if (normalizedKey.includes(key)) return mapping[key];
+  if (mapping[normalizedKey]) {
+    result = mapping[normalizedKey];
+  } else {
+    // Partial mapping check
+    for (const key in mapping) {
+      if (normalizedKey.includes(key)) {
+        result = mapping[key];
+        break;
+      }
+    }
   }
 
-  // 2. Smart Parsing
-  const parts = name.split('_');
-  
-  if (parts.length >= 2) {
-    // Case A: Skip leading indices (e.g., "01_Title")
-    if (/^\d+$/.test(parts[0])) {
-      const candidate = parts[1].trim();
-      // Only return if it's not a pure number/date
-      if (!/^\d{4,}$/.test(candidate)) return candidate;
-    }
+  if (!result) {
+    // 2. Smart Parsing
+    const parts = name.split('_');
     
-    // Case B: If 2nd part looks like a date/ID (4+ digits), take 1st part if it's descriptive
-    if (/^\d{4,}$/.test(parts[1])) {
-      if (!/^\d+$/.test(parts[0])) return parts[0].trim();
-      // If both are numbers, try to find the first non-numeric part
-      const descriptivePart = parts.find(p => !/^\d+$/.test(p) && p.length > 2);
-      if (descriptivePart) return descriptivePart.trim();
-    }
+    if (parts.length >= 2) {
+      // Case A: Skip leading indices (e.g., "01_Title")
+      if (/^\d+$/.test(parts[0])) {
+        const candidate = parts[1].trim();
+        // Only return if it's not a pure number/date
+        if (!/^\d{4,}$/.test(candidate)) {
+          result = candidate;
+        }
+      }
+      
+      if (!result) {
+        // Case B: If 2nd part looks like a date/ID (4+ digits), take 1st part if it's descriptive
+        if (/^\d{4,}$/.test(parts[1])) {
+          if (!/^\d+$/.test(parts[0])) {
+            result = parts[0].trim();
+          } else {
+            // If both are numbers, try to find the first non-numeric part
+            const descriptivePart = parts.find(p => !/^\d+$/.test(p) && p.length > 2);
+            if (descriptivePart) result = descriptivePart.trim();
+          }
+        }
+      }
 
-    return parts[1].trim() || parts[0].trim();
+      if (!result) {
+        result = parts[1].trim() || parts[0].trim();
+      }
+    } else {
+      // Fallback: Clean up separators
+      result = name.replace(/[_-]/g, ' ').trim() || "Project Asset";
+    }
+  }
+
+  // Add HOUSTON 2026 suffix for NRA titles
+  if (result.toUpperCase().includes("NRA")) {
+    return `${result} HOUSTON 2026`;
   }
   
-  // Fallback: Clean up separators
-  return name.replace(/[_-]/g, ' ').trim() || "Project Asset";
+  return result;
 };
 
 // --- Navbar ---
@@ -2043,7 +2068,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
               });
 
               const renderGrid = (items: any[]) => (
-                <div className={isVideo ? "space-y-16 mb-24" : `grid ${isRetouching ? "grid-cols-4 gap-1.5 sm:gap-4 md:gap-6 lg:gap-8" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8"} mb-16`}>
+                <div className={isVideo ? "space-y-16 mb-24" : `grid ${isRetouching ? "grid-cols-4 gap-1 sm:gap-4 md:gap-6 lg:gap-8" : "grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-1 sm:gap-2 md:gap-8"} mb-16`}>
                   {items.map((item, idx) => {
                     // 获取在统一列表中的全局索引
                     const globalIndex = displayList.indexOf(item);
@@ -2065,26 +2090,26 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                           setSelectedIndex(globalIndex);
                         }}
                       >
-                        <div className={`relative ${isVideo ? "aspect-video" : isRetouching ? "aspect-square" : "min-h-[200px] h-auto"} overflow-hidden bg-white/5 border border-white/10 ${isRetouching ? "p-0.5 md:p-1" : "p-1"} mb-1 md:mb-3`}>
+                        <div className={`relative ${isVideo ? "aspect-video" : isRetouching ? "aspect-square" : "aspect-square sm:aspect-auto sm:min-h-[200px] h-auto"} overflow-hidden bg-white/5 border border-white/10 ${isRetouching ? "p-0.5 md:p-1" : "p-0.5 sm:p-1"} mb-1 md:mb-3`}>
                           <img 
                             src={getOptimizedUrl(imageUrl, isVideo || isRetouching ? 1600 : 1200)} 
-                            className={`w-full ${isVideo || isRetouching ? "h-full object-cover" : "h-auto object-contain"} transition-all duration-700 group-hover:scale-105`}
+                            className={`w-full ${isVideo || isRetouching || !isObject ? "h-full object-cover" : "h-auto object-contain"} transition-all duration-700 group-hover:scale-105`}
                             referrerPolicy="no-referrer"
                             loading="lazy"
                           />
                           {(isVideo || videoUrl.includes('bilibili.com') || videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be') || videoUrl.match(/\.(mp4|mov|webm)$/i)) && (
                             <div className="absolute inset-0 flex items-center justify-center">
-                              <div className="w-12 h-12 rounded-full bg-brand-red/90 flex items-center justify-center text-white shadow-2xl transform group-hover:scale-110 transition-transform duration-500">
-                                <Play size={20} fill="currentColor" className="ml-1" />
+                              <div className="w-8 h-8 md:w-12 md:h-12 rounded-full bg-brand-red/90 flex items-center justify-center text-white shadow-2xl transform group-hover:scale-110 transition-transform duration-500">
+                                <Play size={isMobile ? 14 : 20} fill="currentColor" className="ml-1" />
                               </div>
                             </div>
                           )}
                         </div>
                         <div className="flex justify-between items-start gap-1">
-                          <h3 className={`${isVideo || (isObject && item.title) ? "text-[8px] md:text-base font-bold" : "text-[8px] md:text-[12px] font-medium text-white/50"} font-display leading-tight flex-grow truncate md:whitespace-normal`}>
+                          <h3 className={`${isVideo || (isObject && item.title) ? "text-[6px] sm:text-[8px] md:text-[11px] font-bold" : "text-[6px] sm:text-[8px] md:text-[9px] font-medium text-white/50"} font-display leading-tight flex-grow truncate md:whitespace-normal`}>
                             {isObject && item.title ? item.title : formatTitle(videoUrl)}
                           </h3>
-                          <span className="text-[7px] md:text-[9px] font-bold text-white/10 tracking-widest shrink-0 mt-0.5">{globalIndex + 1}</span>
+                          <span className="text-[6px] md:text-[9px] font-bold text-white/10 tracking-widest shrink-0 mt-0.1 md:mt-0.5">{globalIndex + 1}</span>
                         </div>
                       </motion.div>
                     );
@@ -2305,20 +2330,20 @@ const INITIAL_ARCHIVE: Project[] = [
     title: "Design",
     subtitle: "Not decoration. Problem solving.",
     category: "Design",
-    image: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/01_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg",
+    image: "https://github.com/David007-CN/DW/blob/main/Cover/C%20Teaser_1920x1080.jpg?raw=true",
     galleryImages: [
-      { url: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/04_Osight%20C%20launch%20banner_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/04_Osight%20C%20launch%20banner_1920x1080.jpg", title: "Osight C Launch Banner" },
-      { url: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/01_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/01_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg", title: "Osight SE Launch Banner" },
-      { url: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/06_Osight%20C%20Teaser_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/06_Osight%20C%20Teaser_1920x1080.jpg", title: "Osight C Teaser" },
-      { url: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/03_C%20and%20K%20Teaser_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/03_C%20and%20K%20Teaser_1920x1080.jpg", title: "C and K Teaser" },
-      { url: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/02_SE%20GN%206%20MOA%20Trial%20sales_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/02_SE%20GN%206%20MOA%20Trial%20sales_1920x1080.jpg", title: "SE GN Trial Sales" },
-      { url: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/05_Osight%20C%20launch%20banner_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/05_Osight%20C%20launch%20banner_1920x1080.jpg", title: "Osight C Banner Without Gun" },
-      { url: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/07_Osight%20C%20GN%20launch%20banner_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/07_Osight%20C%20GN%20launch%20banner_1920x1080.jpg", title: "Osight C GN Launch Banner" },
-      { url: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/08_XR%20banner10_1200x628_AZ.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/08_XR%20banner10_1200x628_AZ.jpg", title: "XR Ads Banner" },
-      { url: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/09_C%20GN%20banner2_1200x628_SN.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/09_C%20GN%20banner2_1200x628_SN.jpg", title: "C GN Ads Banner" },
-      { url: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/10_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/10_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg", title: "Osight SE 6MOA GN alternative banner" },
-      { url: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/11_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/11_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg", title: "Osight SE 6MOA GN banner without gun" },
-      { url: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/12_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/bfb077e391046a418e835dcb6c5ec176752e7d55/Design/12_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg", title: "Osight SE 6MOA GN alternative banner without gun" },
+      { url: "https://raw.githubusercontent.com/David007-CN/DW/main/Design/04_Osight%20C%20launch%20banner_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/main/Design/04_Osight%20C%20launch%20banner_1920x1080.jpg", title: "Osight C Launch Banner" },
+      { url: "https://raw.githubusercontent.com/David007-CN/DW/main/Design/01_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/main/Design/01_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg", title: "Osight SE Launch Banner" },
+      { url: "https://raw.githubusercontent.com/David007-CN/DW/main/Design/06_Osight%20C%20Teaser_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/main/Design/06_Osight%20C%20Teaser_1920x1080.jpg", title: "Osight C Teaser" },
+      { url: "https://raw.githubusercontent.com/David007-CN/DW/main/Design/03_C%20and%20K%20Teaser_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/main/Design/03_C%20and%20K%20Teaser_1920x1080.jpg", title: "C and K Teaser" },
+      { url: "https://raw.githubusercontent.com/David007-CN/DW/main/Design/02_SE%20GN%206%20MOA%20Trial%20sales_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/main/Design/02_SE%20GN%206%20MOA%20Trial%20sales_1920x1080.jpg", title: "SE GN Trial Sales" },
+      { url: "https://raw.githubusercontent.com/David007-CN/DW/main/Design/05_Osight%20C%20launch%20banner_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/main/Design/05_Osight%20C%20launch%20banner_1920x1080.jpg", title: "Osight C Banner Without Gun" },
+      { url: "https://raw.githubusercontent.com/David007-CN/DW/main/Design/07_Osight%20C%20GN%20launch%20banner_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/main/Design/07_Osight%20C%20GN%20launch%20banner_1920x1080.jpg", title: "Osight C GN Launch Banner" },
+      { url: "https://raw.githubusercontent.com/David007-CN/DW/main/Design/08_XR%20banner10_1200x628_AZ.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/main/Design/08_XR%20banner10_1200x628_AZ.jpg", title: "XR Ads Banner" },
+      { url: "https://raw.githubusercontent.com/David007-CN/DW/main/Design/09_C%20GN%20banner2_1200x628_SN.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/main/Design/09_C%20GN%20banner2_1200x628_SN.jpg", title: "C GN Ads Banner" },
+      { url: "https://raw.githubusercontent.com/David007-CN/DW/main/Design/10_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/main/Design/10_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg", title: "Osight SE 6MOA GN alternative banner" },
+      { url: "https://raw.githubusercontent.com/David007-CN/DW/main/Design/11_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/main/Design/11_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg", title: "Osight SE 6MOA GN banner without gun" },
+      { url: "https://raw.githubusercontent.com/David007-CN/DW/main/Design/12_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg", cover: "https://raw.githubusercontent.com/David007-CN/DW/main/Design/12_Osight%20SE%206MOA%20GN%20launch%20banner_1920x1080.jpg", title: "Osight SE 6MOA GN alternative banner without gun" },
     ]
   },
   {
