@@ -2335,9 +2335,9 @@ const INITIAL_ARCHIVE: Project[] = [
         title: "We Made OSIGHT SE Green Again"
       },
        { 
-        url: "https://www.bilibili.com/video/BV1oNkTBnErQ?t=79.5", 
-        cover: "https://raw.githubusercontent.com/David007-CN/DW/main/Cover/03_DSC06797.jpg",
-        title: "【双板新手入门】第二课 犁式刹车和拐弯！"
+        url: "https://www.youtube.com/watch?v=B33ywnrQFFg", 
+        // cover: "https://raw.githubusercontent.com/David007-CN/DW/main/Cover/03_DSC06797.jpg",
+        title: "See the Osight SE Green & X Green in Action — Launch Now Live!"
       },
       { 
         url: "https://www.youtube.com/shorts/6mLs_SSOnh4?feature=share", 
