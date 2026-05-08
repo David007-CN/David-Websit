@@ -1730,15 +1730,17 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
     
     const finalProject = freshProject || archiveProjects[0];
     
-    // Reset state for new project
-    setProject(finalProject);
+    // CRITICAL: When switching projects, immediately clear dynamic gallery if not Video
+    // This prevents showing old content during loading.
+    setProject({
+      ...finalProject,
+      galleryImages: finalProject.title === 'Video' ? finalProject.galleryImages : []
+    });
+    
     setSelectedIndex(null);
     setError(null);
     
-    // Video is local only, others are dynamic (even if they have some initial static images)
-    const isDynamic = finalProject.title !== 'Video';
-    setIsLoading(isDynamic);
-
+    setIsLoading(finalProject.title !== 'Video');
   }, [id, archiveProjects]);
 
   const galleryItems = project?.galleryImages || [];
@@ -1851,57 +1853,45 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
         }
       };
 
+      const fetchAllContents = async (path: string, groupName?: string): Promise<any[]> => {
+        const url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${path}?ref=${ref}`;
+        const response = await safeFetch(url);
+        
+        if (!response.ok) return [];
+        const items = await response.json();
+        if (!Array.isArray(items)) return [];
+
+        let gallery: any[] = [];
+        const promises = items.map(async item => {
+          if (item.type === 'file' && item.name.toLowerCase().match(/\.(jpg|jpeg|png|webp|mp4|mov|webm)$/i)) {
+            const dUrl = item.download_url || `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${ref}/${item.path}`;
+            return {
+              url: dUrl,
+              cover: item.name.toLowerCase().match(/\.(mp4|mov|webm)$/) ? dUrl.replace(/\.(mp4|mov|webm)$/i, '.jpg') : dUrl,
+              title: item.name.replace(/\.[^/.]+$/, ""),
+              group: groupName
+            };
+          } else if (item.type === 'dir') {
+            // Recurse into subfolders. Use folder name as group if not already in a group.
+            return await fetchAllContents(item.path, groupName || item.name);
+          }
+          return null;
+        });
+
+        const results = await Promise.all(promises);
+        return results.flat().filter(Boolean);
+      };
+
       try {
-        const response = await safeFetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${folderName}?ref=${ref}`);
+        const dynamicGallery = await fetchAllContents(folderName);
         
         if (isCancelled) return;
 
-        if (response.ok) {
-          const data = await response.json();
-          if (Array.isArray(data)) {
-            const results = await Promise.all(data.map(async item => {
-              if (item.type === 'file' && item.name.toLowerCase().match(/\.(jpg|jpeg|png|webp|mp4|mov|webm)$/i)) {
-                const downloadUrl = item.download_url || `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${ref}/${item.path}`;
-                return {
-                  url: downloadUrl,
-                  cover: item.name.toLowerCase().match(/\.(mp4|mov|webm)$/) ? downloadUrl.replace(/\.(mp4|mov|webm)$/i, '.jpg') : downloadUrl,
-                  title: item.name.replace(/\.[^/.]+$/, "")
-                };
-              } else if (item.type === 'dir') {
-                const subRes = await safeFetch(item.url);
-                if (subRes.ok) {
-                  const subItems = await subRes.json();
-                  if (Array.isArray(subItems)) {
-                    return subItems
-                      .filter(si => si.type === 'file' && si.name.toLowerCase().match(/\.(jpg|jpeg|png|webp|mp4|mov|webm)$/i))
-                      .map(si => {
-                        const dUrl = si.download_url || `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${ref}/${si.path}`;
-                        return {
-                          url: dUrl,
-                          cover: si.name.toLowerCase().match(/\.(mp4|mov|webm)$/i) ? dUrl.replace(/\.(mp4|mov|webm)$/i, '.jpg') : dUrl,
-                          title: si.name.replace(/\.[^/.]+$/, ""),
-                          group: item.name
-                        };
-                      });
-                  }
-                }
-              }
-              return null;
-            }));
-
-            const dynamicGallery = results.flat().filter(Boolean);
-            
-            if (!isCancelled) {
-              setProject(prev => prev.id === currentProjectId ? ({ ...prev, galleryImages: dynamicGallery }) : prev);
-              if (dynamicGallery.length > 0) {
-                localStorage.setItem(cacheKey, JSON.stringify({ data: dynamicGallery, timestamp: Date.now() }));
-              } else {
-                setError("No images found in this folder.");
-              }
-            }
-          }
+        if (dynamicGallery.length > 0) {
+          setProject(prev => prev.id === currentProjectId ? ({ ...prev, galleryImages: dynamicGallery }) : prev);
+          localStorage.setItem(cacheKey, JSON.stringify({ data: dynamicGallery, timestamp: Date.now() }));
         } else {
-          if (!isCancelled) setError(`Failed to load content (Status: ${response.status})`);
+          setError("No images found in the configured GitHub folder.");
         }
       } catch (err) {
         console.error("Gallery Fetch Error:", err);
@@ -2263,11 +2253,12 @@ const cleanFileNameToTitle = (filename: string) => {
 };
 
 const CATEGORY_CONFIGS: Record<string, { folder: string, ref?: string }> = {
-  "Design": { folder: "Expertise Showcase" },
-  "Photography": { folder: "Photography" },
-  "Retouching": { folder: "Retouching" },
-  "Rendering": { folder: "Rendering" },
-  "AI Studio": { folder: "AI Studio" },
+  "UI Design": { folder: "Life/Design/UIUX" },
+  "Design": { folder: "Life/Design" },
+  "Photography": { folder: "Life/Photography" },
+  "Retouching": { folder: "Life/Retouching" },
+  "Rendering": { folder: "Life/Rendering" },
+  "AI Studio": { folder: "Life/AI_Studio" },
   "Video": { folder: "Video" }
 };
 
