@@ -59,6 +59,17 @@
     -webkit-user-select: none;
     user-select: none;
   }
+
+  /* Utility for scroll locking */
+  body.overflow-hidden {
+    overflow: hidden !important;
+  }
+  
+  body.fixed {
+    position: fixed !important;
+    width: 100% !important;
+    height: 100% !important;
+  }
 }
 
 .parchment-card {

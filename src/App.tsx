@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useLayoutEffect, useMemo, useRef, useCallback } from 'react';
-import { Routes, Route, Link, useNavigate, useLocation, useParams } from 'react-router-dom';
+import { Routes, Route, Link, useNavigate, useLocation, useParams, Navigate } from 'react-router-dom';
 import { motion, AnimatePresence, useMotionValue, useAnimationFrame } from 'motion/react';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import { 
@@ -792,6 +792,18 @@ const Spotlight = () => {
   const [pinchStartDistance, setPinchStartDistance] = useState<number | null>(null);
   const [pinchStartScale, setPinchStartScale] = useState(1);
 
+  // Modal scroll locking for Spotlight
+  useEffect(() => {
+    if (isZoomed) {
+      document.body.classList.add('overflow-hidden');
+    } else {
+      document.body.classList.remove('overflow-hidden');
+    }
+    return () => {
+      document.body.classList.remove('overflow-hidden');
+    };
+  }, [isZoomed]);
+
   const project = PROJECTS[selectedIndex % PROJECTS.length];
   const currentImage = project.image;
 
@@ -1351,6 +1363,18 @@ const Featured = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedIndex, shuffledItems.length]);
 
+  // Modal scroll locking for Featured
+  useEffect(() => {
+    if (selectedIndex !== null) {
+      document.body.classList.add('overflow-hidden');
+    } else {
+      document.body.classList.remove('overflow-hidden');
+    }
+    return () => {
+      document.body.classList.remove('overflow-hidden');
+    };
+  }, [selectedIndex]);
+
   const selectedItem = selectedIndex !== null ? shuffledItems[selectedIndex] : null;
 
   return (
@@ -1704,9 +1728,17 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
       freshProject = archiveProjects.find(p => p.title.toLowerCase() === id.toLowerCase());
     }
     
-    setProject(freshProject || archiveProjects[0]);
+    const finalProject = freshProject || archiveProjects[0];
+    
+    // CRITICAL: Immediately update project and clear gallery if dynamic
+    setProject({ 
+      ...finalProject, 
+      galleryImages: finalProject.title === 'Video' ? finalProject.galleryImages : [] 
+    });
+    
     setSelectedIndex(null);
     setError(null);
+    setIsLoading(finalProject.title !== 'Video');
   }, [id, archiveProjects]);
 
   const galleryItems = project?.galleryImages || [];
@@ -1737,50 +1769,48 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
 
     const list: any[] = [];
     if (isRetouching) {
-      // Retouching: 文件夹顺序反向（最新在前），根项目（文件夹外的散图）顺序也反向
-      const reversedRootItems = [...rootItems].reverse();
-      const reversedGroupOrder = [...groupOrder].reverse();
-      
-      reversedRootItems.forEach(item => list.push(item));
-      reversedGroupOrder.forEach(gName => {
-        // 文件夹内部保持原有逻辑（通常文件夹内已经是按顺序排列的）
+      [...rootItems].reverse().forEach(item => list.push(item));
+      [...groupOrder].reverse().forEach(gName => {
         groups[gName].forEach(item => list.push(item));
       });
     } else {
-      // 其他分页：保持自然顺序
       rootItems.forEach(item => list.push(item));
       groupOrder.forEach(gName => {
         groups[gName].forEach(item => list.push(item));
       });
     }
     return list;
-  }, [galleryItems, project?.title]);
+  }, [project?.galleryImages, project?.title]);
+
+  // Enhanced scroll lock management
+  useEffect(() => {
+    if (selectedIndex !== null) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [selectedIndex]);
 
   useEffect(() => {
-    if (!project || project.title === 'Video') return;
+    if (!project || project.title === 'Video') {
+      setIsLoading(false);
+      return;
+    }
     
-    // Reset loading state and gallery if id changes significantly
-    setProject(prev => {
-      if (prev.id !== Number(id)) {
-        return { ...prev, galleryImages: archiveProjects.find(p => p.id === Number(id))?.galleryImages || [] };
-      }
-      return prev;
-    });
-
-      const fetchGalleryContent = async (isManualRefresh = false) => {
-      // 1. First check if we already have it in localStorage to avoid API calls
+    const fetchGalleryContent = async (isManualRefresh = false) => {
       const cacheKey = `github_gallery_${project.title}_${project.id}`;
-      
       const cachedData = localStorage.getItem(cacheKey);
       
       if (cachedData && !isManualRefresh) {
         try {
           const { data, timestamp } = JSON.parse(cachedData);
-          // Cache lasts 1 hour normally, but if we're debugging let's be more aggressive
-          const isExpired = Date.now() - timestamp > 1000 * 60 * 30; // 30 mins
-          
-          if (!isExpired && data && data.length > 0) {
-            setProject(prev => prev ? ({ ...prev, galleryImages: data }) : null);
+          if (Date.now() - timestamp < 1000 * 60 * 60 && data?.length > 0) {
+            setProject(prev => prev && prev.id === project.id ? ({ ...prev, galleryImages: data }) : prev);
+            setIsLoading(false);
             return;
           }
         } catch (e) {
@@ -1789,113 +1819,70 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
       }
 
       setIsLoading(true);
-      setError(null);
-      
-      const config = CATEGORY_CONFIGS[project.title] || { folder: project.title, ref: undefined };
+      const config = CATEGORY_CONFIGS[project.title] || { folder: project.title };
       const folderName = config.folder;
       const ref = config.ref || GITHUB_REF;
-      
-      const headers: Record<string, string> = {
-        'Accept': 'application/vnd.github.v3+json',
-      };
       const token = GET_GITHUB_TOKEN();
-      if (token) headers['Authorization'] = `token ${token}`;
-
-      const safeFetch = async (url: string, useProxy = true) => {
+      
+      const safeFetch = async (url: string) => {
+        const t = Date.now();
+        const headers = token ? { 'Authorization': `token ${token}` } : {};
         try {
-          if (useProxy) {
-            const proxyUrl = `/api/github-proxy?owner=${GITHUB_USER}&repo=${GITHUB_REPO}&path=${encodeURIComponent(url.replace(/.*\/contents\//, '').split('?')[0])}&ref=${ref}&t=${Date.now()}`;
-            const res = await fetch(proxyUrl);
-            if (res.ok) return res;
-          }
-          // Fallback to direct
-          const directUrl = url.includes('?') ? `${url}&t=${Date.now()}` : `${url}?t=${Date.now()}`;
-          return await fetch(directUrl, { headers });
+          const proxyUrl = `/api/github-proxy?owner=${GITHUB_USER}&repo=${GITHUB_REPO}&path=${encodeURIComponent(url.replace(/.*\/contents\//, '').split('?')[0])}&ref=${ref}&t=${t}`;
+          const res = await fetch(proxyUrl);
+          if (res.ok) return res;
+          return await fetch(`${url}${url.includes('?') ? '&' : '?' }t=${t}`, { headers });
         } catch (e) {
-          return await fetch(url.includes('?') ? `${url}&t=${Date.now()}` : `${url}?t=${Date.now()}`, { headers });
+          return await fetch(`${url}${url.includes('?') ? '&' : '?' }t=${t}`, { headers });
         }
       };
 
       try {
-        const initialUrl = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${folderName}?ref=${ref}`;
-        const response = await safeFetch(initialUrl);
-        
-        if (response.status === 403) {
-          const resetTime = response.headers.get('x-ratelimit-reset');
-          const waitTime = resetTime ? Math.ceil((parseInt(resetTime) * 1000 - Date.now()) / 60000) : 60;
-          setError(`GitHub API 访问受限。请稍后再试（约 ${waitTime} 分钟后），或在预览环境中查看。`);
-          setIsLoading(false);
-          return;
-        }
-
+        const response = await safeFetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${folderName}?ref=${ref}`);
         if (response.ok) {
           const data = await response.json();
-          const dynamicGallery: any[] = [];
-          
           if (Array.isArray(data)) {
-            const folderPromises = data.map(async (item) => {
+            const results = await Promise.all(data.map(async item => {
               if (item.type === 'file' && item.name.toLowerCase().match(/\.(jpg|jpeg|png|webp|mp4|mov|webm)$/i)) {
-                const rawUrl = item.download_url || `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${ref}/${item.path}`;
                 return {
-                  url: rawUrl,
-                  cover: item.name.toLowerCase().match(/\.(mp4|mov|webm)$/) ? rawUrl.replace(/\.(mp4|mov|webm)$/i, '.jpg') : rawUrl,
+                  url: item.download_url,
+                  cover: item.name.toLowerCase().match(/\.(mp4|mov|webm)$/) ? item.download_url.replace(/\.(mp4|mov|webm)$/i, '.jpg') : item.download_url,
                   title: item.name.replace(/\.[^/.]+$/, "")
                 };
               } else if (item.type === 'dir') {
-                const subRes = await safeFetch(item.url);
-                if (subRes.ok) {
-                  const subItems = await subRes.json();
-                  if (Array.isArray(subItems)) {
-                    return subItems
-                      .filter(si => si.type === 'file' && si.name.toLowerCase().match(/\.(jpg|jpeg|png|webp|mp4|mov|webm)$/i))
-                      .map(si => ({
-                        url: si.download_url || `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${ref}/${si.path}`,
-                        cover: si.name.toLowerCase().match(/\.(mp4|mov|webm)$/) ? (si.download_url || "").replace(/\.(mp4|mov|webm)$/i, '.jpg') : (si.download_url || ""),
-                        title: si.name.replace(/\.[^/.]+$/, ""),
-                        group: item.name
-                      }));
-                  }
+                const sub = await safeFetch(item.url);
+                if (sub.ok) {
+                  const subItems = await sub.json();
+                  return Array.isArray(subItems) ? subItems
+                    .filter(si => si.type === 'file' && si.name.toLowerCase().match(/\.(jpg|jpeg|png|webp|mp4|mov|webm)$/i))
+                    .map(si => ({
+                      url: si.download_url,
+                      cover: si.name.toLowerCase().match(/\.(mp4|mov|webm)$/i) ? si.download_url.replace(/\.(mp4|mov|webm)$/i, '.jpg') : si.download_url,
+                      title: si.name.replace(/\.[^/.]+$/, ""),
+                      group: item.name
+                    })) : null;
                 }
               }
               return null;
-            });
+            }));
 
-            const results = await Promise.all(folderPromises);
-            results.forEach(res => {
-              if (Array.isArray(res)) dynamicGallery.push(...res);
-              else if (res) dynamicGallery.push(res);
-            });
-            
-            setProject(prev => prev ? ({ ...prev, galleryImages: dynamicGallery }) : null);
-            
+            const dynamicGallery = results.flat().filter(Boolean);
+            // Only update if still on matching project
+            setProject(prev => (prev && prev.id === project.id) ? { ...prev, galleryImages: dynamicGallery } : prev);
             if (dynamicGallery.length > 0) {
-              localStorage.setItem(cacheKey, JSON.stringify({
-                data: dynamicGallery,
-                timestamp: Date.now()
-              }));
-            } else {
-              setError("该文件夹中没有找到图片或视频。");
+              localStorage.setItem(cacheKey, JSON.stringify({ data: dynamicGallery, timestamp: Date.now() }));
             }
           }
-        } else if (response.status === 404) {
-          setError(`未找到文件夹: ${folderName}`);
-        } else {
-          setError(`获取失败 (错误码: ${response.status})`);
         }
       } catch (err) {
         console.error("Gallery Fetch Error:", err);
-        setError("无法连接到 GitHub 资源，请检查网络或刷新页面。");
       } finally {
         setIsLoading(false);
       }
     };
 
-      // 暴露给全局，方便刷新按钮调用
-      (window as any).fetchGalleryContent = fetchGalleryContent;
-      
-      fetchGalleryContent();
-    }, [project.title, project.id, id, archiveProjects]);
-
+    fetchGalleryContent();
+  }, [project.id]); // Only re-run when actual project ID changes
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [id]);
@@ -1936,16 +1923,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
             <Link to="/" className="text-brand-red flex items-center gap-2 text-base font-bold tracking-normal hover:text-white transition-colors mb-8">
               <ChevronLeft size={16} /> Back to Home
             </Link>
-            <div className="flex items-center gap-4">
-              <h1 className="text-4xl md:text-7xl font-display font-bold mb-6">{project.title}</h1>
-              <button 
-                onClick={() => (window as any).fetchGalleryContent?.(true)}
-                className="mb-6 p-2 text-white/20 hover:text-white transition-colors"
-                title="Refresh Content"
-              >
-                <RefreshCw size={18} className={isLoading ? "animate-spin" : ""} />
-              </button>
-            </div>
+            <h1 className="text-4xl md:text-7xl font-display font-bold mb-6">{project.title}</h1>
             <p className="text-white/40 text-lg mb-8 max-w-2xl italic">{project.subtitle}</p>
             <div className="w-24 h-[1px] bg-brand-red" />
           </div>
@@ -1963,20 +1941,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
           </div>
         </div>
 
-        {error && (
-          <div className="mb-12 p-6 bg-brand-red/10 border border-brand-red/20 rounded-lg">
-            <h3 className="text-brand-red font-bold mb-2 flex items-center gap-2">
-              <Shield size={18} /> 获取内容提醒 (GitHub API Notice)
-            </h3>
-            <p className="text-white/80 mb-4">{error}</p>
-            <button 
-              onClick={() => (window as any).fetchGalleryContent?.(true)}
-              className="px-4 py-2 bg-brand-red text-white font-bold hover:bg-white hover:text-brand-red transition-all flex items-center gap-2"
-            >
-              <RefreshCw size={16} /> 尝试清除缓存并重新同步
-            </button>
-          </div>
-        )}
+
 
         <div className={project.title === "Video" ? "space-y-16" : ""}>
           {isLoading && galleryItems.length === 0 ? (
@@ -2359,32 +2324,10 @@ const INITIAL_ARCHIVE: Project[] = [
   }
 ];
 
-// --- Scroll To Top Helper ---
-const ScrollToTop = () => {
-  const { pathname, hash } = useLocation();
-  
-  useEffect(() => {
-    if (!hash) {
-      // 使用更底层的覆盖方式
-      const forceTop = () => {
-        window.scrollTo(0, 0);
-        document.body.scrollTo(0, 0);
-        if (document.scrollingElement) {
-          document.scrollingElement.scrollTop = 0;
-        }
-      };
-      
-      forceTop();
-      requestAnimationFrame(forceTop);
-      const t = setTimeout(forceTop, 30);
-      return () => clearTimeout(t);
-    }
-  }, [pathname, hash]);
-  
-  return null;
-};
+// --- Scroll To Top Helper (Deprecated, logic moved to App) ---
+const ScrollToTop = () => null;
 
-// 强制在全局范围禁用滚动恢复，防止刷新时跳回底部
+// 强制在全局范围禁用滚动恢复
 if (typeof window !== 'undefined' && 'scrollRestoration' in window.history) {
   window.history.scrollRestoration = 'manual';
 }
@@ -2392,48 +2335,26 @@ if (typeof window !== 'undefined' && 'scrollRestoration' in window.history) {
 export default function App() {
   const location = useLocation();
 
-  // 核心修复：刷新时强制回顶并开启滚动能力
-  useLayoutEffect(() => {
-    // 禁用浏览器自动滚动恢复
-    if ('scrollRestoration' in window.history) {
-      window.history.scrollRestoration = 'manual';
-    }
-
-    const forceReset = () => {
-      // 暴力回顶
-      window.scrollTo(0, 0);
-      document.body.scrollTop = 0;
-      document.documentElement.scrollTop = 0;
-      
-      // 彻底解锁滚动能力
-      const styles = {
-        overflow: 'auto',
-        height: 'auto',
-        minHeight: '100vh',
-        position: 'static',
-        touchAction: 'auto'
-      };
-      
-      Object.assign(document.body.style, styles);
-      Object.assign(document.documentElement.style, styles);
-      
-      // 特殊情况：如果是苹果设备或某些特定的容器导致的卡死
-      document.body.classList.remove('overflow-hidden', 'fixed');
-    };
-
-    forceReset();
-    // 多次确认，防止异步组件（如 Archive）渲染导致的位置偏移
-    const timers = [10, 100, 300, 700].map(ms => setTimeout(forceReset, ms));
-    return () => timers.forEach(clearTimeout);
-  }, []);
+  // Robust initialization for all route changes
+  useEffect(() => {
+    // 强制滚动到顶部
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    
+    // 确保滚动条没被锁定
+    document.body.style.overflow = '';
+    document.documentElement.style.overflow = '';
+    document.body.classList.remove('overflow-hidden', 'fixed');
+  }, [location.pathname, location.key]);
 
   return (
     <div className="min-h-screen bg-brand-dark selection:bg-brand-red selection:text-white custom-scrollbar">
-      <ScrollToTop />
       <Navbar />
       <Routes location={location}>
         <Route path="/" element={<HomePage archiveProjects={INITIAL_ARCHIVE} />} />
         <Route path="/gallery/:id" element={<GalleryPage archiveProjects={INITIAL_ARCHIVE} />} />
+        {/* Catch-all route to handle malformed hash paths like /#about */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <Footer />
     </div>
