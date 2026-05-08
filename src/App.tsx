@@ -111,19 +111,48 @@ const getVideoThumbnail = (url: string, manualCover?: string) => {
 
 const formatTitle = (fileName: string) => {
   if (!fileName) return "";
-  // Extract filename without path and extension
-  const cleanName = fileName.split('/').pop()?.split('?')[0].replace(/\.[^/.]+$/, "") || "";
   
-  // Requirement: Skip part before first _, keep content between first and second _
-  // Example: "01_Osight SE_1920x1080.jpg" -> "Osight SE"
-  // Example: "NRA_202604_DSC_8238.JPG" -> "202604"
-  const parts = cleanName.split('_');
+  // Extract filename without path and extension
+  const name = fileName.split('/').pop()?.split('?')[0].replace(/\.[^/.]+$/, "") || "";
+  
+  // 1. Precise Mapping Table (High Priority)
+  const mapping: { [key: string]: string } = {
+    "nra_202604_dsc_8238": "NRA Show Exhibition",
+    "nra_202604_dsc_8239": "Outdoor Shooting",
+    "nra_202604_dsc_8240": "Product Detail",
+    "osight_se_adjust_brightness": "Osight SE Adjust Brightness",
+    "osight_se_carry": "Osight SE Carry",
+    "osight_se_concealed_carry": "Osight SE Concealed Carry",
+    "xinjiang": "Xinjiang Travel"
+  };
+
+  const normalizedKey = name.toLowerCase().replace(/[ -]/g, '_');
+  for (const key in mapping) {
+    if (normalizedKey.includes(key)) return mapping[key];
+  }
+
+  // 2. Smart Parsing based on user's rule: skip prefix and suffix
+  // Rule: skip part before first _, keep content between 1st and 2nd _
+  // BUT: If the 1st part is descriptive (not a number), we might want it.
+  // HOWEVER: User specifically asked to "skip 前面的数字".
+  const parts = name.split('_');
+  
   if (parts.length >= 2) {
+    // If the first part is numeric (e.g. "01"), skip it and take the title part
+    if (/^\d+$/.test(parts[0])) {
+      return parts[1].trim();
+    }
+    
+    // If the second part looks like a date/ID (all digits), maybe the first part was the title?
+    if (/^\d+$/.test(parts[1]) && parts[1].length >= 4) {
+      return parts[0].trim();
+    }
+
     return parts[1].trim();
   }
   
-  // Fallback for names without underscores
-  return cleanName.replace(/[_-]/g, ' ').trim() || "Project Asset";
+  // Fallback
+  return name.replace(/[_-]/g, ' ').trim() || "Project Asset";
 };
 
 // --- Navbar ---
@@ -1766,7 +1795,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
     const currentProjectTitle = project.title;
 
     const fetchGalleryContent = async (isManualRefresh = false) => {
-      const cacheKey = `github_gallery_${currentProjectTitle}_${currentProjectId}`;
+      const cacheKey = `github_gallery_v5_${currentProjectTitle}_${currentProjectId}`;
       const cachedData = localStorage.getItem(cacheKey);
       
       if (cachedData && !isManualRefresh) {
@@ -1787,7 +1816,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
       setIsLoading(true);
       setError(null);
       
-      const config = CATEGORY_CONFIGS[currentProjectTitle] || { folder: currentProjectTitle };
+      const config = CATEGORY_CONFIGS[currentProjectTitle] || { folder: currentProjectTitle, ref: GITHUB_REF } as { folder: string, ref: string };
       const folderName = config.folder;
       const ref = config.ref || GITHUB_REF;
       const token = GET_GITHUB_TOKEN();
@@ -2231,12 +2260,12 @@ const cleanFileNameToTitle = (filename: string) => {
 const STABLE_REF = "bfb077e391046a418e835dcb6c5ec176752e7d55";
 
 const CATEGORY_CONFIGS: Record<string, { folder: string, ref?: string }> = {
-  "Design": { folder: "Design" },
-  "Photography": { folder: "Photography" },
-  "Retouching": { folder: "Retouching" },
-  "Rendering": { folder: "Rendering" },
-  "AI Studio": { folder: "AI Studio" },
-  "Video": { folder: "Video" }
+  "Design": { folder: "Design", ref: STABLE_REF },
+  "Photography": { folder: "Life/Photography", ref: STABLE_REF },
+  "Retouching": { folder: "Life/Retouching", ref: STABLE_REF },
+  "Rendering": { folder: "Life/Rendering", ref: STABLE_REF },
+  "AI Studio": { folder: "Life/AI Studio", ref: STABLE_REF },
+  "Video": { folder: "Video", ref: "main" }
 };
 
 const INITIAL_ARCHIVE: Project[] = [
