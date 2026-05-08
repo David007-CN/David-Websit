@@ -1730,17 +1730,17 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
     
     const finalProject = freshProject || archiveProjects[0];
     
-    // CRITICAL: When switching projects, immediately clear dynamic gallery if not Video
-    // This prevents showing old content during loading.
+    // Reset state for new project
+    const isDynamic = finalProject.title !== 'Video';
+    
     setProject({
       ...finalProject,
-      galleryImages: finalProject.title === 'Video' ? finalProject.galleryImages : []
+      galleryImages: isDynamic ? [] : finalProject.galleryImages
     });
     
     setSelectedIndex(null);
     setError(null);
-    
-    setIsLoading(finalProject.title !== 'Video');
+    setIsLoading(isDynamic);
   }, [id, archiveProjects]);
 
   const galleryItems = project?.galleryImages || [];
@@ -1849,29 +1849,42 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
       };
 
       const fetchAllContents = async (path: string, groupName?: string): Promise<any[]> => {
-        const url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${path}?ref=${ref}`;
-        const response = await safeFetch(url);
-        
-        if (!response.ok) return [];
-        const items = await response.json();
-        if (!Array.isArray(items)) return [];
-
-        let gallery: any[] = [];
-        for (const item of items) {
-          if (item.type === 'file' && item.name.toLowerCase().match(/\.(jpg|jpeg|png|webp|mp4|mov|webm)$/i)) {
-            const dUrl = item.download_url || `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${ref}/${item.path}`;
-            gallery.push({
-              url: dUrl,
-              cover: item.name.toLowerCase().match(/\.(mp4|mov|webm)$/) ? dUrl.replace(/\.(mp4|mov|webm)$/i, '.jpg') : dUrl,
-              title: item.name.replace(/\.[^/.]+$/, ""),
-              group: groupName || (path !== folderName ? path.split('/').pop() : undefined)
-            });
-          } else if (item.type === 'dir' && !item.name.startsWith('.')) {
-            const sub = await fetchAllContents(item.path, groupName || item.name);
-            gallery.push(...sub);
+        try {
+          const url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${path}?ref=${ref}`;
+          const response = await safeFetch(url);
+          
+          if (!response.ok) {
+            console.error(`Fetch failed for ${path}: ${response.status}`);
+            return [];
           }
+          
+          const items = await response.json();
+          if (!Array.isArray(items)) return [];
+
+          let gallery: any[] = [];
+          for (const item of items) {
+            if (item.type === 'file' && item.name.toLowerCase().match(/\.(jpg|jpeg|png|webp|mp4|mov|webm)$/i)) {
+              // Skip system files or hidden files
+              if (item.name.startsWith('.')) continue;
+
+              const dUrl = item.download_url || `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${ref}/${item.path}`;
+              gallery.push({
+                url: dUrl,
+                cover: item.name.toLowerCase().match(/\.(mp4|mov|webm)$/) ? dUrl.replace(/\.(mp4|mov|webm)$/i, '.jpg') : dUrl,
+                title: item.name.replace(/\.[^/.]+$/, ""),
+                group: groupName || (path !== folderName ? path.split('/').pop() : undefined)
+              });
+            } else if (item.type === 'dir' && !item.name.startsWith('.')) {
+              // Use Folder name as Group Name if we are in the root category folder
+              const subItems = await fetchAllContents(item.path, groupName || item.name);
+              gallery.push(...subItems);
+            }
+          }
+          return gallery;
+        } catch (e) {
+          console.error(`Recursive fetch error at ${path}:`, e);
+          return [];
         }
-        return gallery;
       };
 
       try {
@@ -1882,10 +1895,14 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
             setProject(prev => (prev && prev.id === currentProjectId) ? { ...prev, galleryImages: dynamicGallery } : prev);
             localStorage.setItem(cacheKey, JSON.stringify({ data: dynamicGallery, timestamp: Date.now() }));
           } else {
-            setError("No items found in this folder.");
+            console.warn(`No items found for category: ${currentProjectTitle}`);
+            setError(`No items found in folder: ${folderName}`);
+            // If empty, clear cache to force retry next time
+            localStorage.removeItem(cacheKey);
           }
         }
       } catch (err) {
+        console.error("Gallery Fetch Error:", err);
         if (!isCancelled) setError("Connection failed. Please check your network.");
       } finally {
         if (!isCancelled) setIsLoading(false);
