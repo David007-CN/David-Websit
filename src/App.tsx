@@ -41,6 +41,11 @@ const GITHUB_REPO = "DW";
 const GITHUB_REF = "main";
 const GITHUB_FOLDER = "Life";
 
+// Get token from environment if available in production/static builds
+const GET_GITHUB_TOKEN = () => {
+  return import.meta.env.VITE_GITHUB_TOKEN || "";
+};
+
 // Detection for mobile performance
 const isMobile = typeof window !== 'undefined' ? /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768 : false;
 
@@ -1762,16 +1767,17 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
       return prev;
     });
 
-      const fetchGalleryContent = async () => {
+      const fetchGalleryContent = async (isManualRefresh = false) => {
       // 1. First check if we already have it in localStorage to avoid API calls
       const cacheKey = `github_gallery_${project.title}_${project.id}`;
       
       const cachedData = localStorage.getItem(cacheKey);
       
-      if (cachedData) {
+      if (cachedData && !isManualRefresh) {
         try {
           const { data, timestamp } = JSON.parse(cachedData);
-          const isExpired = Date.now() - timestamp > 1000 * 60 * 60; // 1 hour expiration
+          // Cache lasts 1 hour normally, but if we're debugging let's be more aggressive
+          const isExpired = Date.now() - timestamp > 1000 * 60 * 30; // 30 mins
           
           if (!isExpired && data && data.length > 0) {
             setProject(prev => prev ? ({ ...prev, galleryImages: data }) : null);
@@ -1782,9 +1788,6 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
         }
       }
 
-      // Avoid refetching if already loaded in current state (unless it's Retouching)
-      if (galleryItems.length > 5 && project.title !== 'Retouching') return;
-
       setIsLoading(true);
       setError(null);
       
@@ -1792,121 +1795,106 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
       const folderName = config.folder;
       const ref = config.ref || GITHUB_REF;
       
-      const apiPath = `/api/github-proxy?owner=${GITHUB_USER}&repo=${GITHUB_REPO}&path=${encodeURIComponent(folderName)}&ref=${ref}&t=${Date.now()}`;
-      
-      try {
-        let response: Response;
+      const headers: Record<string, string> = {
+        'Accept': 'application/vnd.github.v3+json',
+      };
+      const token = GET_GITHUB_TOKEN();
+      if (token) headers['Authorization'] = `token ${token}`;
+
+      const safeFetch = async (url: string, useProxy = true) => {
         try {
-          response = await fetch(apiPath);
+          if (useProxy) {
+            const proxyUrl = `/api/github-proxy?owner=${GITHUB_USER}&repo=${GITHUB_REPO}&path=${encodeURIComponent(url.replace(/.*\/contents\//, '').split('?')[0])}&ref=${ref}&t=${Date.now()}`;
+            const res = await fetch(proxyUrl);
+            if (res.ok) return res;
+          }
+          // Fallback to direct
+          const directUrl = url.includes('?') ? `${url}&t=${Date.now()}` : `${url}?t=${Date.now()}`;
+          return await fetch(directUrl, { headers });
         } catch (e) {
-          console.warn("Proxy fetch failed, attempting direct GitHub API fallback");
-          const directUrl = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${folderName}?ref=${ref}&t=${Date.now()}`;
-          response = await fetch(directUrl);
+          return await fetch(url.includes('?') ? `${url}&t=${Date.now()}` : `${url}?t=${Date.now()}`, { headers });
         }
+      };
+
+      try {
+        const initialUrl = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${folderName}?ref=${ref}`;
+        const response = await safeFetch(initialUrl);
         
-        // If the response is not OK (any error status), try fallback
-        if (!response.ok) {
-          console.warn(`Initial fetch failed (${response.status}), falling back to direct GitHub API`);
-          const directUrl = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${folderName}?ref=${ref}&t=${Date.now()}`;
-          response = await fetch(directUrl);
+        if (response.status === 403) {
+          const resetTime = response.headers.get('x-ratelimit-reset');
+          const waitTime = resetTime ? Math.ceil((parseInt(resetTime) * 1000 - Date.now()) / 60000) : 60;
+          setError(`GitHub API 访问受限。请稍后再试（约 ${waitTime} 分钟后），或在预览环境中查看。`);
+          setIsLoading(false);
+          return;
         }
-        
+
         if (response.ok) {
-          try {
-            const data = await response.json();
-            console.log(`Gallery fetch success for ${project.title}:`, Array.isArray(data) ? data.length : "one", "items");
-            const dynamicGallery: any[] = [];
-            
-            if (Array.isArray(data)) {
-              // Process root items
-              for (const item of data) {
-                if (item.type === 'file' && item.name.toLowerCase().match(/\.(jpg|jpeg|png|webp|mp4|mov|webm)$/i)) {
-                  const rawUrl = item.download_url || `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${ref}/${item.path}`;
-                  dynamicGallery.push({
-                    url: rawUrl,
-                    cover: item.name.toLowerCase().match(/\.(mp4|mov|webm)$/) ? rawUrl.replace(/\.(mp4|mov|webm)$/i, '.jpg') : rawUrl,
-                    title: item.name.replace(/\.[^/.]+$/, "")
-                  });
-                } else if (item.type === 'dir') {
-                  // For subdirectories, fetch their contents too
-                  const subPath = item.path;
-                  const subApi = `/api/github-proxy?owner=${GITHUB_USER}&repo=${GITHUB_REPO}&path=${encodeURIComponent(subPath)}&ref=${ref}&t=${Date.now()}`;
-                  try {
-                    let subRes: Response;
-                    try {
-                      subRes = await fetch(subApi);
-                    } catch (e) {
-                      const directSubUrl = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${subPath}?ref=${ref}&t=${Date.now()}`;
-                      subRes = await fetch(directSubUrl);
-                    }
-                    
-                    // Fallback for subfolders too
-                    if (!subRes.ok) {
-                      const directSubUrl = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${subPath}?ref=${ref}&t=${Date.now()}`;
-                      subRes = await fetch(directSubUrl);
-                    }
-                    
-                    if (subRes.ok) {
-                      const subItems = await subRes.json();
-                      if (Array.isArray(subItems)) {
-                        subItems.forEach((subItem: any) => {
-                          if (subItem.type === 'file' && subItem.name.toLowerCase().match(/\.(jpg|jpeg|png|webp|mp4|mov|webm)$/i)) {
-                            const rawUrl = subItem.download_url || `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${ref}/${subItem.path}`;
-                            dynamicGallery.push({
-                              url: rawUrl,
-                              cover: subItem.name.toLowerCase().match(/\.(mp4|mov|webm)$/) ? rawUrl.replace(/\.(mp4|mov|webm)$/i, '.jpg') : rawUrl,
-                              title: subItem.name.replace(/\.[^/.]+$/, ""),
-                              group: item.name // Keep track of parent folder name
-                            });
-                          }
-                        });
-                      }
-                    }
-                  } catch (e) {
-                    console.error(`Failed to fetch subfolder ${subPath}:`, e);
+          const data = await response.json();
+          const dynamicGallery: any[] = [];
+          
+          if (Array.isArray(data)) {
+            const folderPromises = data.map(async (item) => {
+              if (item.type === 'file' && item.name.toLowerCase().match(/\.(jpg|jpeg|png|webp|mp4|mov|webm)$/i)) {
+                const rawUrl = item.download_url || `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${ref}/${item.path}`;
+                return {
+                  url: rawUrl,
+                  cover: item.name.toLowerCase().match(/\.(mp4|mov|webm)$/) ? rawUrl.replace(/\.(mp4|mov|webm)$/i, '.jpg') : rawUrl,
+                  title: item.name.replace(/\.[^/.]+$/, "")
+                };
+              } else if (item.type === 'dir') {
+                const subRes = await safeFetch(item.url);
+                if (subRes.ok) {
+                  const subItems = await subRes.json();
+                  if (Array.isArray(subItems)) {
+                    return subItems
+                      .filter(si => si.type === 'file' && si.name.toLowerCase().match(/\.(jpg|jpeg|png|webp|mp4|mov|webm)$/i))
+                      .map(si => ({
+                        url: si.download_url || `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${ref}/${si.path}`,
+                        cover: si.name.toLowerCase().match(/\.(mp4|mov|webm)$/) ? (si.download_url || "").replace(/\.(mp4|mov|webm)$/i, '.jpg') : (si.download_url || ""),
+                        title: si.name.replace(/\.[^/.]+$/, ""),
+                        group: item.name
+                      }));
                   }
                 }
               }
+              return null;
+            });
+
+            const results = await Promise.all(folderPromises);
+            results.forEach(res => {
+              if (Array.isArray(res)) dynamicGallery.push(...res);
+              else if (res) dynamicGallery.push(res);
+            });
             
-              // Set gallery state
-              setProject(prev => prev ? ({ ...prev, galleryImages: dynamicGallery }) : null);
-              
-              if (dynamicGallery.length > 0) {
-                // Cache the result
-                localStorage.setItem(cacheKey, JSON.stringify({
-                  data: dynamicGallery,
-                  timestamp: Date.now()
-                }));
-              } else {
-                localStorage.removeItem(cacheKey);
-                setError("No images found in this folder or its subfolders.");
-              }
+            setProject(prev => prev ? ({ ...prev, galleryImages: dynamicGallery }) : null);
+            
+            if (dynamicGallery.length > 0) {
+              localStorage.setItem(cacheKey, JSON.stringify({
+                data: dynamicGallery,
+                timestamp: Date.now()
+              }));
+            } else {
+              setError("该文件夹中没有找到图片或视频。");
             }
-          } catch (jsonErr) {
-            console.error("Gallery JSON Parsing Error:", jsonErr);
-            setError("The response from GitHub source was invalid.");
           }
+        } else if (response.status === 404) {
+          setError(`未找到文件夹: ${folderName}`);
         } else {
-          // ... error handling ...
-          if (response.status === 404) {
-            setProject(prev => prev ? ({ ...prev, galleryImages: [] }) : null);
-            localStorage.removeItem(cacheKey);
-            setError(`Folder '${folderName}' not found in the repository.`);
-          } else {
-            setError(`GitHub API Error: ${response.status}`);
-          }
+          setError(`获取失败 (错误码: ${response.status})`);
         }
       } catch (err) {
         console.error("Gallery Fetch Error:", err);
-        setError("Failed to connect to GitHub.");
+        setError("无法连接到 GitHub 资源，请检查网络或刷新页面。");
       } finally {
         setIsLoading(false);
       }
     };
 
-
-    fetchGalleryContent();
-  }, [project.title, project.id]);
+      // 暴露给全局，方便刷新按钮调用
+      (window as any).fetchGalleryContent = fetchGalleryContent;
+      
+      fetchGalleryContent();
+    }, [project.title, project.id, id, archiveProjects]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -1948,7 +1936,16 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
             <Link to="/" className="text-brand-red flex items-center gap-2 text-base font-bold tracking-normal hover:text-white transition-colors mb-8">
               <ChevronLeft size={16} /> Back to Home
             </Link>
-            <h1 className="text-4xl md:text-7xl font-display font-bold mb-6">{project.title}</h1>
+            <div className="flex items-center gap-4">
+              <h1 className="text-4xl md:text-7xl font-display font-bold mb-6">{project.title}</h1>
+              <button 
+                onClick={() => (window as any).fetchGalleryContent?.(true)}
+                className="mb-6 p-2 text-white/20 hover:text-white transition-colors"
+                title="Refresh Content"
+              >
+                <RefreshCw size={18} className={isLoading ? "animate-spin" : ""} />
+              </button>
+            </div>
             <p className="text-white/40 text-lg mb-8 max-w-2xl italic">{project.subtitle}</p>
             <div className="w-24 h-[1px] bg-brand-red" />
           </div>
@@ -1965,6 +1962,21 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
             ))}
           </div>
         </div>
+
+        {error && (
+          <div className="mb-12 p-6 bg-brand-red/10 border border-brand-red/20 rounded-lg">
+            <h3 className="text-brand-red font-bold mb-2 flex items-center gap-2">
+              <Shield size={18} /> 获取内容提醒 (GitHub API Notice)
+            </h3>
+            <p className="text-white/80 mb-4">{error}</p>
+            <button 
+              onClick={() => (window as any).fetchGalleryContent?.(true)}
+              className="px-4 py-2 bg-brand-red text-white font-bold hover:bg-white hover:text-brand-red transition-all flex items-center gap-2"
+            >
+              <RefreshCw size={16} /> 尝试清除缓存并重新同步
+            </button>
+          </div>
+        )}
 
         <div className={project.title === "Video" ? "space-y-16" : ""}>
           {isLoading && galleryItems.length === 0 ? (
