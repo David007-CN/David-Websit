@@ -2277,15 +2277,10 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
               )}
             </motion.div>
             
-            {/* 描述信息移入弹窗内部并添加安全检查 */}
+            {/* 隐藏描述信息 */}
             {selectedIndex !== null && (
               <div className="absolute bottom-6 md:bottom-12 left-0 right-0 text-center pointer-events-none z-[110]">
-                <p className="text-white font-display text-lg md:text-xl font-medium drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
-                  {typeof displayList[selectedIndex] === 'object' && (displayList[selectedIndex] as any).title 
-                    ? (displayList[selectedIndex] as any).title 
-                    : formatTitle(selectedUrl)}
-                </p>
-                <p className="text-white/40 text-xs md:text-sm mt-2 drop-shadow-md">{selectedIndex + 1} / {displayList.length}</p>
+                <p className="text-white/40 text-xs md:text-sm drop-shadow-md">{selectedIndex + 1} / {displayList.length}</p>
               </div>
             )}
           </motion.div>
