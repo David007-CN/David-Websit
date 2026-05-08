@@ -111,61 +111,19 @@ const getVideoThumbnail = (url: string, manualCover?: string) => {
 
 const formatTitle = (fileName: string) => {
   if (!fileName) return "";
-  // 提取文件名（不含路径和扩展名）
-  let name = fileName.split('/').pop() || fileName;
-  name = name.split('?')[0].replace(/\.[^/.]+$/, "");
+  // Extract filename without path and extension
+  const cleanName = fileName.split('/').pop()?.split('?')[0].replace(/\.[^/.]+$/, "") || "";
   
-  const testName = name.toLowerCase();
-
-  // 1. 精确匹配表 (优先级最高)
-  const mapping: { [key: string]: string } = {
-    "nra_202604_dsc_8238": "NRA Show Exhibition",
-    "nra_202604_dsc_8239": "Outdoor Shooting",
-    "nra_202604_dsc_8240": "Product Detail",
-    "osight_se_adjust_brightness": "Osight SE Adjust Brightness",
-    "osight_se_carry": "Osight SE Carry",
-    "osight_se_concealed_carry": "Osight SE Concealed Carry",
-    "xinjiang": "Xinjiang Travel"
-  };
-
-  // 检查是否在映射表中（忽略大小写和下划线/空格差异）
-  const normalizedKey = name.toLowerCase().replace(/[ -]/g, '_');
-  for (const key in mapping) {
-    if (normalizedKey.includes(key)) return mapping[key];
+  // Requirement: Skip part before first _, keep content between first and second _
+  // Example: "01_Osight SE_1920x1080.jpg" -> "Osight SE"
+  // Example: "NRA_202604_DSC_8238.JPG" -> "202604"
+  const parts = cleanName.split('_');
+  if (parts.length >= 2) {
+    return parts[1].trim();
   }
-
-  // 2. 如果文件名已经是很清晰的标题（含空格且无 DSC/年份字样），直接返回
-  if (name.includes(' ') && !name.match(/DSC_\d+/i) && !name.match(/20\d{2}/)) {
-    return name;
-  }
-
-  // 3. 通用处理逻辑
-  let title = name;
   
-  // 移除年份标记（如 _202601）
-  title = title.replace(/_?20\d{2,4}(\d{2})?/, '');
-  // 移除相机编号（如 DSC_8238）
-  title = title.replace(/_?DSC_\d+/i, '');
-  // 替换分隔符
-  title = title.replace(/[_-]/g, ' ').trim();
-
-  // 4. 品牌/型号词提取与修正
-  const words = title.split(' ');
-  const formattedWords = words.map(word => {
-    const upper = word.toUpperCase();
-    // 强制大写的缩写
-    if (upper === 'NRA') return 'NRA Show';
-    if (upper === 'XINJIANG') return 'Xinjiang Travel';
-    if (['SE', 'XR', 'AI', 'GN'].includes(upper)) return upper;
-    // 品牌词
-    if (upper === 'OSIGHT') return 'Osight';
-    // 首字母大写
-    return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-  });
-
-  title = formattedWords.join(' ');
-
-  return title || "Project Asset";
+  // Fallback for names without underscores
+  return cleanName.replace(/[_-]/g, ' ').trim() || "Project Asset";
 };
 
 // --- Navbar ---
@@ -1877,7 +1835,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
               gallery.push({
                 url: dUrl,
                 cover: item.name.toLowerCase().match(/\.(mp4|mov|webm)$/) ? dUrl.replace(/\.(mp4|mov|webm)$/i, '.jpg') : dUrl,
-                title: item.name.replace(/\.[^/.]+$/, ""),
+                title: formatTitle(item.name),
                 group: groupName || (path !== folderName ? path.split('/').pop() : undefined)
               });
             } else if (item.type === 'dir' && !item.name.startsWith('.')) {
@@ -1985,6 +1943,17 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
             <div className="py-24 text-center">
               <div className="animate-spin w-8 h-8 border-2 border-brand-red border-t-transparent rounded-full mx-auto mb-4" />
               <p className="text-white/20 text-[10px] font-bold tracking-widest">Connecting to GitHub Source...</p>
+            </div>
+          ) : error ? (
+            <div className="py-24 text-center border-y border-white/5 bg-red-500/5">
+              <Shield className="mx-auto text-brand-red mb-4 opacity-50" size={32} />
+              <p className="text-brand-red/80 text-sm font-display mb-4">{error}</p>
+              <button 
+                onClick={() => window.location.reload()}
+                className="px-6 py-2 border border-brand-red/30 text-brand-red text-xs hover:bg-brand-red hover:text-white transition-all"
+              >
+                Retry Connection
+              </button>
             </div>
           ) : galleryItems.length === 0 ? (
             <div className="py-48 text-center border-y border-white/5 bg-white/[0.01]">
@@ -2139,16 +2108,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              drag={!selectedUrl.match(/\.(mp4|mov|webm)$/i) && !selectedUrl.includes('youtube.com') && !selectedUrl.includes('bilibili.com') ? false : "x"} // Only drag on video/frame for simple nav, or disable if we use pinch
-              dragConstraints={{ left: 0, right: 0 }}
-              onDragEnd={(_, info) => {
-                const threshold = 50;
-                if (info.offset.x < -threshold) {
-                  handleNext();
-                } else if (info.offset.x > threshold) {
-                  handlePrev();
-                }
-              }}
+              drag={false} 
               className={`relative shadow-2xl flex items-center justify-center overflow-hidden bg-black ${
                 selectedUrl.includes('bilibili.com') || (selectedUrl.includes('youtube.com') && !selectedUrl.includes('shorts/')) || selectedUrl.includes('youtu.be')
                   ? "w-full max-w-[95vw] max-h-[90vh] aspect-video" 
@@ -2268,8 +2228,10 @@ const cleanFileNameToTitle = (filename: string) => {
   return filename.replace(/\.[^/.]+$/, "");
 };
 
+const STABLE_REF = "bfb077e391046a418e835dcb6c5ec176752e7d55";
+
 const CATEGORY_CONFIGS: Record<string, { folder: string, ref?: string }> = {
-  "Design": { folder: "Design", ref: "bfb077e391046a418e835dcb6c5ec176752e7d55" },
+  "Design": { folder: "Design" },
   "Photography": { folder: "Photography" },
   "Retouching": { folder: "Retouching" },
   "Rendering": { folder: "Rendering" },
