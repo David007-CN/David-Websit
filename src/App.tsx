@@ -1814,10 +1814,9 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
       if (cachedData && !isManualRefresh) {
         try {
           const { data, timestamp } = JSON.parse(cachedData);
-          // Cache lasts 1 hour
           if (Date.now() - timestamp < 1000 * 60 * 60 && data?.length > 0) {
             if (!isCancelled) {
-              setProject(prev => prev.id === currentProjectId ? ({ ...prev, galleryImages: data }) : prev);
+              setProject(prev => prev && prev.id === currentProjectId ? ({ ...prev, galleryImages: data }) : prev);
               setIsLoading(false);
             }
             return;
@@ -1839,16 +1838,12 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
         const t = Date.now();
         const headers = token ? { 'Authorization': `token ${token}` } : {};
         try {
-          // Use proxy first
           const path = url.replace(/.*\/contents\//, '').split('?')[0];
           const proxyUrl = `/api/github-proxy?owner=${GITHUB_USER}&repo=${GITHUB_REPO}&path=${encodeURIComponent(path)}&ref=${ref}&t=${t}`;
           const res = await fetch(proxyUrl);
           if (res.ok) return res;
-          
-          // Fallback to direct fetch
           return await fetch(`${url}${url.includes('?') ? '&' : '?' }t=${t}`, { headers });
         } catch (e) {
-          // Final fallback
           return await fetch(`${url}${url.includes('?') ? '&' : '?' }t=${t}`, { headers });
         }
       };
@@ -1862,40 +1857,36 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
         if (!Array.isArray(items)) return [];
 
         let gallery: any[] = [];
-        const promises = items.map(async item => {
+        for (const item of items) {
           if (item.type === 'file' && item.name.toLowerCase().match(/\.(jpg|jpeg|png|webp|mp4|mov|webm)$/i)) {
             const dUrl = item.download_url || `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${ref}/${item.path}`;
-            return {
+            gallery.push({
               url: dUrl,
               cover: item.name.toLowerCase().match(/\.(mp4|mov|webm)$/) ? dUrl.replace(/\.(mp4|mov|webm)$/i, '.jpg') : dUrl,
               title: item.name.replace(/\.[^/.]+$/, ""),
-              group: groupName
-            };
-          } else if (item.type === 'dir') {
-            // Recurse into subfolders. Use folder name as group if not already in a group.
-            return await fetchAllContents(item.path, groupName || item.name);
+              group: groupName || (path !== folderName ? path.split('/').pop() : undefined)
+            });
+          } else if (item.type === 'dir' && !item.name.startsWith('.')) {
+            const sub = await fetchAllContents(item.path, groupName || item.name);
+            gallery.push(...sub);
           }
-          return null;
-        });
-
-        const results = await Promise.all(promises);
-        return results.flat().filter(Boolean);
+        }
+        return gallery;
       };
 
       try {
         const dynamicGallery = await fetchAllContents(folderName);
         
-        if (isCancelled) return;
-
-        if (dynamicGallery.length > 0) {
-          setProject(prev => prev.id === currentProjectId ? ({ ...prev, galleryImages: dynamicGallery }) : prev);
-          localStorage.setItem(cacheKey, JSON.stringify({ data: dynamicGallery, timestamp: Date.now() }));
-        } else {
-          setError("No images found in the configured GitHub folder.");
+        if (!isCancelled) {
+          if (dynamicGallery.length > 0) {
+            setProject(prev => (prev && prev.id === currentProjectId) ? { ...prev, galleryImages: dynamicGallery } : prev);
+            localStorage.setItem(cacheKey, JSON.stringify({ data: dynamicGallery, timestamp: Date.now() }));
+          } else {
+            setError("No items found in this folder.");
+          }
         }
       } catch (err) {
-        console.error("Gallery Fetch Error:", err);
-        if (!isCancelled) setError("Connection failed. Please check your internet or retry.");
+        if (!isCancelled) setError("Connection failed. Please check your network.");
       } finally {
         if (!isCancelled) setIsLoading(false);
       }
@@ -2253,12 +2244,11 @@ const cleanFileNameToTitle = (filename: string) => {
 };
 
 const CATEGORY_CONFIGS: Record<string, { folder: string, ref?: string }> = {
-  "UI Design": { folder: "Life/Design/UIUX" },
-  "Design": { folder: "Life/Design" },
-  "Photography": { folder: "Life/Photography" },
-  "Retouching": { folder: "Life/Retouching" },
-  "Rendering": { folder: "Life/Rendering" },
-  "AI Studio": { folder: "Life/AI_Studio" },
+  "Design": { folder: "Expertise Showcase" },
+  "Photography": { folder: "Photography" },
+  "Retouching": { folder: "Retouching" },
+  "Rendering": { folder: "Rendering" },
+  "AI Studio": { folder: "AI Studio" },
   "Video": { folder: "Video" }
 };
 
