@@ -2148,7 +2148,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
               });
 
               const renderGrid = (items: any[]) => (
-                <div className={isVideo ? "space-y-16 mb-24" : `grid ${isRetouching ? "grid-cols-2 md:grid-cols-4 gap-1 sm:gap-4 md:gap-6 lg:gap-8" : "grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-1 sm:gap-2 md:gap-8"} mb-16`}>
+                <div className={isVideo ? "space-y-16 mb-24" : `grid ${isRetouching ? "grid-cols-4 md:grid-cols-4 gap-1 sm:gap-4 md:gap-6 lg:gap-8" : "grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-1 sm:gap-2 md:gap-8"} mb-16`}>
                   {items.map((item, idx) => {
                     // 获取在统一列表中的全局索引
                     const globalIndex = displayList.indexOf(item);
