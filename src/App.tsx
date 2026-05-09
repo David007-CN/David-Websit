@@ -2246,6 +2246,8 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                   ? "max-h-[85vh] aspect-[9/16] w-auto max-w-[95vw]"
                 : selectedUrl.match(/\.(mp4|mov|webm)$/i)
                   ? "max-w-[100vw] max-h-[100vh] w-auto h-auto"
+                : project.title === 'Retouching'
+                  ? "w-full max-w-[min(90vw,1000px)] aspect-square"
                 : "max-w-[min(95vw,1920px)] max-h-[min(90vh,1080px)] w-auto h-auto"
               }`}
               onClick={(e) => e.stopPropagation()}
@@ -2311,7 +2313,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                   >
                     <img 
                       src={getOptimizedUrl(selectedUrl, 2560, 2560, true)} 
-                      className="max-w-full max-h-full object-contain"
+                      className={`max-w-full max-h-full ${project.title === 'Retouching' ? "w-full h-full object-cover" : "object-contain"}`}
                       referrerPolicy="no-referrer"
                       style={{ willChange: 'transform' }}
                     />
