@@ -12,6 +12,7 @@ import {
   Menu, 
   X,
   Shield,
+  ShieldAlert,
   Target,
   Zap,
   Award,
@@ -1734,6 +1735,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [refreshSeed, setRefreshSeed] = useState(0);
   const imgRef = useRef<HTMLImageElement>(null);
 
   // Synchronize state with URL changes
@@ -1827,25 +1829,37 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
     const currentProjectTitle = project.title;
 
     const fetchGalleryContent = async (isManualRefresh = false) => {
-      const cacheKey = `github_gallery_v11_${currentProjectTitle}_${currentProjectId}`;
+      const cacheKey = `github_gallery_v14_${currentProjectTitle}_${currentProjectId}`;
       const cachedData = localStorage.getItem(cacheKey);
       
-      if (cachedData && !isManualRefresh) {
+      let staleData = null;
+      if (cachedData) {
         try {
-          const { data, timestamp } = JSON.parse(cachedData);
-          if (Date.now() - timestamp < 1000 * 60 * 60 && data?.length > 0) {
-            if (!isCancelled) {
-              setProject(prev => prev && prev.id === currentProjectId ? ({ ...prev, galleryImages: data }) : prev);
-              setIsLoading(false);
+          const parsed = JSON.parse(cachedData);
+          staleData = parsed.data;
+          
+          if (!isManualRefresh) {
+            const age = Date.now() - (parsed.timestamp || 0);
+            const TTL = 1000 * 60 * 60 * 24 * 7; // Store for 7 days
+            
+            if (staleData?.length > 0) {
+              // Always show stale data first for instantaneous feel
+              if (!isCancelled) {
+                setProject(prev => prev && prev.id === currentProjectId ? ({ ...prev, galleryImages: staleData }) : prev);
+                // If it's fresh enough (1 hour), we don't even need to show loading
+                if (age < 1000 * 60 * 60) {
+                    setIsLoading(false);
+                    return;
+                }
+              }
             }
-            return;
           }
         } catch (e) {
           localStorage.removeItem(cacheKey);
         }
       }
 
-      setIsLoading(true);
+      setIsLoading(galleryItems.length === 0);
       setError(null);
       
       const config = CATEGORY_CONFIGS[currentProjectTitle] || { folder: currentProjectTitle, ref: GITHUB_REF } as { folder: string, ref: string };
@@ -1855,24 +1869,42 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
       
       const safeFetch = async (url: string) => {
         const t = Date.now();
-        const headers = token ? { 'Authorization': `token ${token}` } : {};
+        const headers: Record<string, string> = {
+          'Accept': 'application/vnd.github.v3+json'
+        };
+        if (token) headers['Authorization'] = `token ${token}`;
         
         try {
           const pathParam = url.replace(/.*\/contents\//, '').split('?')[0];
+          // Determine current host
+          const host = typeof window !== 'undefined' ? window.location.host : '';
+          const isLocal = host.includes('localhost') || host.includes('0.0.0.0') || host.includes('127.0.0.1');
+          
+          // Proxy is available if we have a backend (Express server)
           const proxyUrl = `/api/github-proxy?owner=${GITHUB_USER}&repo=${GITHUB_REPO}&path=${encodeURIComponent(pathParam)}&ref=${ref}&t=${t}`;
           
-          console.log(`[Proxy] Fetching via: ${proxyUrl}`);
+          console.log(`[Source] Fetching via proxy: ${proxyUrl}`);
           const res = await fetch(proxyUrl);
+          
+          // If proxy is missing (static host likely returned 404 or index.html)
+          const contentType = res.headers.get('content-type');
+          if (res.status === 404 || (contentType && contentType.includes('text/html'))) {
+            console.warn(`[Source] Proxy not available, falling back to direct GitHub API...`);
+            throw new Error('PROXY_UNAVAILABLE');
+          }
+          
           if (res.ok) return res;
           
-          console.warn(`[Proxy] Failed (${res.status}), trying direct fetch to GitHub API...`);
+          // If it's a rate limit error (403), throw specific error
+          if (res.status === 403) {
+            throw new Error('GITHUB_RATE_LIMIT');
+          }
           
-          // Direct fetch to GitHub API
-          const directUrl = `${url}${url.includes('?') ? '&' : '?' }t=${t}`;
-          console.log(`[Direct] Fetching: ${directUrl}`);
-          return await fetch(directUrl, { headers });
-        } catch (e) {
-          console.error("Fetch error:", e);
+          return res;
+        } catch (e: any) {
+          if (e.message === 'GITHUB_RATE_LIMIT') throw e;
+          
+          console.warn(`[Source] Proxy failed, trying direct direct fetch...`, e);
           const directUrl = `${url}${url.includes('?') ? '&' : '?' }t=${t}`;
           return await fetch(directUrl, { headers });
         }
@@ -1883,27 +1915,27 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
           const url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${path}?ref=${ref}`;
           let response = await safeFetch(url);
           
-          // Fallback logic: if we tried root, try Life/ prefix if 404
           if (!response.ok && response.status === 404 && !path.startsWith('Life/') && path !== 'Video') {
-            console.log(`Folder ${path} not found at root, trying Life/${path}...`);
             const fallbackUrl = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/Life/${path}?ref=${ref}`;
             const fallbackResponse = await safeFetch(fallbackUrl);
-            if (fallbackResponse.ok) {
-                response = fallbackResponse;
-            }
+            if (fallbackResponse.ok) response = fallbackResponse;
           }
           
-          if (!response.ok) {
-            throw new Error(`GitHub API Error (${response.status}) on ${path}`);
-          }
+          if (response.status === 403) throw new Error('GITHUB_RATE_LIMIT');
+          if (!response.ok) throw new Error(`GitHub API Error (${response.status})`);
           
           const items = await response.json();
-          if (!Array.isArray(items)) return [];
+          if (!Array.isArray(items)) {
+            // Check for rate limit message inside the JSON
+            if (items.message && items.message.toLowerCase().includes('rate limit')) {
+              throw new Error('GITHUB_RATE_LIMIT');
+            }
+            return [];
+          }
 
           let gallery: any[] = [];
           for (const item of items) {
             if (item.type === 'file' && item.name.toLowerCase().match(/\.(jpg|jpeg|png|webp|mp4|mov|webm)$/i)) {
-              // Skip system files or hidden files
               if (item.name.startsWith('.')) continue;
 
               const dUrl = item.download_url || `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${ref}/${item.path}`;
@@ -1914,14 +1946,14 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                 group: groupName || (path !== folderName ? path.split('/').pop() : undefined)
               });
             } else if (item.type === 'dir' && !item.name.startsWith('.')) {
-              // Use Folder name as Group Name if we are in the root category folder
               const subItems = await fetchAllContents(item.path, groupName || item.name);
               gallery.push(...subItems);
             }
           }
           return gallery;
-        } catch (e) {
-          console.error(`Recursive fetch error at ${path}:`, e);
+        } catch (e: any) {
+          if (e.message === 'GITHUB_RATE_LIMIT') throw e;
+          console.error(`Fetch error at ${path}:`, e);
           return [];
         }
       };
@@ -1933,29 +1965,34 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
           if (dynamicGallery.length > 0) {
             setProject(prev => (prev && prev.id === currentProjectId) ? { ...prev, galleryImages: dynamicGallery } : prev);
             localStorage.setItem(cacheKey, JSON.stringify({ data: dynamicGallery, timestamp: Date.now() }));
-          } else {
-            console.warn(`No items found for category: ${currentProjectTitle} in folder: ${folderName}`);
-            setError(`No items found in folder: ${folderName}. Please check your GitHub repository structure.`);
-            // If empty, clear cache to force retry next time
-            localStorage.removeItem(cacheKey);
+            setError(null);
+          } else if (!staleData) {
+            setError(`No items found in folder: ${folderName}. Please confirm GitHub repo structure.`);
           }
         }
       } catch (err: any) {
         console.error("Gallery Fetch Error:", err);
         if (!isCancelled) {
-          const isRateLimit = err.message?.includes('403') || JSON.stringify(err).includes('rate limit');
-          setError(isRateLimit 
-            ? "GitHub API Rate Limit Exceeded. On your personal domain, please configure a VITE_GITHUB_TOKEN to avoid limits." 
-            : `Connection failed: ${err.message || 'Unknown error'}. Please check if the folder exists in your GitHub repo.`);
+          const isRateLimit = err.message === 'GITHUB_RATE_LIMIT' || err.message?.includes('403');
+          
+          if (staleData && staleData.length > 0) {
+            console.log("Using stale data due to fetch error");
+            // Keep stale data but show a small warning maybe?
+            // For now, silently keep stale data to avoid breaking UI
+          } else {
+            setError(isRateLimit 
+              ? "GitHub API Rate Limit! Please configure GITHUB_TOKEN on your personal domain's server or build environment to avoid this." 
+              : `Connection Error: ${err.message || 'Unknown'}.`);
+          }
         }
       } finally {
         if (!isCancelled) setIsLoading(false);
       }
     };
 
-    fetchGalleryContent();
+    fetchGalleryContent(refreshSeed > 0);
     return () => { isCancelled = true; };
-  }, [project.id]);
+  }, [project.id, refreshSeed]);
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [id]);
@@ -2023,12 +2060,27 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
               <p className="text-white/20 text-[10px] font-bold tracking-widest">Connecting to GitHub Source...</p>
             </div>
           ) : error ? (
-            <div className="py-24 text-center border-y border-white/5 bg-red-500/5">
-              <Shield className="mx-auto text-brand-red mb-4 opacity-50" size={32} />
-              <p className="text-brand-red/80 text-sm font-display mb-4">{error}</p>
+            <div className="py-24 text-center border-y border-white/5 bg-white/[0.02]">
+              <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-6 border border-red-500/20 mx-auto">
+                <ShieldAlert className="w-8 h-8 text-red-500" />
+              </div>
+              <h3 className="text-white font-display text-xl mb-4 max-w-md mx-auto">{error}</h3>
+              
+              {error.includes('Rate Limit') && (
+                <div className="mb-8 p-6 bg-white/5 border border-white/10 rounded-2xl text-white/50 text-sm max-w-lg mx-auto text-left space-y-3">
+                  <p className="font-bold text-white text-base">解决加载不出图片的方法：</p>
+                  <ol className="list-decimal list-inside space-y-2">
+                    <li>在 GitHub 设置生成一个 <span className="text-brand-red">Personal Access Token</span></li>
+                    <li>在 Vercel 面板进入 <span className="text-brand-red">Settings &rarr; Environment Variables</span></li>
+                    <li>添加 Key 为 <code className="bg-white/10 px-1 rounded text-white font-mono">GITHUB_TOKEN</code>，Value 填入你的 Token</li>
+                    <li>保存并再次访问页面即可（或重新部署一次）</li>
+                  </ol>
+                </div>
+              )}
+
               <button 
-                onClick={() => window.location.reload()}
-                className="px-6 py-2 border border-brand-red/30 text-brand-red text-xs hover:bg-brand-red hover:text-white transition-all"
+                onClick={() => setRefreshSeed(s => s + 1)}
+                className="px-8 py-3 bg-brand-red text-white rounded-full font-medium hover:bg-red-600 transition-all active:scale-95 shadow-lg shadow-brand-red/20"
               >
                 Retry Connection
               </button>
