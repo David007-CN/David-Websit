@@ -2295,7 +2295,10 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                   centerOnInit={true}
                   limitToBounds={true}
                   doubleClick={{ disabled: true }}
-                  wheel={{ step: 0.05 }}
+                  wheel={{ 
+                    step: 0.01,
+                    smoothStep: 0.001
+                  }}
                   pinch={{ step: 2 }}
                   panning={{ velocityDisabled: false }}
                 >
