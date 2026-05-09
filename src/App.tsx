@@ -1827,7 +1827,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
     const currentProjectTitle = project.title;
 
     const fetchGalleryContent = async (isManualRefresh = false) => {
-      const cacheKey = `github_gallery_v7_${currentProjectTitle}_${currentProjectId}`;
+      const cacheKey = `github_gallery_v8_${currentProjectTitle}_${currentProjectId}`;
       const cachedData = localStorage.getItem(cacheKey);
       
       if (cachedData && !isManualRefresh) {
@@ -2068,7 +2068,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
               });
 
               const renderGrid = (items: any[]) => (
-                <div className={isVideo ? "space-y-16 mb-24" : `grid ${isRetouching ? "grid-cols-4 gap-1 sm:gap-4 md:gap-6 lg:gap-8" : "grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-1 sm:gap-2 md:gap-8"} mb-16`}>
+                <div className={isVideo ? "space-y-16 mb-24" : `grid ${isRetouching ? "grid-cols-4 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-1 sm:gap-4 md:gap-6 lg:gap-8" : "grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-1 sm:gap-2 md:gap-8"} mb-16`}>
                   {items.map((item, idx) => {
                     // 获取在统一列表中的全局索引
                     const globalIndex = displayList.indexOf(item);
@@ -2090,7 +2090,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                           setSelectedIndex(globalIndex);
                         }}
                       >
-                        <div className={`relative ${isVideo ? "aspect-video" : "h-auto"} overflow-hidden bg-white/5 border border-white/10 ${isRetouching ? "p-0.5 md:p-1" : "p-0.5 sm:p-1"} mb-1 md:mb-3`}>
+                        <div className={`relative ${isVideo ? "aspect-video" : "h-auto min-h-[100px] sm:min-h-[150px] md:min-h-[200px]"} overflow-hidden bg-white/5 border border-white/10 ${isRetouching ? "p-0.5 md:p-1" : "p-0.5 sm:p-1"} mb-1 md:mb-3`}>
                           <img 
                             src={getOptimizedUrl(imageUrl, isVideo ? 1600 : 1200)} 
                             className={`w-full h-auto object-contain transition-all duration-700 group-hover:scale-105`}
@@ -2106,10 +2106,10 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                           )}
                         </div>
                         <div className="flex justify-between items-start gap-1">
-                          <h3 className={`${isVideo || (isObject && item.title) ? "text-[6px] sm:text-[8px] md:text-[11px] font-bold" : "text-[6px] sm:text-[8px] md:text-[9px] font-medium text-white/50"} font-display leading-tight flex-grow truncate md:whitespace-normal`}>
+                          <h3 className={`${isVideo || (isObject && item.title) ? "text-[6px] sm:text-[8px] md:text-[10px] font-bold" : "text-[6px] sm:text-[8px] md:text-[8px] font-medium text-white/50"} font-display leading-tight flex-grow truncate md:whitespace-normal`}>
                             {isObject && item.title ? item.title : formatTitle(videoUrl)}
                           </h3>
-                          <span className="text-[6px] md:text-[9px] font-bold text-white/10 tracking-widest shrink-0 mt-0.1 md:mt-0.5">{globalIndex + 1}</span>
+                          <span className="text-[6px] md:text-[8px] font-bold text-white/10 tracking-widest shrink-0 mt-0.1 md:mt-0.5">{globalIndex + 1}</span>
                         </div>
                       </motion.div>
                     );
