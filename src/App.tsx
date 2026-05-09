@@ -2239,7 +2239,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               drag={false} 
-              className={`relative shadow-2xl flex items-center justify-center overflow-hidden bg-black ${
+              className={`relative shadow-2xl flex items-center justify-center overflow-hidden bg-transparent ${
                 selectedUrl.includes('bilibili.com') || (selectedUrl.includes('youtube.com') && !selectedUrl.includes('shorts/')) || selectedUrl.includes('youtu.be')
                   ? "w-full max-w-[95vw] max-h-[90vh] aspect-video" 
                 : selectedUrl.includes('shorts/')
@@ -2248,10 +2248,9 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                   ? "max-w-[100vw] max-h-[100vh] w-auto h-auto"
                 : "w-full h-full max-w-[95vw] max-h-[90vh]"
               }`}
-              onClick={(e) => e.stopPropagation()}
             >
               {selectedUrl.includes('bilibili.com') || selectedUrl.includes('player.bilibili.com') ? (
-                <div className="w-full h-full aspect-video">
+                <div className="w-full h-full aspect-video" onClick={(e) => e.stopPropagation()} onDoubleClick={() => setSelectedIndex(null)}>
                   <iframe 
                     src={
                       selectedUrl.includes('player.bilibili.com') 
@@ -2264,7 +2263,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                   />
                 </div>
               ) : selectedUrl.includes('youtube.com') || selectedUrl.includes('youtu.be') ? (
-                <div className={`w-full h-full ${selectedUrl.includes('shorts/') ? 'aspect-[9/16]' : 'aspect-video'}`}>
+                <div className={`w-full h-full ${selectedUrl.includes('shorts/') ? 'aspect-[9/16]' : 'aspect-video'}`} onClick={(e) => e.stopPropagation()} onDoubleClick={() => setSelectedIndex(null)}>
                   <iframe 
                     src={'https://www.youtube.com/embed/' + (
                       selectedUrl.includes('youtu.be') 
@@ -2284,6 +2283,8 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                   controls
                   autoPlay
                   className="max-w-full max-h-full object-contain"
+                  onClick={(e) => e.stopPropagation()}
+                  onDoubleClick={() => setSelectedIndex(null)}
                 />
               ) : (
                 <TransformWrapper
@@ -2293,7 +2294,8 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                   maxScale={8}
                   centerOnInit={true}
                   limitToBounds={true}
-                  wheel={{ step: 0.1 }}
+                  doubleClick={{ disabled: true }}
+                  wheel={{ step: 0.05 }}
                   pinch={{ step: 2 }}
                   panning={{ velocityDisabled: false }}
                 >
@@ -2310,13 +2312,19 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                       justifyContent: "center"
                     }}
                   >
-                    <img 
-                      src={getOptimizedUrl(selectedUrl, 2560, 2560, true)} 
-                      className="max-w-full max-h-full object-contain select-none"
-                      referrerPolicy="no-referrer"
-                      style={{ willChange: 'transform' }}
-                      onDragStart={(e) => e.preventDefault()}
-                    />
+                    <div 
+                      className="w-full h-full flex items-center justify-center p-4"
+                      onClick={(e) => e.stopPropagation()}
+                      onDoubleClick={() => setSelectedIndex(null)}
+                    >
+                      <img 
+                        src={getOptimizedUrl(selectedUrl, 2560, 2560, true)} 
+                        className="max-w-full max-h-full object-contain select-none shadow-2xl"
+                        referrerPolicy="no-referrer"
+                        style={{ willChange: 'transform' }}
+                        onDragStart={(e) => e.preventDefault()}
+                      />
+                    </div>
                   </TransformComponent>
                 </TransformWrapper>
               )}
