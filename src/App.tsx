@@ -1827,7 +1827,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
     const currentProjectTitle = project.title;
 
     const fetchGalleryContent = async (isManualRefresh = false) => {
-      const cacheKey = `github_gallery_v8_${currentProjectTitle}_${currentProjectId}`;
+      const cacheKey = `github_gallery_v10_${currentProjectTitle}_${currentProjectId}`;
       const cachedData = localStorage.getItem(cacheKey);
       
       if (cachedData && !isManualRefresh) {
@@ -1857,26 +1857,19 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
         const t = Date.now();
         const headers = token ? { 'Authorization': `token ${token}` } : {};
         
-        // Detect AI Studio environment - proxy only works there
-        const isPreview = typeof window !== 'undefined' && 
-          (window.location.hostname.includes('ais-dev') || 
-           window.location.hostname.includes('ais-pre') ||
-           window.location.hostname.includes('googleusercontent.com'));
-
         try {
-          if (isPreview) {
-            const pathParam = url.replace(/.*\/contents\//, '').split('?')[0];
-            const proxyUrl = `/api/github-proxy?owner=${GITHUB_USER}&repo=${GITHUB_REPO}&path=${encodeURIComponent(pathParam)}&ref=${ref}&t=${t}`;
-            
-            console.log(`[Preview] Fetching via proxy: ${proxyUrl}`);
-            const res = await fetch(proxyUrl);
-            if (res.ok) return res;
-            console.warn(`[Preview] Proxy failed (${res.status}), falling back to direct...`);
-          }
+          const pathParam = url.replace(/.*\/contents\//, '').split('?')[0];
+          const proxyUrl = `/api/github-proxy?owner=${GITHUB_USER}&repo=${GITHUB_REPO}&path=${encodeURIComponent(pathParam)}&ref=${ref}&t=${t}`;
+          
+          console.log(`[Proxy] Fetching via: ${proxyUrl}`);
+          const res = await fetch(proxyUrl);
+          if (res.ok) return res;
+          
+          console.warn(`[Proxy] Failed (${res.status}), trying direct fetch to GitHub API...`);
           
           // Direct fetch to GitHub API
           const directUrl = `${url}${url.includes('?') ? '&' : '?' }t=${t}`;
-          console.log(`[Production] Fetching direct: ${directUrl}`);
+          console.log(`[Direct] Fetching: ${directUrl}`);
           return await fetch(directUrl, { headers });
         } catch (e) {
           console.error("Fetch error:", e);
