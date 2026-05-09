@@ -2113,7 +2113,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
               });
 
               const renderGrid = (items: any[]) => (
-                <div className={isVideo ? "space-y-16 mb-24" : `grid ${isRetouching ? "grid-cols-4 gap-1 sm:gap-4 md:gap-6 lg:gap-8" : "grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-1 sm:gap-2 md:gap-8"} mb-16`}>
+                <div className={isVideo ? "space-y-16 mb-24" : `grid ${isRetouching ? "grid-cols-2 md:grid-cols-4 gap-1 sm:gap-4 md:gap-6 lg:gap-8" : "grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-1 sm:gap-2 md:gap-8"} mb-16`}>
                   {items.map((item, idx) => {
                     // 获取在统一列表中的全局索引
                     const globalIndex = displayList.indexOf(item);
@@ -2246,7 +2246,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                   ? "max-h-[85vh] aspect-[9/16] w-auto max-w-[95vw]"
                 : selectedUrl.match(/\.(mp4|mov|webm)$/i)
                   ? "max-w-[100vw] max-h-[100vh] w-auto h-auto"
-                : "max-w-[min(95vw,1920px)] max-h-[min(90vh,1080px)] w-auto h-auto"
+                : "w-full h-full max-w-[95vw] max-h-[90vh]"
               }`}
               onClick={(e) => e.stopPropagation()}
             >
@@ -2287,19 +2287,20 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                 />
               ) : (
                 <TransformWrapper
+                  key={selectedUrl}
                   initialScale={1}
-                  minScale={0.5}
+                  minScale={1}
                   maxScale={8}
                   centerOnInit={true}
+                  limitToBounds={true}
                   wheel={{ step: 0.1 }}
-                  pinch={{ step: 5 }}
+                  pinch={{ step: 2 }}
                   panning={{ velocityDisabled: false }}
                 >
                   <TransformComponent
                     wrapperStyle={{
                       width: "100%",
                       height: "100%",
-                      cursor: "grab"
                     }}
                     contentStyle={{
                       width: "100%",
@@ -2311,9 +2312,10 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                   >
                     <img 
                       src={getOptimizedUrl(selectedUrl, 2560, 2560, true)} 
-                      className="max-w-full max-h-full object-contain"
+                      className="max-w-full max-h-full object-contain select-none"
                       referrerPolicy="no-referrer"
                       style={{ willChange: 'transform' }}
+                      onDragStart={(e) => e.preventDefault()}
                     />
                   </TransformComponent>
                 </TransformWrapper>
