@@ -2113,7 +2113,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
               });
 
               const renderGrid = (items: any[]) => (
-                <div className={isVideo ? "space-y-16 mb-24" : `grid ${isRetouching ? "grid-cols-4 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-1 sm:gap-4 md:gap-6 lg:gap-8" : "grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-1 sm:gap-2 md:gap-8"} mb-16`}>
+                <div className={isVideo ? "space-y-16 mb-24" : `grid ${isRetouching ? "grid-cols-4 gap-1 sm:gap-4 md:gap-6 lg:gap-8" : "grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-1 sm:gap-2 md:gap-8"} mb-16`}>
                   {items.map((item, idx) => {
                     // 获取在统一列表中的全局索引
                     const globalIndex = displayList.indexOf(item);
@@ -2135,10 +2135,10 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                           setSelectedIndex(globalIndex);
                         }}
                       >
-                        <div className={`relative ${isVideo ? "aspect-video" : "h-auto min-h-[100px] sm:min-h-[150px] md:min-h-[200px]"} overflow-hidden bg-white/5 border border-white/10 ${isRetouching ? "p-0.5 md:p-1" : "p-0.5 sm:p-1"} mb-1 md:mb-3`}>
+                        <div className={`relative ${isVideo ? "aspect-video" : "h-auto"} overflow-hidden bg-white/5 border border-white/10 ${isRetouching ? "p-0.5 md:p-1" : "p-0.5 sm:p-1"} mb-1 md:mb-3`}>
                           <img 
                             src={getOptimizedUrl(imageUrl, isVideo ? 1600 : 1200)} 
-                            className={`w-full h-auto object-contain transition-all duration-700 group-hover:scale-105`}
+                            className={`w-full h-auto block transition-all duration-700 group-hover:scale-105`}
                             referrerPolicy="no-referrer"
                             loading="lazy"
                           />
@@ -2246,8 +2246,6 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                   ? "max-h-[85vh] aspect-[9/16] w-auto max-w-[95vw]"
                 : selectedUrl.match(/\.(mp4|mov|webm)$/i)
                   ? "max-w-[100vw] max-h-[100vh] w-auto h-auto"
-                : project.title === "Retouching"
-                  ? "w-full max-w-[min(90vw,1000px)] aspect-square"
                 : "max-w-[min(95vw,1920px)] max-h-[min(90vh,1080px)] w-auto h-auto"
               }`}
               onClick={(e) => e.stopPropagation()}
@@ -2313,7 +2311,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                   >
                     <img 
                       src={getOptimizedUrl(selectedUrl, 2560, 2560, true)} 
-                      className={`max-w-full max-h-full ${project.title === "Retouching" || (typeof displayList[selectedIndex] === 'object' && (displayList[selectedIndex] as any).group) ? "w-full h-full object-cover" : "object-contain"}`}
+                      className="max-w-full max-h-full object-contain"
                       referrerPolicy="no-referrer"
                       style={{ willChange: 'transform' }}
                     />
