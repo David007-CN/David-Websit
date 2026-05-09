@@ -1733,6 +1733,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
 
   const [project, setProject] = useState<Project>(getInitialProject);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [isImageLoading, setIsImageLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refreshSeed, setRefreshSeed] = useState(0);
@@ -1760,6 +1761,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
     });
     
     setSelectedIndex(null);
+    setIsImageLoading(false);
     setError(null);
     setIsLoading(isDynamic);
   }, [id, archiveProjects]);
@@ -2000,16 +2002,49 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
   const handleNext = (e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (selectedIndex !== null) {
-      setSelectedIndex((selectedIndex + 1) % displayList.length);
+      const nextIndex = (selectedIndex + 1) % displayList.length;
+      const nextItem = displayList[nextIndex];
+      const nextUrl = typeof nextItem === 'object' ? nextItem.url : nextItem;
+      const isActuallyVideo = (project.title === 'Video') || nextUrl.match(/\.(mp4|mov|webm|ogg|m4v)$/i) || nextUrl.includes('youtube.com') || nextUrl.includes('youtu.be') || nextUrl.includes('bilibili.com');
+      
+      if (!isActuallyVideo) setIsImageLoading(true);
+      setSelectedIndex(nextIndex);
     }
   };
 
   const handlePrev = (e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (selectedIndex !== null) {
-      setSelectedIndex((selectedIndex - 1 + displayList.length) % displayList.length);
+      const prevIndex = (selectedIndex - 1 + displayList.length) % displayList.length;
+      const prevItem = displayList[prevIndex];
+      const prevUrl = typeof prevItem === 'object' ? prevItem.url : prevItem;
+      const isActuallyVideo = (project.title === 'Video') || prevUrl.match(/\.(mp4|mov|webm|ogg|m4v)$/i) || prevUrl.includes('youtube.com') || prevUrl.includes('youtu.be') || prevUrl.includes('bilibili.com');
+
+      if (!isActuallyVideo) setIsImageLoading(true);
+      setSelectedIndex(prevIndex);
     }
   };
+
+  // Preload neighboring images
+  useEffect(() => {
+    if (selectedIndex !== null && displayList.length > 0) {
+      const preloadIndices = [
+        (selectedIndex + 1) % displayList.length,
+        (selectedIndex - 1 + displayList.length) % displayList.length
+      ];
+      
+      preloadIndices.forEach(idx => {
+        const item = displayList[idx];
+        const url = typeof item === 'object' ? item.url : item;
+        const isVideo = url.match(/\.(mp4|mov|webm|ogg|m4v)$/i);
+        if (url && !isVideo && !url.includes('youtube.com') && !url.includes('youtu.be') && !url.includes('bilibili.com')) {
+          const img = new Image();
+          // Use optimized resolution for preload
+          img.src = getOptimizedUrl(url, isMobile ? 1280 : 2048);
+        }
+      });
+    }
+  }, [selectedIndex, displayList]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -2132,6 +2167,9 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                         transition={{ delay: 0.05 }}
                         className="group cursor-pointer"
                         onClick={() => {
+                          const itemUrl = typeof item === 'object' ? item.url : item;
+                          const isActuallyVideo = isVideo || itemUrl.match(/\.(mp4|mov|webm|ogg|m4v)$/i) || itemUrl.includes('youtube.com') || itemUrl.includes('youtu.be') || itemUrl.includes('bilibili.com');
+                          if (!isActuallyVideo) setIsImageLoading(true);
                           setSelectedIndex(globalIndex);
                         }}
                       >
@@ -2315,19 +2353,27 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                       justifyContent: "center"
                     }}
                   >
-                    <div 
-                      className="w-full h-full flex items-center justify-center p-4"
-                      onClick={(e) => e.stopPropagation()}
-                      onDoubleClick={() => setSelectedIndex(null)}
-                    >
-                      <img 
-                        src={getOptimizedUrl(selectedUrl, 2560, 2560, true)} 
-                        className="max-w-full max-h-full object-contain select-none shadow-2xl"
-                        referrerPolicy="no-referrer"
-                        style={{ willChange: 'transform' }}
-                        onDragStart={(e) => e.preventDefault()}
-                      />
-                    </div>
+                      <div 
+                        className="w-full h-full flex items-center justify-center p-4 relative"
+                        onClick={(e) => e.stopPropagation()}
+                        onDoubleClick={() => setSelectedIndex(null)}
+                      >
+                        {isImageLoading && !selectedUrl.match(/\.(mp4|mov|webm|ogg|m4v)$/i) && !selectedUrl.includes('youtube.com') && !selectedUrl.includes('youtu.be') && !selectedUrl.includes('bilibili.com') && (
+                          <div className="absolute inset-0 flex items-center justify-center z-0">
+                            <div className="w-10 h-10 border-4 border-white/10 border-t-brand-red rounded-full animate-spin"></div>
+                          </div>
+                        )}
+                        <img 
+                          key={selectedUrl}
+                          src={getOptimizedUrl(selectedUrl, isMobile ? 1280 : 2560, isMobile ? 1280 : 2560)} 
+                          className={`max-w-full max-h-full object-contain select-none shadow-2xl transition-opacity duration-300 ${isImageLoading ? 'opacity-0' : 'opacity-100'}`}
+                          referrerPolicy="no-referrer"
+                          style={{ willChange: 'transform' }}
+                          onDragStart={(e) => e.preventDefault()}
+                          onLoad={() => setIsImageLoading(false)}
+                          onError={() => setIsImageLoading(false)}
+                        />
+                      </div>
                   </TransformComponent>
                 </TransformWrapper>
               )}
