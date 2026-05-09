@@ -1162,6 +1162,7 @@ const Archive = ({ archiveProjects }: { archiveProjects: Project[] }) => {
 const Featured = () => {
   const [featuredItems, setFeaturedItems] = useState<Project[]>(FEATURED_ITEMS);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [isModalImageLoading, setIsModalImageLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [shuffleVersion, setShuffleVersion] = useState(0);
 
@@ -1281,6 +1282,7 @@ const Featured = () => {
   const fetchGitHubImages = async (isManual = false) => {
     if (isManual) {
       setIsLoading(true);
+      setIsModalImageLoading(false);
       // Keep existing items until fetch completes for a smooth transition
       localStorage.removeItem(`github_images_cache_${GITHUB_REF}`);
     }
@@ -1361,6 +1363,7 @@ const Featured = () => {
   const handleNext = (e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (selectedIndex !== null) {
+      setIsModalImageLoading(true);
       setSelectedIndex((selectedIndex + 1) % shuffledItems.length);
     }
   };
@@ -1368,9 +1371,28 @@ const Featured = () => {
   const handlePrev = (e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (selectedIndex !== null) {
+      setIsModalImageLoading(true);
       setSelectedIndex((selectedIndex - 1 + shuffledItems.length) % shuffledItems.length);
     }
   };
+
+  // Preload neighboring images for mobile/desktop
+  useEffect(() => {
+    if (selectedIndex !== null && shuffledItems.length > 0) {
+      const preloadIndices = [
+        (selectedIndex + 1) % shuffledItems.length,
+        (selectedIndex - 1 + shuffledItems.length) % shuffledItems.length
+      ];
+      
+      preloadIndices.forEach(idx => {
+        const item = shuffledItems[idx];
+        if (item && item.image) {
+          const img = new Image();
+          img.src = getOptimizedUrl(item.image, isMobile ? 1280 : 2048);
+        }
+      });
+    }
+  }, [selectedIndex, shuffledItems]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -1432,6 +1454,7 @@ const Featured = () => {
                 onClick={() => {
                   if (isDragging) return;
                   const realIndex = index % shuffledItems.length;
+                  setIsModalImageLoading(true);
                   setSelectedIndex(realIndex);
                 }}
                 className="parchment-card p-1 shadow-2xl group w-[300px] md:w-[400px] shrink-0 cursor-grab active:cursor-grabbing"
@@ -1540,13 +1563,20 @@ const Featured = () => {
                   handlePrev();
                 }
               }}
-              className="relative flex items-center justify-center cursor-grab active:cursor-grabbing"
+              className="relative flex items-center justify-center cursor-grab active:cursor-grabbing w-full h-full"
             >
+              {isModalImageLoading && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+                  <div className="w-10 h-10 border-4 border-white/10 border-t-brand-red rounded-full animate-spin"></div>
+                </div>
+              )}
               <img 
-                src={getOptimizedUrl(selectedItem.image, undefined, undefined, true)} 
-                className="w-auto h-auto max-w-[95vw] max-h-[95vh] object-contain shadow-2xl"
+                src={getOptimizedUrl(selectedItem.image, isMobile ? 1280 : 2560, isMobile ? 1280 : 2560, false)} 
+                className={`max-w-[95vw] max-h-[95vh] w-auto h-auto object-contain shadow-2xl transition-opacity duration-300 ${isModalImageLoading ? 'opacity-0' : 'opacity-100'}`}
                 referrerPolicy="no-referrer"
                 crossOrigin="anonymous"
+                onLoad={() => setIsModalImageLoading(false)}
+                onError={() => setIsModalImageLoading(false)}
               />
             </motion.div>
           </motion.div>
