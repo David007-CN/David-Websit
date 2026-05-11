@@ -53,39 +53,46 @@ const isMobile = typeof window !== 'undefined' ? /Android|webOS|iPhone|iPad|iPod
 const getOptimizedUrl = (url: string, width?: number, height?: number, avoidProxy?: boolean) => {
   if (!url) return url;
   
-  const cleanUrl = url.split('?')[0].split('#')[0];
-  const isVideo = cleanUrl.toLowerCase().match(/\.(mp4|webm|ogg|mov|m4v)$/);
-  
+  // 1. URL Normalization (especially for GitHub)
   let rawUrl = url;
+  const isGithub = url.includes('github.com') || url.includes('raw.githubusercontent.com') || url.includes('jsdelivr.net');
   
-  // Handle GitHub URLs - convert to raw content reliably
-  if (url.includes('github.com') || url.includes('raw.githubusercontent.com')) {
-    if (url.includes('raw.githubusercontent.com') && url.includes('?')) return url;
-
+  if (url.includes('github.com') && !url.includes('raw.githubusercontent.com')) {
     rawUrl = url.replace('github.com', 'raw.githubusercontent.com')
                 .replace('/blob/', '/')
                 .replace('/refs/heads/', '/');
-    
-    if (!url.includes('raw.githubusercontent.com')) {
+    // Strip query only if it's a blob URL being converted
+    if (url.includes('/blob/')) {
       rawUrl = rawUrl.split('?')[0];
     }
   }
 
-  // Use wsrv.nl proxy for images to compress (WebP) and resize
-  if (rawUrl.startsWith('http') && !isVideo && !avoidProxy && !rawUrl.includes('youtube.com') && !rawUrl.includes('youtu.be')) {
-    if (!rawUrl) return '';
-    // Skip optimization for local assets or already optimized ones
-    if (!rawUrl.startsWith('http') || rawUrl.includes('placeholder')) return rawUrl;
+    // 2. High-res bypass or explicit bypass
+  // On mobile, if they are zooming, we NEED the original or high-res
+  if (avoidProxy) return rawUrl;
 
-    const mWidth = isMobile ? Math.min(width || 800, 2560) : width;
-    const mHeight = isMobile ? Math.min(height || 800, 2560) : height;
+  const cleanUrl = rawUrl.split('?')[0].split('#')[0];
+  const isVideo = cleanUrl.toLowerCase().match(/\.(mp4|webm|ogg|mov|m4v)$/);
+  
+  // Skip proxy for videos, YouTube, and placeholders
+  if (isVideo || rawUrl.includes('youtube.com') || rawUrl.includes('youtu.be') || rawUrl.includes('placeholder')) {
+    return rawUrl;
+  }
+
+  // 3. wsrv.nl Proxy for Image Optimization
+  if (rawUrl.startsWith('http')) {
+    // Quality adjustment: very high for large requests
+    let finalQuality = 85;
+    if (width) {
+      if (width >= 2500) finalQuality = 98;
+      else if (width >= 1200) finalQuality = 92;
+    }
     
-    // Always use original URL for cross-origin reliability if optimized fails
-    const finalQuality = isMobile ? (width && width > 1200 ? 90 : 80) : (mWidth && mWidth >= 1080 ? 92 : 85);
-    
+    // We remove the hard isMobile capping to allow high-res on zoom
     let wsrvUrl = `https://wsrv.nl/?url=${encodeURIComponent(rawUrl)}&af&il&q=${finalQuality}&output=webp`;
-    if (mWidth) wsrvUrl += `&w=${mWidth}`;
-    if (mHeight) wsrvUrl += `&h=${mHeight}`;
+    if (width) wsrvUrl += `&w=${width}`;
+    if (height) wsrvUrl += `&h=${height}`;
+    
     return wsrvUrl;
   }
 
@@ -1388,7 +1395,7 @@ const Featured = () => {
         const item = shuffledItems[idx];
         if (item && item.image) {
           const img = new Image();
-          img.src = getOptimizedUrl(item.image, 2560, 2560);
+          img.src = getOptimizedUrl(item.image, 3200, 3200);
         }
       });
     }
@@ -1571,7 +1578,7 @@ const Featured = () => {
                 </div>
               )}
               <img 
-                src={getOptimizedUrl(selectedItem.image, 2560, 2560, false)} 
+                src={getOptimizedUrl(selectedItem.image, 3200, 3200)} 
                 className={`max-w-[95vw] max-h-[95vh] w-auto h-auto object-contain shadow-2xl transition-opacity duration-300 ${isModalImageLoading ? 'opacity-0' : 'opacity-100'}`}
                 referrerPolicy="no-referrer"
                 crossOrigin="anonymous"
@@ -2075,8 +2082,8 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
         const isVideo = url.match(/\.(mp4|mov|webm|ogg|m4v)$/i);
         if (url && !isVideo && !url.includes('youtube.com') && !url.includes('youtu.be') && !url.includes('bilibili.com')) {
           const img = new Image();
-          // Use optimized resolution for preload
-          img.src = getOptimizedUrl(url, 2560, 2560);
+          // Use high resolution for modal preload
+          img.src = getOptimizedUrl(url, 3200, 3200);
         }
       });
     }
@@ -2401,21 +2408,18 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                         )}
                         <img 
                           key={selectedUrl}
-                          src={getOptimizedUrl(selectedUrl, 2560, 2560)} 
+                          src={getOptimizedUrl(selectedUrl, 3200, 3200)} 
                           className={`max-w-full max-h-full object-contain select-none shadow-2xl transition-opacity duration-300 ${isImageLoading ? 'opacity-0' : 'opacity-100'}`}
                           referrerPolicy="no-referrer"
-                          style={{ willChange: 'transform' }}
                           onDragStart={(e) => e.preventDefault()}
                           onLoad={() => setIsImageLoading(false)}
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
-                            if (!target.src.includes('wsrv.nl')) {
-                              // If it's already NOT using proxy and still failed, just stop loading
-                              setIsImageLoading(false);
+                            if (target.src.includes('wsrv.nl')) {
+                              // If proxy failed, try raw
+                              target.src = getOptimizedUrl(selectedUrl, undefined, undefined, true);
                               return;
                             }
-                            // Try bypassing the proxy for the high-res view if it fails
-                            target.src = getOptimizedUrl(selectedUrl, undefined, undefined, true);
                             setIsImageLoading(false);
                           }}
                         />
