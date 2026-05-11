@@ -77,11 +77,11 @@ const getOptimizedUrl = (url: string, width?: number, height?: number, avoidProx
     // Skip optimization for local assets or already optimized ones
     if (!rawUrl.startsWith('http') || rawUrl.includes('placeholder')) return rawUrl;
 
-    const mWidth = isMobile ? Math.min(width || 800, 800) : width;
-    const mHeight = isMobile ? Math.min(height || 800, 800) : height;
+    const mWidth = isMobile ? Math.min(width || 800, 2560) : width;
+    const mHeight = isMobile ? Math.min(height || 800, 2560) : height;
     
     // Always use original URL for cross-origin reliability if optimized fails
-    const finalQuality = isMobile ? 70 : (mWidth && mWidth >= 1080 ? 92 : 85);
+    const finalQuality = isMobile ? (width && width > 1200 ? 90 : 80) : (mWidth && mWidth >= 1080 ? 92 : 85);
     
     let wsrvUrl = `https://wsrv.nl/?url=${encodeURIComponent(rawUrl)}&af&il&q=${finalQuality}&output=webp`;
     if (mWidth) wsrvUrl += `&w=${mWidth}`;
@@ -1107,7 +1107,7 @@ const Archive = ({ archiveProjects }: { archiveProjects: Project[] }) => {
           </h2>
           <div className="w-24 h-[1px] bg-brand-red mx-auto" />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
+        <div className="grid grid-cols-2 gap-4 md:gap-8">
           {archiveProjects.map((project, index) => (
             <div 
               key={project.id} 
@@ -1140,12 +1140,12 @@ const Archive = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                   fetchPriority={index < 2 ? "high" : "auto"}
                 />
               )}
-              <div className="absolute inset-0 flex flex-col justify-center items-center text-center p-12 bg-black/25 group-hover:bg-transparent transition-colors duration-500">
-                <p className="text-[11px] font-bold tracking-[0.1em] opacity-60 mb-2">{project.subtitle}</p>
-                <h3 className="text-2xl md:text-4xl font-display font-bold mb-4 group-hover:scale-110 transition-transform duration-500">{project.title}</h3>
+              <div className="absolute inset-0 flex flex-col justify-center items-center text-center p-4 sm:p-6 md:p-12 bg-black/25 group-hover:bg-transparent transition-colors duration-500">
+                <p className="text-[5px] sm:text-[11px] font-bold tracking-[0.1em] opacity-60 mb-0.5 sm:mb-2">{project.subtitle}</p>
+                <h3 className="text-base sm:text-2xl md:text-3xl lg:text-4xl font-display font-bold mb-1 sm:mb-4 group-hover:scale-110 transition-transform duration-500">{project.title}</h3>
                 <div className="flex flex-col items-center">
                   <button 
-                    className="px-4 md:px-6 lg:px-10 py-1 md:py-1.5 lg:py-2 bg-brand-red text-white text-[11px] md:text-[13px] lg:text-[15px] font-bold tracking-normal border border-brand-red hover:bg-brand-dark hover:text-white hover:border-white transition-all duration-300 shadow-lg"
+                    className="px-2 sm:px-4 md:px-6 lg:px-10 py-0.5 sm:py-1 md:py-1.5 lg:py-2 bg-brand-red text-white text-[8px] sm:text-[11px] md:text-[13px] lg:text-[15px] font-bold tracking-normal border border-brand-red hover:bg-brand-dark hover:text-white hover:border-white transition-all duration-300 shadow-lg"
                   >
                     Learn More
                   </button>
@@ -1388,7 +1388,7 @@ const Featured = () => {
         const item = shuffledItems[idx];
         if (item && item.image) {
           const img = new Image();
-          img.src = getOptimizedUrl(item.image, isMobile ? 1280 : 2048);
+          img.src = getOptimizedUrl(item.image, 2560, 2560);
         }
       });
     }
@@ -1571,12 +1571,18 @@ const Featured = () => {
                 </div>
               )}
               <img 
-                src={getOptimizedUrl(selectedItem.image, isMobile ? 1280 : 2560, isMobile ? 1280 : 2560, false)} 
+                src={getOptimizedUrl(selectedItem.image, 2560, 2560, false)} 
                 className={`max-w-[95vw] max-h-[95vh] w-auto h-auto object-contain shadow-2xl transition-opacity duration-300 ${isModalImageLoading ? 'opacity-0' : 'opacity-100'}`}
                 referrerPolicy="no-referrer"
                 crossOrigin="anonymous"
                 onLoad={() => setIsModalImageLoading(false)}
-                onError={() => setIsModalImageLoading(false)}
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  if (target.src.includes('wsrv.nl')) {
+                    target.src = getOptimizedUrl(selectedItem.image, undefined, undefined, true);
+                  }
+                  setIsModalImageLoading(false);
+                }}
               />
             </motion.div>
           </motion.div>
@@ -2070,7 +2076,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
         if (url && !isVideo && !url.includes('youtube.com') && !url.includes('youtu.be') && !url.includes('bilibili.com')) {
           const img = new Image();
           // Use optimized resolution for preload
-          img.src = getOptimizedUrl(url, isMobile ? 1280 : 2048);
+          img.src = getOptimizedUrl(url, 2560, 2560);
         }
       });
     }
@@ -2358,8 +2364,8 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                 <TransformWrapper
                   key={selectedUrl}
                   initialScale={1}
-                  minScale={1}
-                  maxScale={8}
+                  minScale={0.5}
+                  maxScale={12}
                   centerOnInit={true}
                   limitToBounds={true}
                   doubleClick={{ disabled: true }}
@@ -2395,13 +2401,23 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                         )}
                         <img 
                           key={selectedUrl}
-                          src={getOptimizedUrl(selectedUrl, isMobile ? 1280 : 2560, isMobile ? 1280 : 2560)} 
+                          src={getOptimizedUrl(selectedUrl, 2560, 2560)} 
                           className={`max-w-full max-h-full object-contain select-none shadow-2xl transition-opacity duration-300 ${isImageLoading ? 'opacity-0' : 'opacity-100'}`}
                           referrerPolicy="no-referrer"
                           style={{ willChange: 'transform' }}
                           onDragStart={(e) => e.preventDefault()}
                           onLoad={() => setIsImageLoading(false)}
-                          onError={() => setIsImageLoading(false)}
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            if (!target.src.includes('wsrv.nl')) {
+                              // If it's already NOT using proxy and still failed, just stop loading
+                              setIsImageLoading(false);
+                              return;
+                            }
+                            // Try bypassing the proxy for the high-res view if it fails
+                            target.src = getOptimizedUrl(selectedUrl, undefined, undefined, true);
+                            setIsImageLoading(false);
+                          }}
                         />
                       </div>
                   </TransformComponent>
