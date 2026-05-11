@@ -259,7 +259,10 @@ const VideoPlayer = ({ url, fallbackImage, autoPlay = true, loop = true, muted =
           loop={loop}
           playsInline
           disablePictureInPicture
-          controlsList="nodownload"
+          disableRemotePlayback
+          controls={false}
+          onContextMenu={(e) => e.preventDefault()}
+          controlsList="nodownload nofullscreen noremoteplayback"
           preload={preload}
           onLoadedData={handleReady}
           className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 z-10 pointer-events-none`}
@@ -1137,7 +1140,7 @@ const Archive = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                     <VideoPlayer 
                       url={project.videoUrl || `https://www.youtube.com/watch?v=${project.backgroundVideoId}`}
                       fallbackImage={getOptimizedUrl(project.image, 800, 450)}
-                      preload={isMobile ? "none" : "auto"}
+                      preload="auto"
                     />
                   {/* 叠加遮罩层 */}
                   <div className={`absolute inset-0 ${activeTouchId === project.id ? 'bg-black/10' : 'bg-black/50 group-hover:bg-black/10'} transition-colors duration-1000`} />
