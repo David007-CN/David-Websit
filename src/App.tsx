@@ -342,6 +342,10 @@ const FEATURED_ITEMS: Project[] = [
   { id: 115, title: "Xinjiang Travel", category: "Life", image: "https://github.com/David007-CN/DW/blob/main/Life/Xinjiang-1_202501.jpg?raw=true", time: "2 0 2 5 . 0 1" },
   { id: 116, title: "Xinjiang Travel", category: "Life", image: "https://github.com/David007-CN/DW/blob/main/Life/Xinjiang-3_202501.jpg?raw=true", time: "2 0 2 5 . 0 1" },
   { id: 117, title: "Xinjiang Travel", category: "Life", image: "https://github.com/David007-CN/DW/blob/main/Life/Xinjiang-4_202501.jpg?raw=true", time: "2 0 2 5 . 0 1" },
+  { id: 118, title: "Xinjiang Travel", category: "Life", image: "https://github.com/David007-CN/DW/blob/main/Life/Xinjiang-7_202501.jpg?raw=true", time: "2 0 2 5 . 0 1" },
+  { id: 119, title: "Xinjiang Travel", category: "Life", image: "https://github.com/David007-CN/DW/blob/main/Life/Xinjiang-9_202501.jpg?raw=true", time: "2 0 2 5 . 0 1" },
+
+
 ];
 
 // --- Components ---
@@ -1141,13 +1145,13 @@ const Archive = ({ archiveProjects }: { archiveProjects: Project[] }) => {
               ) : (
                 <img 
                   src={getOptimizedUrl(project.image, window.innerWidth > 768 ? 1200 : 800, window.innerWidth > 768 ? 675 : 450)} 
-                  className={`w-full h-full object-cover ${activeTouchId === project.id ? 'grayscale-0 brightness-100' : 'grayscale group-hover:grayscale-0 brightness-[0.45] group-hover:brightness-100'} transition-all duration-700`} 
+                  className={`w-full h-full object-cover ${activeTouchId === project.id ? 'grayscale-0 brightness-100' : `grayscale group-hover:grayscale-0 ${project.title === 'Retouching' ? 'brightness-[0.35]' : 'brightness-[0.45]'} group-hover:brightness-100`} transition-all duration-700`} 
                   referrerPolicy="no-referrer"
                   loading={index < 2 ? "eager" : "lazy"}
                   fetchPriority={index < 2 ? "high" : "auto"}
                 />
               )}
-              <div className="absolute inset-0 flex flex-col justify-center items-center text-center p-4 sm:p-6 md:p-12 bg-black/25 group-hover:bg-transparent transition-colors duration-500">
+              <div className={`absolute inset-0 flex flex-col justify-center items-center text-center p-4 sm:p-6 md:p-12 ${project.title === 'Retouching' ? 'bg-black/45' : 'bg-black/25'} group-hover:bg-transparent transition-colors duration-500`}>
                 <p className="text-[5px] sm:text-[11px] font-bold tracking-[0.1em] opacity-60 mb-0.5 sm:mb-2">{project.subtitle}</p>
                 <h3 className="text-base sm:text-2xl md:text-3xl lg:text-4xl font-display font-bold mb-1 sm:mb-4 group-hover:scale-110 transition-transform duration-500">{project.title}</h3>
                 <div className="flex flex-col items-center">
