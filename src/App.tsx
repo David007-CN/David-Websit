@@ -258,12 +258,14 @@ const VideoPlayer = ({ url, fallbackImage, autoPlay = true, loop = true, muted =
           muted={true}
           loop={loop}
           playsInline
+          webkit-playsinline="true"
+          x-webkit-airplay="deny"
           disablePictureInPicture
           disableRemotePlayback
           controls={false}
           onContextMenu={(e) => e.preventDefault()}
           controlsList="nodownload nofullscreen noremoteplayback"
-          preload={preload}
+          preload="metadata"
           onLoadedData={handleReady}
           className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 z-10 pointer-events-none`}
           style={{ opacity: isReady ? 1 : 0 }}
@@ -1150,8 +1152,8 @@ const Archive = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                   src={getOptimizedUrl(project.image, window.innerWidth > 768 ? 1200 : 800, window.innerWidth > 768 ? 675 : 450)} 
                   className={`w-full h-full object-cover ${activeTouchId === project.id ? 'grayscale-0 brightness-100' : `grayscale group-hover:grayscale-0 ${project.title === 'Retouching' ? 'brightness-[0.35]' : 'brightness-[0.45]'} group-hover:brightness-100`} transition-all duration-700`} 
                   referrerPolicy="no-referrer"
-                  loading={index < 2 ? "eager" : "lazy"}
-                  fetchPriority={index < 2 ? "high" : "auto"}
+                  loading="lazy"
+                  decoding="async"
                 />
               )}
               <div className={`absolute inset-0 flex flex-col justify-center items-center text-center p-4 sm:p-6 md:p-12 ${project.title === 'Retouching' ? 'bg-black/45' : 'bg-black/25'} group-hover:bg-transparent transition-colors duration-500`}>
