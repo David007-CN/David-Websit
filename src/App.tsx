@@ -205,7 +205,41 @@ const VideoPlayer = ({ url, fallbackImage, autoPlay = true, loop = true, muted =
   preload?: "none" | "metadata" | "auto"
 }) => {
   const [isReady, setIsReady] = useState(false);
+  const [videoSrc, setVideoSrc] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    let objectUrl: string | null = null;
+    let isMounted = true;
+
+    async function loadVideo() {
+      // For YouTube, we don't need blob logic
+      if (url.includes('youtube.com') || url.includes('youtu.be')) return;
+
+      try {
+        // Only use Blob strategy on mobile to bypass download prompts, OR if we want to be sneaky
+        if (window.innerWidth < 768) {
+          const response = await fetch(url);
+          const blob = await response.blob();
+          if (isMounted) {
+            objectUrl = URL.createObjectURL(blob);
+            setVideoSrc(objectUrl);
+          }
+        } else {
+          setVideoSrc(url);
+        }
+      } catch (err) {
+        if (isMounted) setVideoSrc(url); // Fallback to direct URL if fetch fails
+      }
+    }
+
+    loadVideo();
+
+    return () => {
+      isMounted = false;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [url]);
 
   const handleReady = () => {
     if (!isReady) {
@@ -214,21 +248,23 @@ const VideoPlayer = ({ url, fallbackImage, autoPlay = true, loop = true, muted =
   };
 
   useEffect(() => {
-    if (videoRef.current) {
-      if (videoRef.current.readyState >= 2) {
-        handleReady();
-      }
+    if (videoRef.current && videoSrc) {
       videoRef.current.muted = true;
       videoRef.current.setAttribute('playsinline', 'true');
       videoRef.current.setAttribute('webkit-playsinline', 'true');
       videoRef.current.setAttribute('x5-playsinline', 'true');
-      videoRef.current.setAttribute('x5-video-player-type', 'h5');
+      videoRef.current.setAttribute('x5-video-player-type', 'h5-page');
+      videoRef.current.setAttribute('x5-video-player-fullscreen', 'false');
       videoRef.current.controls = false;
-      videoRef.current.oncontextmenu = (e) => e.preventDefault();
       
-      videoRef.current.play().catch(() => {});
+      const playPromise = videoRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {
+          // Auto-play might be blocked, but since it's muted it usually works
+        });
+      }
     }
-  }, [url]);
+  }, [videoSrc]);
 
   const isYouTube = url.includes('youtube.com') || url.includes('youtu.be');
   const youTubeId = isYouTube ? (
@@ -240,7 +276,7 @@ const VideoPlayer = ({ url, fallbackImage, autoPlay = true, loop = true, muted =
   ) : '';
 
   return (
-    <div className="absolute inset-0 w-full h-full pointer-events-none bg-black overflow-hidden select-none">
+    <div className="absolute inset-0 w-full h-full pointer-events-none bg-black overflow-hidden select-none no-save">
       <img
         src={fallbackImage}
         alt=""
@@ -249,27 +285,38 @@ const VideoPlayer = ({ url, fallbackImage, autoPlay = true, loop = true, muted =
       />
       
       {!isYouTube ? (
-        <video
-          key={url}
-          ref={videoRef}
-          src={url}
-          poster={fallbackImage}
-          autoPlay={autoPlay}
-          muted={true}
-          loop={loop}
-          playsInline
-          webkit-playsinline="true"
-          x-webkit-airplay="deny"
-          disablePictureInPicture
-          disableRemotePlayback
-          controls={false}
-          onContextMenu={(e) => e.preventDefault()}
-          controlsList="nodownload nofullscreen noremoteplayback"
-          preload="metadata"
-          onLoadedData={handleReady}
-          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 z-10 pointer-events-none`}
-          style={{ opacity: isReady ? 1 : 0 }}
-        />
+        videoSrc && (
+          <video
+            key={videoSrc}
+            ref={videoRef}
+            src={videoSrc}
+            poster={fallbackImage}
+            autoPlay={autoPlay}
+            muted={true}
+            loop={loop}
+            playsInline
+            webkit-playsinline="true"
+            x5-playsinline="true"
+            x5-video-player-type="h5-page"
+            x5-video-player-fullscreen="false"
+            x5-video-orientation="portrait"
+            x-webkit-airplay="deny"
+            disablePictureInPicture
+            disableRemotePlayback
+            controls={false}
+            onPlay={(e) => e.currentTarget.controls = false}
+            onContextMenu={(e) => e.preventDefault()}
+            controlsList="nodownload nofullscreen noremoteplayback"
+            preload={window.innerWidth < 768 ? "none" : "metadata"}
+            onLoadedData={handleReady}
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 z-10 pointer-events-none`}
+            style={{ 
+              opacity: isReady ? 1 : 0,
+              WebkitUserSelect: 'none',
+              WebkitTouchCallout: 'none'
+            }}
+          />
+        )
       ) : (
         <iframe
           src={`https://www.youtube.com/embed/${youTubeId}?autoplay=1&mute=1&loop=1&playlist=${youTubeId}&controls=0&modestbranding=1&iv_load_policy=3&enablejsapi=1`}
@@ -1142,7 +1189,7 @@ const Archive = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                     <VideoPlayer 
                       url={project.videoUrl || `https://www.youtube.com/watch?v=${project.backgroundVideoId}`}
                       fallbackImage={getOptimizedUrl(project.image, 800, 450)}
-                      preload="auto"
+                      preload={window.innerWidth < 768 ? "none" : "metadata"}
                     />
                   {/* 叠加遮罩层 */}
                   <div className={`absolute inset-0 ${activeTouchId === project.id ? 'bg-black/10' : 'bg-black/50 group-hover:bg-black/10'} transition-colors duration-1000`} />
