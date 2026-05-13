@@ -243,7 +243,10 @@ const VideoPlayer = ({ url, fallbackImage, autoPlay = true, loop = true, muted =
 
   const handleReady = () => {
     if (!isReady) {
-      setIsReady(true);
+      // 稍微延迟显示，确保第一帧已经渲染，避免手机端黑屏或封面闪烁
+      setTimeout(() => {
+        if (videoRef.current) setIsReady(true);
+      }, 150);
     }
   };
 
@@ -255,6 +258,9 @@ const VideoPlayer = ({ url, fallbackImage, autoPlay = true, loop = true, muted =
       videoRef.current.setAttribute('x5-playsinline', 'true');
       videoRef.current.setAttribute('x5-video-player-type', 'h5-page');
       videoRef.current.setAttribute('x5-video-player-fullscreen', 'false');
+      videoRef.current.setAttribute('x5-video-orientation', 'portrait');
+      videoRef.current.setAttribute('x-webkit-airplay', 'deny');
+      videoRef.current.setAttribute('disablePictureInPicture', 'true');
       videoRef.current.controls = false;
       
       const playPromise = videoRef.current.play();
@@ -290,7 +296,6 @@ const VideoPlayer = ({ url, fallbackImage, autoPlay = true, loop = true, muted =
             key={videoSrc}
             ref={videoRef}
             src={videoSrc}
-            poster={fallbackImage}
             autoPlay={autoPlay}
             muted={true}
             loop={loop}
@@ -309,9 +314,10 @@ const VideoPlayer = ({ url, fallbackImage, autoPlay = true, loop = true, muted =
             controlsList="nodownload nofullscreen noremoteplayback"
             preload={window.innerWidth < 768 ? "none" : "metadata"}
             onLoadedData={handleReady}
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 z-10 pointer-events-none`}
+            className="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 z-10 pointer-events-none bg-transparent"
             style={{ 
               opacity: isReady ? 1 : 0,
+              visibility: isReady ? 'visible' : 'hidden',
               WebkitUserSelect: 'none',
               WebkitTouchCallout: 'none'
             }}
