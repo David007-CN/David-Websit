@@ -558,12 +558,12 @@ const Hero = () => {
         </div>
       )
     },
-    {
+    /*{
       type: 'image',
       desktop: "https://picsum.photos/seed/hero-banner-1/1920/1080",
       mobile: "https://picsum.photos/seed/hero-banner-1-m/750/1334",
       alt: "Featured Work 1"
-    }
+    }*/
   ];
 
   const handleNext = () => setCurrentSlide((prev) => (prev + 1) % slides.length);
