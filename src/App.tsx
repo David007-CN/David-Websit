@@ -206,30 +206,47 @@ const VideoPlayer = ({ url, fallbackImage, autoPlay = true, loop = true, muted =
 }) => {
   const [isReady, setIsReady] = useState(false);
   const [videoSrc, setVideoSrc] = useState<string | null>(null);
+  const [isInView, setIsInView] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
+  // 1. Intersection Observer to detect when the video is in or near the viewport
   useEffect(() => {
+    if (!containerRef.current) return;
+    
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          setIsInView(true);
+          observer.unobserve(entry.target); // Once starts loading, we keep it
+        }
+      });
+    }, { threshold: 0.01, rootMargin: '200px' }); // Start loading slightly before it enters
+
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  // 2. Load video via Blob only when in view
+  useEffect(() => {
+    if (!isInView) return;
+    
     let objectUrl: string | null = null;
     let isMounted = true;
 
     async function loadVideo() {
-      // For YouTube, we don't need blob logic
       if (url.includes('youtube.com') || url.includes('youtu.be')) return;
 
       try {
-        // Only use Blob strategy on mobile to bypass download prompts, OR if we want to be sneaky
-        if (window.innerWidth < 768) {
-          const response = await fetch(url);
-          const blob = await response.blob();
-          if (isMounted) {
-            objectUrl = URL.createObjectURL(blob);
-            setVideoSrc(objectUrl);
-          }
-        } else {
-          setVideoSrc(url);
+        // Blob URLs help bypass "downloadable resource" alerts in many mobile browsers
+        const response = await fetch(url);
+        const blob = await response.blob();
+        if (isMounted) {
+          objectUrl = URL.createObjectURL(blob);
+          setVideoSrc(objectUrl);
         }
       } catch (err) {
-        if (isMounted) setVideoSrc(url); // Fallback to direct URL if fetch fails
+        if (isMounted) setVideoSrc(url); 
       }
     }
 
@@ -239,38 +256,36 @@ const VideoPlayer = ({ url, fallbackImage, autoPlay = true, loop = true, muted =
       isMounted = false;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [url]);
+  }, [url, isInView]);
 
   const handleReady = () => {
     if (!isReady) {
-      // 稍微延迟显示，确保第一帧已经渲染，避免手机端黑屏或封面闪烁
       setTimeout(() => {
         if (videoRef.current) setIsReady(true);
-      }, 150);
+      }, 200);
     }
   };
 
   useEffect(() => {
-    if (videoRef.current && videoSrc) {
-      videoRef.current.muted = true;
-      videoRef.current.setAttribute('playsinline', 'true');
-      videoRef.current.setAttribute('webkit-playsinline', 'true');
-      videoRef.current.setAttribute('x5-playsinline', 'true');
-      videoRef.current.setAttribute('x5-video-player-type', 'h5-page');
-      videoRef.current.setAttribute('x5-video-player-fullscreen', 'false');
-      videoRef.current.setAttribute('x5-video-orientation', 'portrait');
-      videoRef.current.setAttribute('x-webkit-airplay', 'deny');
-      videoRef.current.setAttribute('disablePictureInPicture', 'true');
-      videoRef.current.controls = false;
+    if (videoRef.current && videoSrc && autoPlay) {
+      const vid = videoRef.current;
+      vid.muted = true;
+      vid.setAttribute('playsinline', 'true');
+      vid.setAttribute('webkit-playsinline', 'true');
+      vid.setAttribute('x5-playsinline', 'true');
+      vid.setAttribute('x5-video-player-type', 'h5-page');
+      vid.setAttribute('x5-video-player-fullscreen', 'false');
+      vid.setAttribute('x5-video-orientation', 'portrait');
+      vid.setAttribute('x-webkit-airplay', 'deny');
+      vid.setAttribute('disablePictureInPicture', 'true');
+      vid.controls = false;
       
-      const playPromise = videoRef.current.play();
+      const playPromise = vid.play();
       if (playPromise !== undefined) {
-        playPromise.catch(() => {
-          // Auto-play might be blocked, but since it's muted it usually works
-        });
+        playPromise.catch(() => {});
       }
     }
-  }, [videoSrc]);
+  }, [videoSrc, autoPlay]);
 
   const isYouTube = url.includes('youtube.com') || url.includes('youtu.be');
   const youTubeId = isYouTube ? (
@@ -282,7 +297,7 @@ const VideoPlayer = ({ url, fallbackImage, autoPlay = true, loop = true, muted =
   ) : '';
 
   return (
-    <div className="absolute inset-0 w-full h-full pointer-events-none bg-black overflow-hidden select-none no-save">
+    <div ref={containerRef} className="absolute inset-0 w-full h-full pointer-events-none bg-black overflow-hidden select-none no-save">
       <img
         src={fallbackImage}
         alt=""
@@ -312,7 +327,7 @@ const VideoPlayer = ({ url, fallbackImage, autoPlay = true, loop = true, muted =
             onPlay={(e) => e.currentTarget.controls = false}
             onContextMenu={(e) => e.preventDefault()}
             controlsList="nodownload nofullscreen noremoteplayback"
-            preload={window.innerWidth < 768 ? "none" : "metadata"}
+            preload="auto"
             onLoadedData={handleReady}
             className="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 z-10 pointer-events-none bg-transparent"
             style={{ 
@@ -567,7 +582,11 @@ const Hero = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const navigate = useNavigate();
 
-  const slides = [
+  type HeroSlide = 
+    | { type: 'content'; bg: string; content: React.ReactNode }
+    | { type: 'image'; desktop: string; mobile: string; alt?: string; content?: React.ReactNode };
+
+  const slides: HeroSlide[] = [
     {
       type: 'content',
       bg: "https://raw.githubusercontent.com/David007-CN/DW/refs/heads/main/David2_3840x2160_middle.jpg",
@@ -647,50 +666,56 @@ const Hero = () => {
           }}
           className="absolute inset-0 flex items-center justify-center cursor-grab active:cursor-grabbing touch-pan-y"
         >
-          {slides[currentSlide].type === 'content' ? (
-            <>
-              <div className="absolute inset-0 z-0 pointer-events-none">
-                <img 
-                  src={getOptimizedUrl(slides[currentSlide].bg!, window.innerWidth > 768 ? 2560 : 1080, window.innerWidth > 768 ? 1440 : 1350)} 
-                  alt="Background" 
-                  className="w-full h-full object-cover brightness-[0.4] contrast-110"
-                  referrerPolicy="no-referrer"
-                  fetchPriority="high"
-                  loading="eager"
-                />
-                <div className="absolute inset-0 bg-gradient-to-b from-brand-dark/50 via-transparent to-brand-dark/75" />
-              </div>
-              {slides[currentSlide].content}
-            </>
-          ) : (
-            <div 
-              className="absolute inset-0"
-              onClick={(e) => {
-                // Only navigate if it wasn't a drag
-                if (Math.abs(e.movementX) < 5) {
-                  document.getElementById('works')?.scrollIntoView({ behavior: 'smooth' });
-                }
-              }}
-            >
-              <img 
-                src={getOptimizedUrl(slides[currentSlide].desktop!, 2560, 1440)} 
-                alt={slides[currentSlide].alt}
-                className="hidden md:block w-full h-full object-cover brightness-[0.8] hover:brightness-[0.9] transition-all duration-1000 pointer-events-none"
-                referrerPolicy="no-referrer"
-                fetchPriority="high"
-                loading="eager"
-              />
-              <img 
-                src={getOptimizedUrl(slides[currentSlide].mobile!, 1080, 1800)} 
-                alt={slides[currentSlide].alt}
-                className="block md:hidden w-full h-full object-cover brightness-[0.8] pointer-events-none"
-                referrerPolicy="no-referrer"
-                fetchPriority="high"
-                loading="eager"
-              />
-              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-brand-dark/40 pointer-events-none" />
-            </div>
-          )}
+          {(() => {
+            const slide = slides[currentSlide];
+            if (slide.type === 'content') {
+              return (
+                <>
+                  <div className="absolute inset-0 z-0 pointer-events-none">
+                    <img 
+                      src={getOptimizedUrl(slide.bg, window.innerWidth > 768 ? 2560 : 1080, window.innerWidth > 768 ? 1440 : 1350)} 
+                      alt="Background" 
+                      className="w-full h-full object-cover brightness-[0.4] contrast-110"
+                      referrerPolicy="no-referrer"
+                      fetchPriority="high"
+                      loading="eager"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-b from-brand-dark/50 via-transparent to-brand-dark/75" />
+                  </div>
+                  {slide.content}
+                </>
+              );
+            } else {
+              return (
+                <div 
+                  className="absolute inset-0"
+                  onClick={(e) => {
+                    if (Math.abs(e.movementX) < 5) {
+                      document.getElementById('works')?.scrollIntoView({ behavior: 'smooth' });
+                    }
+                  }}
+                >
+                  <img 
+                    src={getOptimizedUrl(slide.desktop!, 2560, 1440)} 
+                    alt={slide.alt || 'Featured'}
+                    className="hidden md:block w-full h-full object-cover brightness-[0.8] hover:brightness-[0.9] transition-all duration-1000 pointer-events-none"
+                    referrerPolicy="no-referrer"
+                    fetchPriority="high"
+                    loading="eager"
+                  />
+                  <img 
+                    src={getOptimizedUrl(slide.mobile!, 1080, 1800)} 
+                    alt={slide.alt || 'Featured'}
+                    className="block md:hidden w-full h-full object-cover brightness-[0.8] pointer-events-none"
+                    referrerPolicy="no-referrer"
+                    fetchPriority="high"
+                    loading="eager"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-brand-dark/40 pointer-events-none" />
+                </div>
+              );
+            }
+          })()}
         </motion.div>
       </AnimatePresence>
 
@@ -1195,7 +1220,6 @@ const Archive = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                     <VideoPlayer 
                       url={project.videoUrl || `https://www.youtube.com/watch?v=${project.backgroundVideoId}`}
                       fallbackImage={getOptimizedUrl(project.image, 800, 450)}
-                      preload={window.innerWidth < 768 ? "none" : "metadata"}
                     />
                   {/* 叠加遮罩层 */}
                   <div className={`absolute inset-0 ${activeTouchId === project.id ? 'bg-black/10' : 'bg-black/50 group-hover:bg-black/10'} transition-colors duration-1000`} />
