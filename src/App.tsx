@@ -415,10 +415,6 @@ const FEATURED_ITEMS: Project[] = [
   { id: 115, title: "Xinjiang Travel", category: "Life", image: "https://github.com/David007-CN/DW/blob/main/Life/Xinjiang-1_202501.jpg?raw=true", time: "2 0 2 5 . 0 1" },
   { id: 116, title: "Xinjiang Travel", category: "Life", image: "https://github.com/David007-CN/DW/blob/main/Life/Xinjiang-3_202501.jpg?raw=true", time: "2 0 2 5 . 0 1" },
   { id: 117, title: "Xinjiang Travel", category: "Life", image: "https://github.com/David007-CN/DW/blob/main/Life/Xinjiang-4_202501.jpg?raw=true", time: "2 0 2 5 . 0 1" },
-  { id: 118, title: "Xinjiang Travel", category: "Life", image: "https://github.com/David007-CN/DW/blob/main/Life/Xinjiang-7_202501.jpg?raw=true", time: "2 0 2 5 . 0 1" },
-  { id: 119, title: "Xinjiang Travel", category: "Life", image: "https://github.com/David007-CN/DW/blob/main/Life/Xinjiang-9_202501.jpg?raw=true", time: "2 0 2 5 . 0 1" },
-
-
 ];
 
 // --- Components ---
@@ -1373,6 +1369,8 @@ const Featured = () => {
   };
 
   const fetchGitHubImages = async (isManual = false) => {
+    let hasLoadedCached = false;
+    
     if (isManual) {
       setIsLoading(true);
       setIsModalImageLoading(false);
@@ -1380,20 +1378,25 @@ const Featured = () => {
       localStorage.removeItem(`github_images_cache_${GITHUB_REF}`);
     }
 
-    // 先检查缓存 (非手动模式)
+    // 先检查缓存 (非手动模式下快速载入)
     if (!isManual) {
       const cached = localStorage.getItem(`github_images_cache_${GITHUB_REF}`);
       if (cached) {
         try {
           const parsedCache = JSON.parse(cached);
-          if (Array.isArray(parsedCache)) {
+          if (Array.isArray(parsedCache) && parsedCache.length > 0) {
              if (processFiles(parsedCache)) {
                setIsLoading(false);
-               return;
+               hasLoadedCached = true;
              }
           }
         } catch (e) { }
       }
+    }
+
+    // 如果还没有加载过缓存数据，则显示加载状态
+    if (!hasLoadedCached) {
+      setIsLoading(true);
     }
 
     const controllers = {
@@ -1401,36 +1404,45 @@ const Featured = () => {
       proxy: `/api/github-proxy?owner=${GITHUB_USER}&repo=${GITHUB_REPO}&path=${GITHUB_FOLDER}&ref=${GITHUB_REF}&t=${Date.now()}`
     };
 
+    let freshData: any[] | null = null;
+
     // 优先尝试从 API 获取最新数据
     try {
       const response = await fetch(controllers.direct);
       if (response.ok) {
         const data = await response.json();
         if (Array.isArray(data) && data.length > 0) {
-          localStorage.setItem(`github_images_cache_${GITHUB_REF}`, JSON.stringify(data));
-          if (processFiles(data)) {
-            setIsLoading(false);
-            return;
-          }
+          freshData = data;
         }
       }
     } catch (e) {
       console.warn("Direct fetch skipped or failed, trying proxy...");
     }
 
-    try {
-      const response = await fetch(controllers.proxy);
-      if (response.ok) {
-        const data = await response.json();
-        if (Array.isArray(data) && data.length > 0) {
-          localStorage.setItem(`github_images_cache_${GITHUB_REF}`, JSON.stringify(data));
-          processFiles(data);
+    if (!freshData) {
+      try {
+        const response = await fetch(controllers.proxy);
+        if (response.ok) {
+          const data = await response.json();
+          if (Array.isArray(data) && data.length > 0) {
+            freshData = data;
+          }
         }
+      } catch (err) {
+        console.error("All fetch attempts failed");
       }
-    } catch (err) {
-      console.error("All fetch attempts failed");
-    } finally {
-      setIsLoading(false);
+    }
+
+    if (freshData) {
+      const oldCached = localStorage.getItem(`github_images_cache_${GITHUB_REF}`);
+      const freshDataStr = JSON.stringify(freshData);
+      
+      // 数据变动、或者是手动、或者之前未成功加载等情况才重新载入，避免无谓的动画重绘
+      if (oldCached !== freshDataStr || isManual || !hasLoadedCached) {
+        localStorage.setItem(`github_images_cache_${GITHUB_REF}`, freshDataStr);
+        processFiles(freshData);
+      }
+    } else {
       // Fallback if fetch failed
       setFeaturedItems(prev => {
         if (prev.length === 0) return FEATURED_ITEMS;
@@ -1445,8 +1457,10 @@ const Featured = () => {
         }
         return prev;
       });
-      if (isManual) setShuffleVersion(v => v + 1);
     }
+
+    setIsLoading(false);
+    if (isManual) setShuffleVersion(v => v + 1);
   };
 
   useEffect(() => {
@@ -1964,24 +1978,19 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
       const cachedData = localStorage.getItem(cacheKey);
       
       let staleData = null;
+      let hasLoadedCached = false;
       if (cachedData) {
         try {
           const parsed = JSON.parse(cachedData);
           staleData = parsed.data;
           
           if (!isManualRefresh) {
-            const age = Date.now() - (parsed.timestamp || 0);
-            const TTL = 1000 * 60 * 60 * 24 * 7; // Store for 7 days
-            
             if (staleData?.length > 0) {
               // Always show stale data first for instantaneous feel
               if (!isCancelled) {
                 setProject(prev => prev && prev.id === currentProjectId ? ({ ...prev, galleryImages: staleData }) : prev);
-                // If it's fresh enough (1 hour), we don't even need to show loading
-                if (age < 1000 * 60 * 60) {
-                    setIsLoading(false);
-                    return;
-                }
+                setIsLoading(false);
+                hasLoadedCached = true;
               }
             }
           }
@@ -1990,7 +1999,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
         }
       }
 
-      setIsLoading(galleryItems.length === 0);
+      setIsLoading(galleryItems.length === 0 && !hasLoadedCached);
       setError(null);
       
       const config = CATEGORY_CONFIGS[currentProjectTitle] || { folder: currentProjectTitle, ref: GITHUB_REF } as { folder: string, ref: string };
@@ -2094,8 +2103,14 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
         
         if (!isCancelled) {
           if (dynamicGallery.length > 0) {
-            setProject(prev => (prev && prev.id === currentProjectId) ? { ...prev, galleryImages: dynamicGallery } : prev);
-            localStorage.setItem(cacheKey, JSON.stringify({ data: dynamicGallery, timestamp: Date.now() }));
+            const oldCacheStr = staleData ? JSON.stringify(staleData) : '';
+            const newCacheStr = JSON.stringify(dynamicGallery);
+            
+            // Output changes dynamically if data differs
+            if (oldCacheStr !== newCacheStr || !hasLoadedCached || isManualRefresh) {
+              setProject(prev => (prev && prev.id === currentProjectId) ? { ...prev, galleryImages: dynamicGallery } : prev);
+              localStorage.setItem(cacheKey, JSON.stringify({ data: dynamicGallery, timestamp: Date.now() }));
+            }
             setError(null);
           } else if (!staleData) {
             setError(`No items found in folder: ${folderName}. Please confirm GitHub repo structure.`);
@@ -2546,14 +2561,12 @@ const cleanFileNameToTitle = (filename: string) => {
   return filename.replace(/\.[^/.]+$/, "");
 };
 
-const STABLE_REF = "bfb077e391046a418e835dcb6c5ec176752e7d55";
-
 const CATEGORY_CONFIGS: Record<string, { folder: string, ref?: string }> = {
-  "Design": { folder: "Design", ref: STABLE_REF },
-  "Photography": { folder: "Photography", ref: STABLE_REF },
-  "Retouching": { folder: "Retouching", ref: STABLE_REF },
-  "Rendering": { folder: "Rendering", ref: STABLE_REF },
-  "AI Studio": { folder: "AI Studio", ref: STABLE_REF },
+  "Design": { folder: "Design", ref: GITHUB_REF },
+  "Photography": { folder: "Photography", ref: GITHUB_REF },
+  "Retouching": { folder: "Retouching", ref: GITHUB_REF },
+  "Rendering": { folder: "Rendering", ref: GITHUB_REF },
+  "AI Studio": { folder: "AI Studio", ref: GITHUB_REF },
   "Video": { folder: "Video", ref: "main" }
 };
 
