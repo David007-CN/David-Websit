@@ -607,10 +607,12 @@ const Hero = () => {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1 }}
           >
-            <h1 className="text-3xl md:text-6xl lg:text-8xl font-display font-bold leading-tight tracking-tight mb-16 md:mb-24 lg:mb-32 flex flex-col items-center">
+            <h1 className="mb-16 md:mb-24 lg:mb-32 flex flex-col items-center">
               <div className="relative inline-block max-w-full">
-                <span>Hello, welcome</span>
-                <span className="absolute left-1/2 -translate-x-1/2 top-full mt-2 md:mt-6 text-[8px] md:text-[10px] lg:text-xs font-display font-normal opacity-60 flex justify-center tracking-[0.1em] md:tracking-[0.35em] whitespace-nowrap w-[90vw] md:w-auto">
+                <span className="font-teko font-semibold leading-none text-5xl md:text-8xl lg:text-[8.5rem] tracking-normal text-white">
+                  Hello, Welcome
+                </span>
+                <span className="absolute left-1/2 -translate-x-1/2 top-full mt-2 md:mt-6 text-[8px] md:text-[10px] lg:text-xs font-display font-normal opacity-60 flex justify-center tracking-[0.1em] md:tracking-[0.35em] whitespace-nowrap w-[90vw] md:w-auto text-white/60">
                   {"An unknown designer. More than just a designer.".split("").map((char, i) => (
                     <span key={i}>{char === " " ? "\u00A0" : char}</span>
                   ))}
@@ -1443,7 +1445,7 @@ const Featured = () => {
           }
         }
       } catch (err) {
-        console.error("All fetch attempts failed");
+        console.warn("All fetch attempts failed, using offline or cached items fallback.");
       }
     }
 
@@ -2107,7 +2109,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
           return gallery;
         } catch (e: any) {
           if (e.message === 'GITHUB_RATE_LIMIT') throw e;
-          console.error(`Fetch error at ${path}:`, e);
+          console.warn(`Fetch handled at ${path}:`, e);
           return [];
         }
       };
@@ -2131,7 +2133,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
           }
         }
       } catch (err: any) {
-        console.error("Gallery Fetch Error:", err);
+        console.warn("Gallery Fetch warning handled:", err);
         if (!isCancelled) {
           const isRateLimit = err.message === 'GITHUB_RATE_LIMIT' || err.message?.includes('403');
           
