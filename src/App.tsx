@@ -195,6 +195,20 @@ const formatTitle = (fileName: string) => {
   return result;
 };
 
+const getGroupSubtitle = (groupName: string) => {
+  const norm = groupName.trim().toLowerCase().replace(/\s+/g, ' ');
+  if (norm === "osight se") {
+    return "The Long-Standing #1 Amazon Best Seller Series.";
+  }
+  if (norm === "osight c") {
+    return "The first RMR open-style red dot battery version.";
+  }
+  if (norm === "osight c gn") {
+    return "The first RMR open-style green dot version.";
+  }
+  return null;
+};
+
 // --- Navbar ---
 const VideoPlayer = ({ url, fallbackImage, autoPlay = true, loop = true, muted = true, preload = "none" }: { 
   url: string, 
@@ -2352,7 +2366,14 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                   elements.push(
                     <div key={gName} className="mb-24">
                       <div className="flex items-center gap-6 mb-10">
-                        <h2 className="text-2xl md:text-3xl font-display font-bold text-white whitespace-nowrap">{gName}</h2>
+                        <div className="flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-4 flex-wrap">
+                          <h2 className="text-2xl md:text-3xl font-display font-bold text-white whitespace-nowrap">{gName}</h2>
+                          {getGroupSubtitle(gName) && (
+                            <span className="text-[11px] sm:text-xs md:text-sm font-normal text-white/50 tracking-wider font-sans italic whitespace-normal">
+                              {getGroupSubtitle(gName)}
+                            </span>
+                          )}
+                        </div>
                         <div className="h-[1px] bg-white/20 flex-grow" />
                       </div>
                       {renderGrid(groups[gName])}
@@ -2365,7 +2386,14 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                   elements.push(
                     <div key={gName} className="mb-24">
                       <div className="flex items-center gap-6 mb-10">
-                        <h2 className="text-2xl md:text-3xl font-display font-bold text-white whitespace-nowrap">{gName}</h2>
+                        <div className="flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-4 flex-wrap">
+                          <h2 className="text-2xl md:text-3xl font-display font-bold text-white whitespace-nowrap">{gName}</h2>
+                          {getGroupSubtitle(gName) && (
+                            <span className="text-[11px] sm:text-xs md:text-sm font-normal text-white/50 tracking-wider font-sans italic whitespace-normal">
+                              {getGroupSubtitle(gName)}
+                            </span>
+                          )}
+                        </div>
                         <div className="h-[1px] bg-white/20 flex-grow" />
                       </div>
                       {renderGrid(groups[gName])}
