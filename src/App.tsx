@@ -1088,7 +1088,7 @@ const Spotlight = () => {
               
               <div className="w-full mt-4 text-center lg:text-right">
                 <h4 className="text-sm font-bold text-white/90 mb-1">{project.title}</h4>
-                <p className="text-sm text-white/60 leading-relaxed italic">
+                <p className="text-sm text-white/60 leading-relaxed">
                   {project.description}
                 </p>
               </div>
@@ -2236,7 +2236,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
               <ChevronLeft size={16} /> Back to Home
             </Link>
             <h1 className="text-4xl md:text-7xl font-display font-bold mb-6">{project.title}</h1>
-            <p className="text-white/40 text-lg mb-8 max-w-2xl italic">{project.subtitle}</p>
+            <p className="text-white/40 text-lg mb-8 max-w-2xl">{project.subtitle}</p>
             <div className="w-24 h-[1px] bg-brand-red" />
           </div>
 
@@ -2289,7 +2289,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
             </div>
           ) : galleryItems.length === 0 ? (
             <div className="py-48 text-center border-y border-white/5 bg-white/[0.01]">
-              <p className="text-white/40 text-[13px] italic font-display tracking-wide">No images found in this folder.</p>
+              <p className="text-white/40 text-[13px] font-display tracking-wide">No images found in this folder.</p>
             </div>
           ) : (
             (() => {
@@ -2378,7 +2378,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                         <div className="flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-4 flex-wrap">
                           <h2 className="text-2xl md:text-3xl font-display font-bold text-white whitespace-nowrap">{gName}</h2>
                           {getGroupSubtitle(gName) && (
-                            <span className="text-[11px] sm:text-xs md:text-sm font-normal text-white/50 tracking-wider font-sans italic whitespace-normal">
+                            <span className="text-[11px] sm:text-xs md:text-sm font-normal text-white/50 tracking-wider font-sans whitespace-normal">
                               {getGroupSubtitle(gName)}
                             </span>
                           )}
@@ -2398,7 +2398,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
                         <div className="flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-4 flex-wrap">
                           <h2 className="text-2xl md:text-3xl font-display font-bold text-white whitespace-nowrap">{gName}</h2>
                           {getGroupSubtitle(gName) && (
-                            <span className="text-[11px] sm:text-xs md:text-sm font-normal text-white/50 tracking-wider font-sans italic whitespace-normal">
+                            <span className="text-[11px] sm:text-xs md:text-sm font-normal text-white/50 tracking-wider font-sans whitespace-normal">
                               {getGroupSubtitle(gName)}
                             </span>
                           )}
