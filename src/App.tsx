@@ -195,7 +195,7 @@ const formatTitle = (fileName: string) => {
   return result;
 };
 
-const getGroupSubtitle = (groupName: string) => {
+const getGroupSubtitle = (groupName: string): React.ReactNode => {
   const norm = groupName.trim().toLowerCase().replace(/\s+/g, ' ');
   if (norm === "osight se") {
     return "The Long-Standing #1 Amazon Best Seller Series.";
@@ -205,6 +205,13 @@ const getGroupSubtitle = (groupName: string) => {
   }
   if (norm === "osight c gn") {
     return "The first RMR open-style green dot version.";
+  }
+  if (norm === "osight xe amrs" || norm.includes("osight xe amrs")) {
+    return (
+      <>
+        Industry's First Advanced Multi-Reticle System (AMRS<sup>TM</sup>).
+      </>
+    );
   }
   return null;
 };
