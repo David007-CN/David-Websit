@@ -703,12 +703,20 @@ const Hero = () => {
     } */
   ];
 
+  const isFirstPlayRef = useRef(true);
+
   const handleNext = () => setCurrentSlide((prev) => (prev + 1) % slides.length);
   const handlePrev = () => setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
 
   useEffect(() => {
-    const timer = setInterval(handleNext, 10000);
-    return () => clearInterval(timer);
+    let delay = 6000;
+    if (currentSlide === 0 && isFirstPlayRef.current) {
+      delay = 2000;
+      isFirstPlayRef.current = false;
+    }
+
+    const timer = setTimeout(handleNext, delay);
+    return () => clearTimeout(timer);
   }, [currentSlide, slides.length]);
 
   return (
