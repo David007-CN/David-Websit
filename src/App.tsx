@@ -608,18 +608,18 @@ const Hero = () => {
       type: 'content',
       bg: "https://raw.githubusercontent.com/David007-CN/DW/refs/heads/main/David2_3840x2160_middle.jpg",
       content: (
-        <div className="relative z-10 text-center max-w-5xl px-6">
+        <div className="relative z-10 text-center max-w-5xl px-6 transform translate-y-[22%] md:translate-y-[5vh]">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1 }}
           >
-            <h1 className="mb-16 md:mb-24 lg:mb-32 flex flex-col items-center">
+            <h1 className="mb-16 md:mb-14 lg:mb-32 flex flex-col items-center">
               <div className="relative inline-block max-w-full">
-                <span className="font-teko font-semibold leading-none text-5xl md:text-8xl lg:text-[8.5rem] tracking-normal text-white">
+                <span className="font-teko font-semibold leading-none text-5xl md:text-[4.125rem] lg:text-[8.5rem] tracking-normal text-white">
                   Hello, Welcome
                 </span>
-                <span className="absolute left-1/2 -translate-x-1/2 top-full mt-2 md:mt-6 text-[8px] md:text-[10px] lg:text-xs font-display font-normal opacity-60 flex justify-center tracking-[0.1em] md:tracking-[0.35em] whitespace-nowrap w-[90vw] md:w-auto text-white/60">
+                <span className="absolute left-1/2 -translate-x-1/2 top-full mt-2 md:mt-3 lg:mt-6 text-[8px] md:text-[9px] lg:text-xs font-display font-normal opacity-60 flex justify-center tracking-[0.1em] md:tracking-[0.18em] lg:tracking-[0.35em] whitespace-nowrap w-[90vw] md:w-auto text-white/60">
                   {"An unknown designer. More than just a designer.".split("").map((char, i) => (
                     <span key={i}>{char === " " ? "\u00A0" : char}</span>
                   ))}
@@ -627,12 +627,12 @@ const Hero = () => {
               </div>
             </h1>
             
-            <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-6">
+            <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-3 lg:gap-6">
               <motion.button 
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => document.getElementById('works')?.scrollIntoView({ behavior: 'smooth' })}
-                className="w-48 md:w-40 lg:w-48 py-2 md:py-2 lg:py-2.5 border border-white/20 bg-white/5 backdrop-blur-sm text-white font-bold tracking-normal text-sm md:text-xs lg:text-base transition-all"
+                className="w-48 md:w-32 lg:w-48 py-2 md:py-1.5 lg:py-2.5 border border-white/20 bg-white/5 backdrop-blur-sm text-white font-bold tracking-normal text-sm md:text-xs lg:text-base transition-all"
               >
                 Learn More
               </motion.button>
@@ -640,10 +640,56 @@ const Hero = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
-                className="w-48 md:w-40 lg:w-48 py-2 md:py-2 lg:py-2.5 bg-brand-red text-white font-bold tracking-normal text-sm md:text-xs lg:text-base transition-all"
+                className="w-48 md:w-32 lg:w-48 py-2 md:py-1.5 lg:py-2.5 bg-brand-red text-white font-bold tracking-normal text-sm md:text-xs lg:text-base transition-all"
               >
                 Contact Now
               </motion.button>
+            </div>
+          </motion.div>
+        </div>
+      )
+    },
+    {
+      type: 'image',
+      desktop: "https://github.com/David007-CN/DW/blob/main/Banner/Studio_1920x1080.jpg?raw=true",
+      mobile: "https://github.com/David007-CN/DW/blob/main/Banner/Studio_1080x1920.jpg?raw=true",
+      alt: "Featured Work 2",
+      content: (
+        <div className="relative z-10 text-center max-w-5xl px-6 transform translate-y-[28%] md:translate-y-[5vh]">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 1 }}
+          >
+            <h1 className="mb-16 md:mb-14 lg:mb-32 flex flex-col items-center">
+              <div className="relative inline-block max-w-full">
+                <span className="font-teko font-semibold leading-none text-5xl md:text-[4.125rem] lg:text-[8.5rem] tracking-normal text-white">
+                  SEE THE POWER
+                </span>
+                <span className="absolute left-1/2 -translate-x-1/2 top-full mt-2 md:mt-3 lg:mt-6 text-[8.5px] md:text-[10px] lg:text-[13px] font-display font-normal opacity-100 flex justify-center tracking-[0.1em] md:tracking-[0.18em] lg:tracking-[0.3em] whitespace-nowrap w-[90vw] md:w-auto text-[#a3a3a3]">
+                  {"Trusted by IPSC Champions Worldwide".split("").map((char, i) => (
+                    <span key={i}>{char === " " ? "\u00A0" : char}</span>
+                  ))}
+                </span>
+              </div>
+            </h1>
+            
+            <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-3 lg:gap-6">
+              <a 
+                href="https://osight.com" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-block"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <motion.button 
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="w-56 md:w-44 lg:w-56 py-2 md:py-1.5 lg:py-2.5 bg-brand-red text-white font-bold tracking-normal text-sm md:text-xs lg:text-base transition-all"
+                >
+                  Experience the Power →
+                </motion.button>
+              </a>
             </div>
           </motion.div>
         </div>
@@ -666,7 +712,7 @@ const Hero = () => {
   }, [currentSlide, slides.length]);
 
   return (
-    <section id="home" className="relative h-screen flex items-center justify-center overflow-hidden bg-brand-dark pt-[56px] md:pt-[64px]">
+    <section id="home" className="relative h-screen md:h-[calc(56.25vw+64px)] lg:h-screen flex items-center justify-center overflow-hidden bg-brand-dark pt-[56px] md:pt-[64px]">
       <AnimatePresence initial={false}>
         <motion.div
           key={currentSlide}
@@ -706,18 +752,11 @@ const Hero = () => {
               );
             } else {
               return (
-                <div 
-                  className="absolute inset-0"
-                  onClick={(e) => {
-                    if (Math.abs(e.movementX) < 5) {
-                      document.getElementById('works')?.scrollIntoView({ behavior: 'smooth' });
-                    }
-                  }}
-                >
+                <div className="absolute inset-0 flex items-center justify-center">
                   <img 
                     src={getOptimizedUrl(slide.desktop!, 2560, 1440)} 
                     alt={slide.alt || 'Featured'}
-                    className="hidden md:block w-full h-full object-cover brightness-[0.8] hover:brightness-[0.9] transition-all duration-1000 pointer-events-none"
+                    className="absolute inset-0 hidden md:block w-full h-full object-cover transition-all duration-1000 pointer-events-none"
                     referrerPolicy="no-referrer"
                     fetchPriority="high"
                     loading="eager"
@@ -725,12 +764,13 @@ const Hero = () => {
                   <img 
                     src={getOptimizedUrl(slide.mobile!, 1080, 1800)} 
                     alt={slide.alt || 'Featured'}
-                    className="block md:hidden w-full h-full object-cover brightness-[0.8] pointer-events-none"
+                    className="absolute inset-0 block md:hidden w-full h-full object-cover pointer-events-none"
                     referrerPolicy="no-referrer"
                     fetchPriority="high"
                     loading="eager"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-brand-dark/40 pointer-events-none" />
+                  <div className={`absolute inset-0 ${currentSlide === 2 ? 'bg-black/10' : 'bg-black/60'} pointer-events-none`} />
+                  {slide.content}
                 </div>
               );
             }
