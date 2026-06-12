@@ -608,7 +608,7 @@ const Hero = () => {
       type: 'content',
       bg: "https://raw.githubusercontent.com/David007-CN/DW/refs/heads/main/David2_3840x2160_middle.jpg",
       content: (
-        <div className="relative z-10 text-center max-w-5xl px-6 pt-32 md:pt-0">
+        <div className="relative z-10 text-center max-w-5xl px-6">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -683,7 +683,7 @@ const Hero = () => {
             if (info.offset.x > threshold) handlePrev();
             else if (info.offset.x < -threshold) handleNext();
           }}
-          className="absolute inset-0 flex items-center justify-center cursor-grab active:cursor-grabbing touch-pan-y"
+          className="absolute top-[56px] md:top-[64px] inset-x-0 bottom-0 flex items-center justify-center cursor-grab active:cursor-grabbing touch-pan-y"
         >
           {(() => {
             const slide = slides[currentSlide];
