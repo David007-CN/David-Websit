@@ -649,12 +649,12 @@ const Hero = () => {
         </div>
       )
     },
-    /*{
+    {
       type: 'image',
-      desktop: "https://picsum.photos/seed/hero-banner-1/1920/1080",
-      mobile: "https://picsum.photos/seed/hero-banner-1-m/750/1334",
+      desktop: "https://github.com/David007-CN/DW/blob/main/Banner/XE%20AMRS%20Launch%20banner_1920x1080.jpg?raw=true",
+      mobile: "https://github.com/David007-CN/DW/blob/main/Banner/XE%20AMRS%20Launch%20banner_1080x1920.jpg?raw=true",
       alt: "Featured Work 1"
-    }*/
+    }
   ];
 
   const handleNext = () => setCurrentSlide((prev) => (prev + 1) % slides.length);
