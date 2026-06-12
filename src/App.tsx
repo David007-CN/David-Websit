@@ -695,12 +695,12 @@ const Hero = () => {
         </div>
       )
     },
-    {
+   /* {
       type: 'image',
       desktop: "https://github.com/David007-CN/DW/blob/main/Banner/XE%20AMRS%20Launch%20banner_1920x1080.jpg?raw=true",
       mobile: "https://github.com/David007-CN/DW/blob/main/Banner/XE%20AMRS%20Launch%20banner_1080x1920.jpg?raw=true",
       alt: "Featured Work 1"
-    }
+    } */
   ];
 
   const handleNext = () => setCurrentSlide((prev) => (prev + 1) % slides.length);
