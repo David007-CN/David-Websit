@@ -825,7 +825,7 @@ const Hero = () => {
 };
 
 const FeatureSection = () => (
-  <section id="about" className="py-16 md:py-24 lg:py-32 bg-brand-dark border-y border-white/5">
+  <section id="about" className="py-10 md:py-16 lg:py-20 bg-brand-dark border-y border-white/5">
     <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
       <motion.div 
         initial={{ opacity: 0, x: -30 }}
@@ -869,7 +869,7 @@ const FeatureSection = () => (
 );
 
 const ExperienceAndServices = () => (
-  <section id="services" className="py-16 md:py-24 lg:py-32 bg-brand-dark border-t border-white/5">
+  <section id="services" className="py-10 md:py-16 lg:py-20 bg-brand-dark border-t border-white/5">
     <div className="max-w-7xl mx-auto px-6">
       <div className="text-center mb-16 md:mb-24">
         <h2 className="text-3xl md:text-5xl font-display font-bold mb-4">Work & Capability</h2>
@@ -1036,7 +1036,7 @@ const Spotlight = () => {
   };
   
   return (
-    <section id="expertise" className="relative py-16 md:py-24 lg:py-32 overflow-hidden bg-[#0a0a0a]">
+    <section id="expertise" className="relative py-10 md:py-16 lg:py-20 overflow-hidden bg-[#0a0a0a]">
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         <div className="text-center mb-10 md:mb-16 lg:mb-20">
           <h2 className="text-3xl md:text-5xl font-display font-bold mb-4 max-w-md md:max-w-none mx-auto leading-tight">Selected Work</h2>
@@ -1258,7 +1258,7 @@ const Archive = ({ archiveProjects }: { archiveProjects: Project[] }) => {
   const [activeTouchId, setActiveTouchId] = useState<number | null>(null);
   
   return (
-    <section id="works" className="py-16 md:py-24 lg:py-32 bg-brand-dark">
+    <section id="works" className="py-10 md:py-16 lg:py-20 bg-brand-dark">
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-10 md:mb-16 lg:mb-20">
           <h2 
@@ -1598,7 +1598,7 @@ const Featured = () => {
   const selectedItem = selectedIndex !== null ? shuffledItems[selectedIndex] : null;
 
   return (
-    <section id="work-life-section" className="py-16 md:py-24 lg:py-32 bg-[#0A0A0A] overflow-hidden relative min-h-[500px]">
+    <section id="work-life-section" className="py-10 md:py-16 lg:py-20 bg-[#0A0A0A] overflow-hidden relative min-h-[500px]">
       <div className="max-w-7xl mx-auto px-6 mb-10 md:mb-16 text-center relative">
         <h2 className="text-3xl md:text-5xl font-display font-bold mb-4 tracking-tighter text-white">Work & Life</h2>
         <div className="w-12 h-[1px] bg-brand-red mx-auto mb-6" />
@@ -1808,7 +1808,7 @@ const Newsletter = () => {
   };
 
   return (
-    <section id="contact" className="py-16 md:py-24 lg:py-32 border-t border-white/5">
+    <section id="contact" className="py-10 md:py-16 lg:py-20 border-t border-white/5">
       <div className="max-w-3xl mx-auto px-6">
         <div className="text-center mb-10 md:mb-16">
           <h2 className="text-3xl md:text-5xl font-display font-bold mb-4 max-w-xs md:max-w-none mx-auto leading-tight">If I'm not available, please leave your contact details.</h2>
@@ -2635,9 +2635,8 @@ const HomePage = ({ archiveProjects }: { archiveProjects: Project[] }) => (
     <ExperienceAndServices />
     <Spotlight />
     <Archive archiveProjects={archiveProjects} />
-    <div className="h-16 md:h-24 bg-[#0A0A0A]" aria-hidden="true" />
-    <Featured />
     <Newsletter />
+    <Featured />
   </main>
 );
 
