@@ -1809,78 +1809,108 @@ const Newsletter = () => {
 
   return (
     <section id="contact" className="py-10 md:py-16 lg:py-20 border-t border-white/5">
-      <div className="max-w-3xl mx-auto px-6">
+      <div className="max-w-5xl mx-auto px-6">
         <div className="text-center mb-10 md:mb-16">
           <h2 className="text-3xl md:text-5xl font-display font-bold mb-4 max-w-xs md:max-w-none mx-auto leading-tight">If I'm not available, please leave your contact details.</h2>
           <div className="w-12 h-[1px] bg-brand-red mx-auto" />
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="relative group">
-              <input 
-                required
-                type="text" 
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Name *" 
-                className="w-full bg-transparent border-b border-white/20 py-4 px-2 outline-none focus:border-brand-red transition-colors text-sm placeholder:text-white/20"
-              />
-            </div>
-            <div className="relative group">
-              <input 
-                required
-                type="email" 
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="Email *" 
-                className="w-full bg-transparent border-b border-white/20 py-4 px-2 outline-none focus:border-brand-red transition-colors text-sm placeholder:text-white/20"
-              />
-            </div>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-stretch">
+          <div className="lg:col-span-7">
+            <form onSubmit={handleSubmit} className="space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="relative group">
+                  <input 
+                    required
+                    type="text" 
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="Name *" 
+                    className="w-full bg-transparent border-b border-white/20 py-4 px-2 outline-none focus:border-brand-red transition-colors text-sm placeholder:text-white/20"
+                  />
+                </div>
+                <div className="relative group">
+                  <input 
+                    required
+                    type="email" 
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="Email *" 
+                    className="w-full bg-transparent border-b border-white/20 py-4 px-2 outline-none focus:border-brand-red transition-colors text-sm placeholder:text-white/20"
+                  />
+                </div>
+              </div>
+
+              <div className="relative group">
+                <input 
+                  type="tel" 
+                  value={formData.phone}
+                  onChange={(e) => {
+                    const value = e.target.value.split(/[^0-9+\-() ]/).join('');
+                    setFormData({ ...formData, phone: value });
+                  }}
+                  pattern="[0-9+\\-() ]*"
+                  placeholder="Phone (Optional)" 
+                  className="w-full bg-transparent border-b border-white/20 py-4 px-2 outline-none focus:border-brand-red transition-colors text-sm placeholder:text-white/20"
+                />
+              </div>
+
+              <div className="relative group">
+                <textarea 
+                  maxLength={200}
+                  value={formData.message}
+                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                  placeholder="Message (Optional, max 200 characters)" 
+                  rows={4}
+                  className="w-full bg-transparent border-b border-white/20 py-4 px-2 outline-none focus:border-brand-red transition-colors text-sm placeholder:text-white/20 resize-none"
+                />
+                <div className="absolute right-2 bottom-2 text-[10px] font-bold tracking-widest opacity-30">
+                  {formData.message.length} / 200
+                </div>
+              </div>
+
+              <div className="text-center pt-4">
+                <motion.button 
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  disabled={status !== 'idle'}
+                  className="px-20 py-2.5 bg-brand-red text-white font-bold tracking-normal text-base disabled:opacity-50 disabled:cursor-not-allowed border-none outline-none focus:ring-0"
+                >
+                  {status === 'idle' ? 'Submit' : status === 'submitting' ? 'Sending...' : 'Success!'}
+                </motion.button>
+                <p className="mt-6 text-[10px] text-white/30 tracking-widest text-center">
+                  Your information is confidential. I’ll respond as soon as possible.
+                </p>
+              </div>
+            </form>
           </div>
 
-          <div className="relative group">
-            <input 
-              type="tel" 
-              value={formData.phone}
-              onChange={(e) => {
-                const value = e.target.value.split(/[^0-9+\-() ]/).join('');
-                setFormData({ ...formData, phone: value });
-              }}
-              pattern="[0-9+\\\\-() ]*"
-              placeholder="Phone (Optional)" 
-              className="w-full bg-transparent border-b border-white/20 py-4 px-2 outline-none focus:border-brand-red transition-colors text-sm placeholder:text-white/20"
-            />
-          </div>
-
-          <div className="relative group">
-            <textarea 
-              maxLength={200}
-              value={formData.message}
-              onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-              placeholder="Message (Optional, max 200 characters)" 
-              rows={4}
-              className="w-full bg-transparent border-b border-white/20 py-4 px-2 outline-none focus:border-brand-red transition-colors text-sm placeholder:text-white/20 resize-none"
-            />
-            <div className="absolute right-2 bottom-2 text-[10px] font-bold tracking-widest opacity-30">
-              {formData.message.length} / 200
+          <div className="lg:col-span-5 flex flex-col items-center justify-center p-8 bg-[#121212]/40 border border-white/5 rounded-2xl text-center relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-brand-red/10 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            
+            <div className="flex flex-col items-center justify-center py-6">
+              <div className="relative p-3 bg-white rounded-xl shadow-2xl transition-transform duration-300 group-hover:scale-[1.03] select-none">
+                <img 
+                  src={getOptimizedUrl("https://github.com/David007-CN/DW/blob/main/Contact%20information/WeChat.jpg?raw=true", 240, 240)}
+                  alt="WeChat QR Code"
+                  className="w-44 h-44 md:w-52 md:h-52 object-cover rounded-lg"
+                  referrerPolicy="no-referrer"
+                />
+                <div className="absolute -top-1.5 -left-1.5 w-4 h-4 border-t-2 border-l-2 border-brand-red" />
+                <div className="absolute -top-1.5 -right-1.5 w-4 h-4 border-t-2 border-r-2 border-brand-red" />
+                <div className="absolute -bottom-1.5 -left-1.5 w-4 h-4 border-b-2 border-l-2 border-brand-red" />
+                <div className="absolute -bottom-1.5 -right-1.5 w-4 h-4 border-b-2 border-r-2 border-brand-red" />
+              </div>
+              
+              <p className="mt-8 text-base font-display font-bold text-white tracking-wider">
+                Scan to connect
+              </p>
+              <p className="mt-2 text-xs text-[#a3a3a3] max-w-xs leading-relaxed">
+                Minimal note helps faster response.
+              </p>
             </div>
           </div>
-
-          <div className="text-center pt-8">
-            <motion.button 
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              disabled={status !== 'idle'}
-              className="px-20 py-2.5 bg-brand-red text-white font-bold tracking-normal text-base disabled:opacity-50 disabled:cursor-not-allowed border-none outline-none focus:ring-0"
-            >
-              {status === 'idle' ? 'Submit' : status === 'submitting' ? 'Sending...' : 'Success!'}
-            </motion.button>
-            <p className="mt-8 text-[10px] text-white/30 tracking-widest text-center">
-              Your information is confidential. I’ll respond as soon as possible.
-            </p>
-          </div>
-        </form>
+        </div>
       </div>
     </section>
   );
