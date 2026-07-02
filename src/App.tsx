@@ -601,7 +601,7 @@ const Hero = () => {
 
   type HeroSlide = 
     | { type: 'content'; bg: string; content: React.ReactNode }
-    | { type: 'image'; desktop: string; mobile: string; alt?: string; content?: React.ReactNode };
+    | { type: 'image'; desktop: string; mobile: string; alt?: string; content?: React.ReactNode; overlayClassName?: string };
 
   const slides: HeroSlide[] = [
     {
@@ -695,6 +695,13 @@ const Hero = () => {
         </div>
       )
     },
+    {
+      type: 'image',
+      desktop: "https://github.com/David007-CN/DW/blob/main/Banner/Personal%20Profile/David_1920x1080.jpg?raw=true",
+      mobile: "https://github.com/David007-CN/DW/blob/main/Banner/Personal%20Profile/David_1080x1920.jpg?raw=true",
+      alt: "David Personal Profile",
+      overlayClassName: "bg-black/10"
+    },
    /* {
       type: 'image',
       desktop: "https://github.com/David007-CN/DW/blob/main/Banner/XE%20AMRS%20Launch%20banner_1920x1080.jpg?raw=true",
@@ -777,7 +784,7 @@ const Hero = () => {
                     fetchPriority="high"
                     loading="eager"
                   />
-                  <div className={`absolute inset-0 ${currentSlide === 2 ? 'bg-black/10' : 'bg-black/60'} pointer-events-none`} />
+                  <div className={`absolute inset-0 ${slide.overlayClassName || 'bg-black/60'} pointer-events-none`} />
                   {slide.content}
                 </div>
               );
