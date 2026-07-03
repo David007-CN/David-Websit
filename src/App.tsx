@@ -697,8 +697,8 @@ const Hero = () => {
     },
     {
       type: 'image',
-      desktop: "https://github.com/David007-CN/DW/blob/main/Banner/Personal%20Profile/David_1920x1080.jpg?raw=true",
-      mobile: "https://github.com/David007-CN/DW/blob/main/Banner/Personal%20Profile/David_1080x1920.jpg?raw=true",
+      desktop: "https://github.com/David007-CN/DW/blob/main/Banner/Personal%20Profile/David2_1920x1080.jpg?raw=true",
+      mobile: "https://github.com/David007-CN/DW/blob/main/Banner/Personal%20Profile/David2_1080x1920.jpg?raw=true",
       alt: "David Personal Profile",
       overlayClassName: "bg-black/10"
     },
@@ -810,7 +810,7 @@ const Hero = () => {
       </button>
 
       {/* Slide Indicators */}
-      <div className="absolute bottom-12 left-1/2 -translate-x-1/2 flex gap-4 z-20">
+      <div className="absolute bottom-5 md:bottom-12 left-1/2 -translate-x-1/2 flex gap-4 z-20">
         {slides.map((_, i) => (
           <button
             key={i}
