@@ -53,16 +53,26 @@ const isMobile = typeof window !== 'undefined' ? /Android|webOS|iPhone|iPad|iPod
 const getOptimizedUrl = (url: string, width?: number, height?: number, avoidProxy?: boolean) => {
   if (!url) return url;
   
+  // Safe decode to prevent double encoding of %20, etc.
+  let decodedUrl = url;
+  try {
+    decodedUrl = decodeURIComponent(url);
+  } catch (e) {
+    try {
+      decodedUrl = decodeURI(url);
+    } catch (err) {}
+  }
+
   // 1. URL Normalization (especially for GitHub)
-  let rawUrl = url;
-  const isGithub = url.includes('github.com') || url.includes('raw.githubusercontent.com') || url.includes('jsdelivr.net');
+  let rawUrl = decodedUrl;
+  const isGithub = decodedUrl.includes('github.com') || decodedUrl.includes('raw.githubusercontent.com') || decodedUrl.includes('jsdelivr.net');
   
-  if (url.includes('github.com') && !url.includes('raw.githubusercontent.com')) {
-    rawUrl = url.replace('github.com', 'raw.githubusercontent.com')
+  if (decodedUrl.includes('github.com') && !decodedUrl.includes('raw.githubusercontent.com')) {
+    rawUrl = decodedUrl.replace('github.com', 'raw.githubusercontent.com')
                 .replace('/blob/', '/')
                 .replace('/refs/heads/', '/');
     // Strip query only if it's a blob URL being converted
-    if (url.includes('/blob/')) {
+    if (decodedUrl.includes('/blob/')) {
       rawUrl = rawUrl.split('?')[0];
     }
   }
@@ -697,8 +707,8 @@ const Hero = () => {
     },
     {
       type: 'image',
-      desktop: "https://raw.githubusercontent.com/David007-CN/DW/main/Banner/Personal%20Profile/David2_1920x1080.jpg?v=2",
-      mobile: "https://raw.githubusercontent.com/David007-CN/DW/main/Banner/Personal%20Profile/David2_1080x1920.jpg?v=2",
+      desktop: "https://raw.githubusercontent.com/David007-CN/DW/main/Banner/Personal%20Profile/David2_1920x1080.jpg?v=5",
+      mobile: "https://raw.githubusercontent.com/David007-CN/DW/main/Banner/Personal%20Profile/David2_1080x1920.jpg?v=5",
       alt: "David Personal Profile",
       overlayClassName: "bg-black/10"
     },
