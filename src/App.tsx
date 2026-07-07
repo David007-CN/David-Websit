@@ -737,7 +737,7 @@ const Hero = () => {
   }, [currentSlide, slides.length]);
 
   return (
-    <section id="home" className="relative w-full aspect-[9/16] md:aspect-[16/9] h-auto flex items-center justify-center overflow-hidden bg-brand-dark">
+    <section id="home" className="relative w-full h-[40rem] sm:h-[45rem] md:h-[55rem] lg:h-[60rem] flex items-center justify-center overflow-hidden bg-brand-dark pt-[56px] md:pt-[64px]">
       <AnimatePresence initial={false}>
         <motion.div
           key={currentSlide}
