@@ -721,9 +721,37 @@ const Hero = () => {
   ];
 
   const isFirstPlayRef = useRef(true);
+  const [zoomScale, setZoomScale] = useState(1);
 
   const handleNext = () => setCurrentSlide((prev) => (prev + 1) % slides.length);
   const handlePrev = () => setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
+
+  useEffect(() => {
+    setZoomScale(1);
+  }, [currentSlide]);
+
+  useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      if (e.ctrlKey) {
+        e.preventDefault();
+        const delta = e.deltaY;
+        setZoomScale((prev) => {
+          const newScale = prev - delta * 0.003;
+          return Math.min(Math.max(newScale, 0.5), 3.0);
+        });
+      }
+    };
+
+    const section = document.getElementById('home');
+    if (section) {
+      section.addEventListener('wheel', handleWheel, { passive: false });
+    }
+    return () => {
+      if (section) {
+        section.removeEventListener('wheel', handleWheel);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     let delay = 6000;
@@ -737,7 +765,7 @@ const Hero = () => {
   }, [currentSlide, slides.length]);
 
   return (
-    <section id="home" className="relative w-full aspect-[9/16] md:aspect-[16/9] h-auto flex items-center justify-center overflow-hidden bg-brand-dark pt-[56px] md:pt-[64px]">
+    <section id="home" className="relative w-full aspect-[9/16] md:aspect-[16/9] h-auto flex items-center justify-center overflow-hidden bg-brand-dark">
       <AnimatePresence initial={false}>
         <motion.div
           key={currentSlide}
@@ -745,6 +773,7 @@ const Hero = () => {
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -100 }}
           transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+          style={{ scale: zoomScale, originX: 0.5, originY: 0.5 }}
           drag="x"
           dragDirectionLock
           dragConstraints={{ left: 0, right: 0 }}
@@ -763,9 +792,17 @@ const Hero = () => {
                 <>
                   <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
                     <img 
-                      src={getOptimizedUrl(slide.bg, window.innerWidth > 768 ? 2560 : 1080, window.innerWidth > 768 ? 1440 : 1350)} 
+                      src={getOptimizedUrl(slide.bg, 2560, 1440)} 
                       alt="Background" 
-                      className="w-full h-full object-cover brightness-[0.4] contrast-110"
+                      className="absolute inset-0 hidden md:block w-full h-full object-cover brightness-[0.4] contrast-110"
+                      referrerPolicy="no-referrer"
+                      fetchPriority="high"
+                      loading="eager"
+                    />
+                    <img 
+                      src={getOptimizedUrl(slide.bg, 1080, 1920)} 
+                      alt="Background" 
+                      className="absolute inset-0 block md:hidden w-full h-full object-cover brightness-[0.4] contrast-110"
                       referrerPolicy="no-referrer"
                       fetchPriority="high"
                       loading="eager"
