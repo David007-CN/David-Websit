@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect, useLayoutEffect, useMemo, useRef, useCallback } from 'react';
 import { Routes, Route, Link, useNavigate, useLocation, useParams, Navigate } from 'react-router-dom';
-import { motion, AnimatePresence, useMotionValue, useAnimationFrame } from 'motion/react';
+import { motion, AnimatePresence, useMotionValue, useAnimationFrame, useScroll, useTransform } from 'motion/react';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import { 
   Twitter, 
@@ -608,6 +608,8 @@ const Navbar = () => {
 const Hero = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const navigate = useNavigate();
+  const { scrollY } = useScroll();
+  const bgScale = useTransform(scrollY, [0, 1000], [1, 1.25]);
 
   type HeroSlide = 
     | { type: 'content'; bg: string; content: React.ReactNode }
@@ -761,11 +763,12 @@ const Hero = () => {
             if (slide.type === 'content') {
               return (
                 <>
-                  <div className="absolute inset-0 z-0 pointer-events-none">
-                    <img 
+                  <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+                    <motion.img 
                       src={getOptimizedUrl(slide.bg, window.innerWidth > 768 ? 2560 : 1080, window.innerWidth > 768 ? 1440 : 1350)} 
                       alt="Background" 
-                      className="w-full h-full object-cover brightness-[0.4] contrast-110"
+                      className="w-full h-full object-cover brightness-[0.4] contrast-110 origin-center"
+                      style={{ scale: bgScale }}
                       referrerPolicy="no-referrer"
                       fetchPriority="high"
                       loading="eager"
@@ -777,19 +780,21 @@ const Hero = () => {
               );
             } else {
               return (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <img 
+                <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+                  <motion.img 
                     src={getOptimizedUrl(slide.desktop!, 2560, 1440)} 
                     alt={slide.alt || 'Featured'}
-                    className="absolute inset-0 hidden md:block w-full h-full object-cover transition-all duration-1000 pointer-events-none"
+                    className="absolute inset-0 hidden md:block w-full h-full object-cover pointer-events-none origin-center"
+                    style={{ scale: bgScale }}
                     referrerPolicy="no-referrer"
                     fetchPriority="high"
                     loading="eager"
                   />
-                  <img 
+                  <motion.img 
                     src={getOptimizedUrl(slide.mobile!, 1080, 1800)} 
                     alt={slide.alt || 'Featured'}
-                    className="absolute inset-0 block md:hidden w-full h-full object-cover pointer-events-none"
+                    className="absolute inset-0 block md:hidden w-full h-full object-cover pointer-events-none origin-center"
+                    style={{ scale: bgScale }}
                     referrerPolicy="no-referrer"
                     fetchPriority="high"
                     loading="eager"
