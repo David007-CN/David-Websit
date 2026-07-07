@@ -737,7 +737,7 @@ const Hero = () => {
   }, [currentSlide, slides.length]);
 
   return (
-    <section id="home" className="relative h-[42rem] md:h-[56.25rem] flex items-center justify-center overflow-hidden bg-brand-dark pt-[56px] md:pt-[64px]">
+    <section id="home" className="relative w-full aspect-[9/16] md:aspect-[16/9] h-auto flex items-center justify-center overflow-hidden bg-brand-dark pt-[56px] md:pt-[64px]">
       <AnimatePresence initial={false}>
         <motion.div
           key={currentSlide}
@@ -754,7 +754,7 @@ const Hero = () => {
             if (info.offset.x > threshold) handlePrev();
             else if (info.offset.x < -threshold) handleNext();
           }}
-          className="absolute top-[56px] md:top-[64px] inset-x-0 bottom-0 flex items-center justify-center cursor-grab active:cursor-grabbing touch-pan-y"
+          className="absolute inset-0 flex items-center justify-center cursor-grab active:cursor-grabbing touch-pan-y"
         >
           {(() => {
             const slide = slides[currentSlide];
