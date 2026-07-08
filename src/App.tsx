@@ -609,6 +609,19 @@ const Hero = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const navigate = useNavigate();
 
+  const [isLandscape, setIsLandscape] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    return window.innerWidth > window.innerHeight;
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsLandscape(window.innerWidth > window.innerHeight);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   type HeroSlide = 
     | { type: 'content'; bg: string; content: React.ReactNode }
     | { type: 'image'; desktop: string; mobile: string; alt?: string; content?: React.ReactNode; overlayClassName?: string };
@@ -618,7 +631,7 @@ const Hero = () => {
       type: 'content',
       bg: "https://raw.githubusercontent.com/David007-CN/DW/refs/heads/main/David2_3840x2160_middle.jpg",
       content: (
-        <div className="relative z-10 text-center max-w-5xl px-6 transform portrait:translate-y-[22%] landscape:translate-y-[3.5rem]">
+        <div className={`relative z-10 text-center max-w-5xl px-6 transform ${isLandscape ? 'translate-y-[3.5rem]' : 'translate-y-[22%]'}`}>
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -665,7 +678,7 @@ const Hero = () => {
       mobile: "https://github.com/David007-CN/DW/blob/main/Banner/Studio_1080x1920.jpg?raw=true",
       alt: "Featured Work 2",
       content: (
-        <div className="relative z-10 text-center max-w-5xl px-6 transform portrait:translate-y-[28%] landscape:translate-y-[3.5rem]">
+        <div className={`relative z-10 text-center max-w-5xl px-6 transform ${isLandscape ? 'translate-y-[3.5rem]' : 'translate-y-[28%]'}`}>
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -737,7 +750,7 @@ const Hero = () => {
   }, [currentSlide, slides.length]);
 
   return (
-    <section id="home" className="relative w-full portrait:aspect-[9/16] landscape:aspect-[16/9] h-auto flex items-center justify-center overflow-hidden bg-brand-dark pt-[56px] md:pt-[64px]">
+    <section id="home" className={`relative w-full ${isLandscape ? 'aspect-[16/9]' : 'aspect-[9/16]'} h-auto flex items-center justify-center overflow-hidden bg-brand-dark pt-[56px] md:pt-[64px]`}>
       <AnimatePresence initial={false}>
         <motion.div
           key={currentSlide}
@@ -763,17 +776,9 @@ const Hero = () => {
                 <>
                   <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
                     <img 
-                      src={getOptimizedUrl(slide.bg, 2560, 1440)} 
+                      src={getOptimizedUrl(slide.bg, isLandscape ? 2560 : 1080, isLandscape ? 1440 : 1920)} 
                       alt="Background" 
-                      className="absolute inset-0 hidden landscape:block w-full h-full object-cover brightness-[0.4] contrast-110"
-                      referrerPolicy="no-referrer"
-                      fetchPriority="high"
-                      loading="eager"
-                    />
-                    <img 
-                      src={getOptimizedUrl(slide.bg, 1080, 1920)} 
-                      alt="Background" 
-                      className="absolute inset-0 block landscape:hidden w-full h-full object-cover brightness-[0.4] contrast-110"
+                      className="absolute inset-0 w-full h-full object-cover brightness-[0.4] contrast-110"
                       referrerPolicy="no-referrer"
                       fetchPriority="high"
                       loading="eager"
@@ -787,17 +792,9 @@ const Hero = () => {
               return (
                 <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
                   <img 
-                    src={getOptimizedUrl(slide.desktop!, 2560, 1440)} 
+                    src={getOptimizedUrl(isLandscape ? slide.desktop! : slide.mobile!, isLandscape ? 2560 : 1080, isLandscape ? 1440 : 1800)} 
                     alt={slide.alt || 'Featured'}
-                    className="absolute inset-0 hidden landscape:block w-full h-full object-cover pointer-events-none"
-                    referrerPolicy="no-referrer"
-                    fetchPriority="high"
-                    loading="eager"
-                  />
-                  <img 
-                    src={getOptimizedUrl(slide.mobile!, 1080, 1800)} 
-                    alt={slide.alt || 'Featured'}
-                    className="absolute inset-0 block landscape:hidden w-full h-full object-cover pointer-events-none"
+                    className="absolute inset-0 w-full h-full object-cover pointer-events-none"
                     referrerPolicy="no-referrer"
                     fetchPriority="high"
                     loading="eager"
