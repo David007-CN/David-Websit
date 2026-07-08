@@ -618,7 +618,7 @@ const Hero = () => {
       type: 'content',
       bg: "https://raw.githubusercontent.com/David007-CN/DW/refs/heads/main/David2_3840x2160_middle.jpg",
       content: (
-        <div className="relative z-10 text-center max-w-5xl px-6 transform translate-y-[22%] md:translate-y-[3.5rem]">
+        <div className="relative z-10 text-center max-w-5xl px-6 transform portrait:translate-y-[22%] landscape:translate-y-[3.5rem]">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -665,7 +665,7 @@ const Hero = () => {
       mobile: "https://github.com/David007-CN/DW/blob/main/Banner/Studio_1080x1920.jpg?raw=true",
       alt: "Featured Work 2",
       content: (
-        <div className="relative z-10 text-center max-w-5xl px-6 transform translate-y-[28%] md:translate-y-[3.5rem]">
+        <div className="relative z-10 text-center max-w-5xl px-6 transform portrait:translate-y-[28%] landscape:translate-y-[3.5rem]">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -737,7 +737,7 @@ const Hero = () => {
   }, [currentSlide, slides.length]);
 
   return (
-    <section id="home" className="relative w-full h-[40rem] sm:h-[45rem] md:h-[55rem] lg:h-[60rem] flex items-center justify-center overflow-hidden bg-brand-dark pt-[56px] md:pt-[64px]">
+    <section id="home" className="relative w-full portrait:aspect-[9/16] landscape:aspect-[16/9] h-auto flex items-center justify-center overflow-hidden bg-brand-dark pt-[56px] md:pt-[64px]">
       <AnimatePresence initial={false}>
         <motion.div
           key={currentSlide}
@@ -765,7 +765,7 @@ const Hero = () => {
                     <img 
                       src={getOptimizedUrl(slide.bg, 2560, 1440)} 
                       alt="Background" 
-                      className="absolute inset-0 hidden md:block w-full h-full object-cover brightness-[0.4] contrast-110"
+                      className="absolute inset-0 hidden landscape:block w-full h-full object-cover brightness-[0.4] contrast-110"
                       referrerPolicy="no-referrer"
                       fetchPriority="high"
                       loading="eager"
@@ -773,7 +773,7 @@ const Hero = () => {
                     <img 
                       src={getOptimizedUrl(slide.bg, 1080, 1920)} 
                       alt="Background" 
-                      className="absolute inset-0 block md:hidden w-full h-full object-cover brightness-[0.4] contrast-110"
+                      className="absolute inset-0 block landscape:hidden w-full h-full object-cover brightness-[0.4] contrast-110"
                       referrerPolicy="no-referrer"
                       fetchPriority="high"
                       loading="eager"
@@ -789,7 +789,7 @@ const Hero = () => {
                   <img 
                     src={getOptimizedUrl(slide.desktop!, 2560, 1440)} 
                     alt={slide.alt || 'Featured'}
-                    className="absolute inset-0 hidden md:block w-full h-full object-cover pointer-events-none"
+                    className="absolute inset-0 hidden landscape:block w-full h-full object-cover pointer-events-none"
                     referrerPolicy="no-referrer"
                     fetchPriority="high"
                     loading="eager"
@@ -797,7 +797,7 @@ const Hero = () => {
                   <img 
                     src={getOptimizedUrl(slide.mobile!, 1080, 1800)} 
                     alt={slide.alt || 'Featured'}
-                    className="absolute inset-0 block md:hidden w-full h-full object-cover pointer-events-none"
+                    className="absolute inset-0 block landscape:hidden w-full h-full object-cover pointer-events-none"
                     referrerPolicy="no-referrer"
                     fetchPriority="high"
                     loading="eager"
