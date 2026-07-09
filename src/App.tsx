@@ -609,18 +609,16 @@ const Hero = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const navigate = useNavigate();
 
-  const [windowSize, setWindowSize] = useState(() => {
-    if (typeof window === 'undefined') return { width: 1920, height: 1080 };
-    return { width: window.innerWidth, height: window.innerHeight };
+  const [isLandscape, setIsLandscape] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    return window.innerWidth > window.innerHeight;
   });
-
-  const isLandscape = windowSize.width > windowSize.height;
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
     
     const handleResize = () => {
-      setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+      setIsLandscape(window.innerWidth > window.innerHeight);
     };
     
     handleResize();
@@ -629,22 +627,6 @@ const Hero = () => {
       window.removeEventListener('resize', handleResize);
     };
   }, []);
-
-  const baseWidth = isLandscape ? 1920 : 1080;
-  const baseHeight = isLandscape ? 1080 : 1920;
-  const scale = windowSize.width / baseWidth;
-  const containerHeight = baseHeight * scale;
-
-  const wrapperStyle: React.CSSProperties = {
-    width: `${baseWidth}px`,
-    height: `${baseHeight}px`,
-    transform: `scale(${scale})`,
-    transformOrigin: 'top left',
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    overflow: 'hidden',
-  };
 
   type HeroSlide = 
     | { type: 'content'; bg: string; content: React.ReactNode }
@@ -656,9 +638,9 @@ const Hero = () => {
       bg: "https://raw.githubusercontent.com/David007-CN/DW/refs/heads/main/David2_3840x2160_middle.jpg",
       content: (
         <div 
-          className="relative z-10 text-center w-full px-6"
+          className="relative z-10 text-center w-full px-[3vw]"
           style={{
-            transform: isLandscape ? 'translateY(32px)' : 'translateY(120px)',
+            transform: isLandscape ? 'translateY(1.66vw)' : 'translateY(11.11vw)',
           }}
         >
           <motion.div
@@ -667,20 +649,23 @@ const Hero = () => {
             transition={{ duration: 1 }}
           >
             <h1 
-              className={`flex flex-col items-center ${isLandscape ? 'mb-[100px]' : 'mb-[140px]'}`}
+              className={`flex flex-col items-center ${isLandscape ? 'mb-[5.2vw]' : 'mb-[12.96vw]'}`}
             >
               <div className="relative inline-block max-w-full">
                 <span 
-                  className={`font-teko font-semibold leading-none tracking-normal text-white ${isLandscape ? 'text-[136px]' : 'text-[96px]'}`}
+                  className="font-teko font-semibold leading-none tracking-normal text-white"
+                  style={{
+                    fontSize: isLandscape ? '7.08vw' : '8.88vw',
+                  }}
                 >
                   Hello, Welcome
                 </span>
                 <span 
                   className="absolute left-1/2 -translate-x-1/2 top-full opacity-60 flex justify-center whitespace-nowrap text-white/60 font-display font-normal"
                   style={{
-                    fontSize: isLandscape ? '16px' : '20px',
+                    fontSize: isLandscape ? '0.83vw' : '1.85vw',
                     letterSpacing: isLandscape ? '0.35em' : '0.15em',
-                    marginTop: isLandscape ? '16px' : '24px',
+                    marginTop: isLandscape ? '0.83vw' : '2.22vw',
                   }}
                 >
                   {"An unknown designer. More than just a designer.".split("").map((char, i) => (
@@ -690,12 +675,24 @@ const Hero = () => {
               </div>
             </h1>
             
-            <div className={`flex items-center justify-center ${isLandscape ? 'flex-row gap-[24px]' : 'flex-col gap-[32px]'}`}>
+            <div 
+              className="flex items-center justify-center"
+              style={{
+                gap: isLandscape ? '1.25vw' : '2.96vw',
+                flexDirection: isLandscape ? 'row' : 'column',
+              }}
+            >
               <motion.button 
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => document.getElementById('works')?.scrollIntoView({ behavior: 'smooth' })}
-                className={`border border-white/20 bg-white/5 backdrop-blur-sm text-white font-bold tracking-normal transition-all ${isLandscape ? 'w-[192px] py-[12px] text-[16px]' : 'w-[280px] py-[18px] text-[24px]'}`}
+                className="border border-white/20 bg-white/5 backdrop-blur-sm text-white font-bold tracking-normal transition-all"
+                style={{
+                  width: isLandscape ? '10vw' : '25.92vw',
+                  paddingTop: isLandscape ? '0.625vw' : '1.66vw',
+                  paddingBottom: isLandscape ? '0.625vw' : '1.66vw',
+                  fontSize: isLandscape ? '0.83vw' : '2.22vw',
+                }}
               >
                 Learn More
               </motion.button>
@@ -703,7 +700,13 @@ const Hero = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
-                className={`bg-brand-red text-white font-bold tracking-normal transition-all ${isLandscape ? 'w-[192px] py-[12px] text-[16px]' : 'w-[280px] py-[18px] text-[24px]'}`}
+                className="bg-brand-red text-white font-bold tracking-normal transition-all"
+                style={{
+                  width: isLandscape ? '10vw' : '25.92vw',
+                  paddingTop: isLandscape ? '0.625vw' : '1.66vw',
+                  paddingBottom: isLandscape ? '0.625vw' : '1.66vw',
+                  fontSize: isLandscape ? '0.83vw' : '2.22vw',
+                }}
               >
                 Contact Now
               </motion.button>
@@ -719,9 +722,9 @@ const Hero = () => {
       alt: "Featured Work 2",
       content: (
         <div 
-          className="relative z-10 text-center w-full px-6"
+          className="relative z-10 text-center w-full px-[3vw]"
           style={{
-            transform: isLandscape ? 'translateY(32px)' : 'translateY(120px)',
+            transform: isLandscape ? 'translateY(1.66vw)' : 'translateY(11.11vw)',
           }}
         >
           <motion.div
@@ -730,20 +733,23 @@ const Hero = () => {
             transition={{ duration: 1 }}
           >
             <h1 
-              className={`flex flex-col items-center ${isLandscape ? 'mb-[100px]' : 'mb-[140px]'}`}
+              className={`flex flex-col items-center ${isLandscape ? 'mb-[5.2vw]' : 'mb-[12.96vw]'}`}
             >
               <div className="relative inline-block max-w-full">
                 <span 
-                  className={`font-teko font-semibold leading-none tracking-normal text-white ${isLandscape ? 'text-[136px]' : 'text-[96px]'}`}
+                  className="font-teko font-semibold leading-none tracking-normal text-white"
+                  style={{
+                    fontSize: isLandscape ? '7.08vw' : '8.88vw',
+                  }}
                 >
                   SEE THE POWER
                 </span>
                 <span 
                   className="absolute left-1/2 -translate-x-1/2 top-full opacity-100 flex justify-center whitespace-nowrap text-[#a3a3a3] font-display font-normal"
                   style={{
-                    fontSize: isLandscape ? '16px' : '20px',
+                    fontSize: isLandscape ? '0.83vw' : '1.85vw',
                     letterSpacing: isLandscape ? '0.3em' : '0.15em',
-                    marginTop: isLandscape ? '16px' : '24px',
+                    marginTop: isLandscape ? '0.83vw' : '2.22vw',
                   }}
                 >
                   {"Trusted by IPSC Champions Worldwide".split("").map((char, i) => (
@@ -753,7 +759,13 @@ const Hero = () => {
               </div>
             </h1>
             
-            <div className={`flex items-center justify-center ${isLandscape ? 'flex-row gap-[24px]' : 'flex-col gap-[32px]'}`}>
+            <div 
+              className="flex items-center justify-center"
+              style={{
+                gap: isLandscape ? '1.25vw' : '2.96vw',
+                flexDirection: isLandscape ? 'row' : 'column',
+              }}
+            >
               <a 
                 href="https://osight.com" 
                 target="_blank" 
@@ -764,7 +776,13 @@ const Hero = () => {
                 <motion.button 
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className={`bg-brand-red text-white font-bold tracking-normal transition-all ${isLandscape ? 'w-[240px] py-[12px] text-[16px]' : 'w-[320px] py-[18px] text-[24px]'}`}
+                  className="bg-brand-red text-white font-bold tracking-normal transition-all"
+                  style={{
+                    width: isLandscape ? '12.5vw' : '29.63vw',
+                    paddingTop: isLandscape ? '0.625vw' : '1.66vw',
+                    paddingBottom: isLandscape ? '0.625vw' : '1.66vw',
+                    fontSize: isLandscape ? '0.83vw' : '2.22vw',
+                  }}
                 >
                   Experience the Power →
                 </motion.button>
@@ -802,71 +820,66 @@ const Hero = () => {
   return (
     <section 
       id="home" 
-      className="relative w-full overflow-hidden bg-brand-dark"
-      style={{
-        height: `${containerHeight}px`,
-      }}
+      className={`relative w-full ${isLandscape ? 'aspect-[16/9]' : 'aspect-[9/16]'} h-auto overflow-hidden bg-brand-dark`}
     >
-      <div style={wrapperStyle}>
-        <AnimatePresence initial={false}>
-          <motion.div
-            key={currentSlide}
-            initial={{ opacity: 0, x: 100 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -100 }}
-            transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-            drag="x"
-            dragDirectionLock
-            dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={0.7}
-            onDragEnd={(_, info) => {
-              const threshold = 30;
-              if (info.offset.x > threshold) handlePrev();
-              else if (info.offset.x < -threshold) handleNext();
-            }}
-            className="absolute inset-0 flex items-center justify-center cursor-grab active:cursor-grabbing touch-pan-y"
-          >
-            {(() => {
-              const slide = slides[currentSlide];
-              const bgUrl = slide.type === 'content' 
-                ? slide.bg 
-                : (isLandscape ? slide.desktop! : slide.mobile!);
-              const overlayClass = slide.type === 'content'
-                ? 'bg-gradient-to-b from-brand-dark/50 via-transparent to-brand-dark/75'
-                : (slide.overlayClassName || 'bg-black/60');
+      <AnimatePresence initial={false}>
+        <motion.div
+          key={currentSlide}
+          initial={{ opacity: 0, x: 100 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -100 }}
+          transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+          drag="x"
+          dragDirectionLock
+          dragConstraints={{ left: 0, right: 0 }}
+          dragElastic={0.7}
+          onDragEnd={(_, info) => {
+            const threshold = 30;
+            if (info.offset.x > threshold) handlePrev();
+            else if (info.offset.x < -threshold) handleNext();
+          }}
+          className="absolute inset-0 flex items-center justify-center cursor-grab active:cursor-grabbing touch-pan-y"
+        >
+          {(() => {
+            const slide = slides[currentSlide];
+            const bgUrl = slide.type === 'content' 
+              ? slide.bg 
+              : (isLandscape ? slide.desktop! : slide.mobile!);
+            const overlayClass = slide.type === 'content'
+              ? 'bg-gradient-to-b from-brand-dark/50 via-transparent to-brand-dark/75'
+              : (slide.overlayClassName || 'bg-black/60');
 
-              return (
-                <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
-                  {/* Background Image Container */}
-                  <div className="absolute inset-0 z-0 pointer-events-none select-none">
-                    <img 
-                      src={getOptimizedUrl(bgUrl, baseWidth, baseHeight)} 
-                      alt={slide.type === 'image' ? (slide.alt || 'Featured') : 'Background'} 
-                      className="absolute inset-0 w-full h-full object-cover brightness-[0.4] contrast-110"
-                      style={{
-                        transform: 'scale(1.02)', // Avoid sub-pixel white gaps
-                      }}
-                      referrerPolicy="no-referrer"
-                      fetchPriority="high"
-                      loading="eager"
-                    />
-                    <div className={`absolute inset-0 ${overlayClass}`} />
-                  </div>
-
-                  {/* Slide Content Container */}
-                  {slide.content && (
-                    <div className="relative z-10 w-full h-full flex items-center justify-center pointer-events-none">
-                      <div className="pointer-events-auto w-full">
-                        {slide.content}
-                      </div>
-                    </div>
-                  )}
+            return (
+              <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+                {/* Background Image Container */}
+                <div className="absolute inset-0 z-0 pointer-events-none select-none">
+                  <img 
+                    src={getOptimizedUrl(bgUrl, isLandscape ? 2560 : 1080, isLandscape ? 1440 : 1920)} 
+                    alt={slide.type === 'image' ? (slide.alt || 'Featured') : 'Background'} 
+                    className="absolute inset-0 w-full h-full object-cover brightness-[0.4] contrast-110"
+                    style={{
+                      transform: 'scale(1.02)', // Avoid sub-pixel white gaps
+                    }}
+                    referrerPolicy="no-referrer"
+                    fetchPriority="high"
+                    loading="eager"
+                  />
+                  <div className={`absolute inset-0 ${overlayClass}`} />
                 </div>
-              );
-            })()}
-          </motion.div>
-        </AnimatePresence>
-      </div>
+
+                {/* Slide Content Container */}
+                {slide.content && (
+                  <div className="relative z-10 w-full h-full flex items-center justify-center pointer-events-none">
+                    <div className="pointer-events-auto w-full">
+                      {slide.content}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+        </motion.div>
+      </AnimatePresence>
 
       {/* Navigation Arrows */}
       <button 
