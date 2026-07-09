@@ -614,32 +614,17 @@ const Hero = () => {
     return window.innerWidth > window.innerHeight;
   });
 
-  const [containerWidth, setContainerWidth] = useState(1920);
-  const containerRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     if (typeof window === 'undefined') return;
     
     const updateSize = () => {
       setIsLandscape(window.innerWidth > window.innerHeight);
-      if (containerRef.current) {
-        setContainerWidth(containerRef.current.getBoundingClientRect().width);
-      }
     };
     
     updateSize();
     
-    const observer = new ResizeObserver(() => {
-      updateSize();
-    });
-    
-    if (containerRef.current) {
-      observer.observe(containerRef.current);
-    }
-    
     window.addEventListener('resize', updateSize);
     return () => {
-      observer.disconnect();
       window.removeEventListener('resize', updateSize);
     };
   }, []);
@@ -653,23 +638,23 @@ const Hero = () => {
       type: 'content',
       bg: "https://raw.githubusercontent.com/David007-CN/DW/refs/heads/main/David2_3840x2160_middle.jpg",
       content: (
-        <div className={`relative z-10 text-center px-6 transform ${isLandscape ? 'translate-y-[32px]' : 'translate-y-[120px]'}`}>
+        <div className={`relative z-10 text-center px-6 transform ${isLandscape ? 'translate-y-[1.8vw]' : 'translate-y-[11vw]'}`}>
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1 }}
           >
-            <h1 className={`flex flex-col items-center ${isLandscape ? 'mb-[100px]' : 'mb-[140px]'}`}>
+            <h1 className={`flex flex-col items-center ${isLandscape ? 'mb-[5vw]' : 'mb-[13vw]'}`}>
               <div className="relative inline-block max-w-full">
-                <span className={`font-teko font-semibold leading-none tracking-normal text-white ${isLandscape ? 'text-[136px]' : 'text-[96px]'}`}>
+                <span className={`font-teko font-semibold leading-none tracking-normal text-white ${isLandscape ? 'text-[7vw]' : 'text-[9vw]'}`}>
                   Hello, Welcome
                 </span>
                 <span 
                   className={`absolute left-1/2 -translate-x-1/2 top-full opacity-60 flex justify-center whitespace-nowrap text-white/60 font-display font-normal`}
                   style={{
-                    fontSize: isLandscape ? '16px' : '20px',
+                    fontSize: isLandscape ? '0.85vw' : '1.8vw',
                     letterSpacing: isLandscape ? '0.35em' : '0.15em',
-                    marginTop: isLandscape ? '16px' : '24px',
+                    marginTop: isLandscape ? '0.8vw' : '2.2vw',
                   }}
                 >
                   {"An unknown designer. More than just a designer.".split("").map((char, i) => (
@@ -679,12 +664,18 @@ const Hero = () => {
               </div>
             </h1>
             
-            <div className={`flex items-center justify-center ${isLandscape ? 'flex-row gap-[24px]' : 'flex-col gap-[32px]'}`}>
+            <div className={`flex items-center justify-center ${isLandscape ? 'flex-row gap-[1.25vw]' : 'flex-col gap-[3vw]'}`}>
               <motion.button 
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => document.getElementById('works')?.scrollIntoView({ behavior: 'smooth' })}
-                className={`border border-white/20 bg-white/5 backdrop-blur-sm text-white font-bold tracking-normal transition-all ${isLandscape ? 'w-[192px] py-[12px] text-[16px]' : 'w-[280px] py-[18px] text-[24px]'}`}
+                className="border border-white/20 bg-white/5 backdrop-blur-sm text-white font-bold tracking-normal transition-all"
+                style={{
+                  width: isLandscape ? '10vw' : '26vw',
+                  paddingTop: isLandscape ? '0.6vw' : '1.6vw',
+                  paddingBottom: isLandscape ? '0.6vw' : '1.6vw',
+                  fontSize: isLandscape ? '0.85vw' : '2.2vw',
+                }}
               >
                 Learn More
               </motion.button>
@@ -692,7 +683,13 @@ const Hero = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
-                className={`bg-brand-red text-white font-bold tracking-normal transition-all ${isLandscape ? 'w-[192px] py-[12px] text-[16px]' : 'w-[280px] py-[18px] text-[24px]'}`}
+                className="bg-brand-red text-white font-bold tracking-normal transition-all"
+                style={{
+                  width: isLandscape ? '10vw' : '26vw',
+                  paddingTop: isLandscape ? '0.6vw' : '1.6vw',
+                  paddingBottom: isLandscape ? '0.6vw' : '1.6vw',
+                  fontSize: isLandscape ? '0.85vw' : '2.2vw',
+                }}
               >
                 Contact Now
               </motion.button>
@@ -707,23 +704,23 @@ const Hero = () => {
       mobile: "https://github.com/David007-CN/DW/blob/main/Banner/Studio_1080x1920.jpg?raw=true",
       alt: "Featured Work 2",
       content: (
-        <div className={`relative z-10 text-center px-6 transform ${isLandscape ? 'translate-y-[32px]' : 'translate-y-[120px]'}`}>
+        <div className={`relative z-10 text-center px-6 transform ${isLandscape ? 'translate-y-[1.8vw]' : 'translate-y-[11vw]'}`}>
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1 }}
           >
-            <h1 className={`flex flex-col items-center ${isLandscape ? 'mb-[100px]' : 'mb-[140px]'}`}>
+            <h1 className={`flex flex-col items-center ${isLandscape ? 'mb-[5vw]' : 'mb-[13vw]'}`}>
               <div className="relative inline-block max-w-full">
-                <span className={`font-teko font-semibold leading-none tracking-normal text-white ${isLandscape ? 'text-[136px]' : 'text-[96px]'}`}>
+                <span className={`font-teko font-semibold leading-none tracking-normal text-white ${isLandscape ? 'text-[7vw]' : 'text-[9vw]'}`}>
                   SEE THE POWER
                 </span>
                 <span 
                   className={`absolute left-1/2 -translate-x-1/2 top-full opacity-100 flex justify-center whitespace-nowrap text-[#a3a3a3] font-display font-normal`}
                   style={{
-                    fontSize: isLandscape ? '16px' : '20px',
+                    fontSize: isLandscape ? '0.85vw' : '1.8vw',
                     letterSpacing: isLandscape ? '0.3em' : '0.15em',
-                    marginTop: isLandscape ? '16px' : '24px',
+                    marginTop: isLandscape ? '0.8vw' : '2.2vw',
                   }}
                 >
                   {"Trusted by IPSC Champions Worldwide".split("").map((char, i) => (
@@ -744,7 +741,13 @@ const Hero = () => {
                 <motion.button 
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className={`bg-brand-red text-white font-bold tracking-normal transition-all ${isLandscape ? 'w-[240px] py-[12px] text-[16px]' : 'w-[320px] py-[18px] text-[24px]'}`}
+                  className="bg-brand-red text-white font-bold tracking-normal transition-all"
+                  style={{
+                    width: isLandscape ? '12.5vw' : '30vw',
+                    paddingTop: isLandscape ? '0.6vw' : '1.6vw',
+                    paddingBottom: isLandscape ? '0.6vw' : '1.6vw',
+                    fontSize: isLandscape ? '0.85vw' : '2.2vw',
+                  }}
                 >
                   Experience the Power →
                 </motion.button>
@@ -779,30 +782,10 @@ const Hero = () => {
     return () => clearTimeout(timer);
   }, [currentSlide, slides.length]);
 
-  const baseWidth = isLandscape ? 1920 : 1080;
-  const baseHeight = isLandscape ? 1080 : 1920;
-  const scale = containerWidth / baseWidth;
-  const containerHeight = baseHeight * scale;
-
-  const wrapperStyle: React.CSSProperties = {
-    width: `${baseWidth}px`,
-    height: `${baseHeight}px`,
-    transform: `scale(${scale})`,
-    transformOrigin: 'top left',
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    overflow: 'hidden',
-  };
-
   return (
     <section 
-      ref={containerRef}
       id="home" 
-      className="relative w-full overflow-hidden bg-brand-dark"
-      style={{
-        height: `${containerHeight}px`,
-      }}
+      className={`relative w-full ${isLandscape ? 'aspect-[16/9]' : 'aspect-[9/16]'} h-auto flex items-center justify-center overflow-hidden bg-brand-dark pt-[56px] md:pt-[64px]`}
     >
       <AnimatePresence initial={false}>
         <motion.div
@@ -822,47 +805,42 @@ const Hero = () => {
           }}
           className="absolute inset-0 flex items-center justify-center cursor-grab active:cursor-grabbing touch-pan-y"
         >
-          {/* Synchronously scaled container */}
-          <div style={wrapperStyle}>
-            {(() => {
-              const slide = slides[currentSlide];
-              if (slide.type === 'content') {
-                return (
-                  <>
-                    <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-                      <img 
-                        src={getOptimizedUrl(slide.bg, baseWidth, baseHeight)} 
-                        alt="Background" 
-                        style={{ width: `${baseWidth}px`, height: `${baseHeight}px` }}
-                        className="absolute inset-0 object-cover brightness-[0.4] contrast-110"
-                        referrerPolicy="no-referrer"
-                        fetchPriority="high"
-                        loading="eager"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-b from-brand-dark/50 via-transparent to-brand-dark/75" />
-                    </div>
-                    {slide.content}
-                  </>
-                );
-              } else {
-                return (
-                  <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+          {(() => {
+            const slide = slides[currentSlide];
+            if (slide.type === 'content') {
+              return (
+                <>
+                  <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
                     <img 
-                      src={getOptimizedUrl(isLandscape ? slide.desktop! : slide.mobile!, baseWidth, baseHeight)} 
-                      alt={slide.alt || 'Featured'}
-                      style={{ width: `${baseWidth}px`, height: `${baseHeight}px` }}
-                      className="absolute inset-0 object-cover pointer-events-none"
+                      src={getOptimizedUrl(slide.bg, isLandscape ? 2560 : 1080, isLandscape ? 1440 : 1920)} 
+                      alt="Background" 
+                      className="absolute inset-0 w-full h-full object-cover brightness-[0.4] contrast-110"
                       referrerPolicy="no-referrer"
                       fetchPriority="high"
                       loading="eager"
                     />
-                    <div className={`absolute inset-0 ${slide.overlayClassName || 'bg-black/60'} pointer-events-none`} />
-                    {slide.content}
+                    <div className="absolute inset-0 bg-gradient-to-b from-brand-dark/50 via-transparent to-brand-dark/75" />
                   </div>
-                );
-              }
-            })()}
-          </div>
+                  {slide.content}
+                </>
+              );
+            } else {
+              return (
+                <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+                  <img 
+                    src={getOptimizedUrl(isLandscape ? slide.desktop! : slide.mobile!, isLandscape ? 2560 : 1080, isLandscape ? 1440 : 1800)} 
+                    alt={slide.alt || 'Featured'}
+                    className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                    referrerPolicy="no-referrer"
+                    fetchPriority="high"
+                    loading="eager"
+                  />
+                  <div className={`absolute inset-0 ${slide.overlayClassName || 'bg-black/60'} pointer-events-none`} />
+                  {slide.content}
+                </div>
+              );
+            }
+          })()}
         </motion.div>
       </AnimatePresence>
 
