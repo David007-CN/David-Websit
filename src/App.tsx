@@ -614,6 +614,8 @@ const Hero = () => {
     return window.innerWidth > window.innerHeight;
   });
 
+  const [isBannerHovered, setIsBannerHovered] = useState(false);
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
     
@@ -640,7 +642,10 @@ const Hero = () => {
         <div 
           className="relative z-10 text-center w-full px-[3vw]"
           style={{
-            transform: isLandscape ? 'translateY(1.66vw)' : 'translateY(11.11vw)',
+            transform: isLandscape 
+              ? `translateY(${isBannerHovered ? '1.2vw' : '1.66vw'}) scale(${isBannerHovered ? 1.03 : 1})` 
+              : `translateY(${isBannerHovered ? '10vw' : '11.11vw'}) scale(${isBannerHovered ? 1.03 : 1})`,
+            transition: 'transform 1s cubic-bezier(0.25, 1, 0.5, 1)',
           }}
         >
           <motion.div
@@ -724,7 +729,10 @@ const Hero = () => {
         <div 
           className="relative z-10 text-center w-full px-[3vw]"
           style={{
-            transform: isLandscape ? 'translateY(1.66vw)' : 'translateY(11.11vw)',
+            transform: isLandscape 
+              ? `translateY(${isBannerHovered ? '1.2vw' : '1.66vw'}) scale(${isBannerHovered ? 1.03 : 1})` 
+              : `translateY(${isBannerHovered ? '10vw' : '11.11vw'}) scale(${isBannerHovered ? 1.03 : 1})`,
+            transition: 'transform 1s cubic-bezier(0.25, 1, 0.5, 1)',
           }}
         >
           <motion.div
@@ -821,6 +829,8 @@ const Hero = () => {
     <section 
       id="home" 
       className={`relative w-full ${isLandscape ? 'aspect-[16/9]' : 'aspect-[9/16]'} h-auto overflow-hidden bg-brand-dark`}
+      onMouseEnter={() => setIsBannerHovered(true)}
+      onMouseLeave={() => setIsBannerHovered(false)}
     >
       <AnimatePresence initial={false}>
         <motion.div
@@ -839,7 +849,7 @@ const Hero = () => {
             if (info.offset.x > threshold) handlePrev();
             else if (info.offset.x < -threshold) handleNext();
           }}
-          className={`absolute inset-0 flex items-center justify-center ${isMobile ? "cursor-grab active:cursor-grabbing touch-pan-y pointer-events-auto" : "pointer-events-none"}`}
+          className={`absolute inset-0 flex items-center justify-center pointer-events-auto ${isMobile ? "cursor-grab active:cursor-grabbing touch-pan-y" : "cursor-default"}`}
         >
           {(() => {
             const slide = slides[currentSlide];
@@ -859,7 +869,8 @@ const Hero = () => {
                     alt={slide.type === 'image' ? (slide.alt || 'Featured') : 'Background'} 
                     className="absolute inset-0 w-full h-full object-cover brightness-[0.4] contrast-110"
                     style={{
-                      transform: 'scale(1.02)', // Avoid sub-pixel white gaps
+                      transform: isBannerHovered ? 'scale(1.08)' : 'scale(1.02)', // Avoid sub-pixel white gaps and zoom smoothly
+                      transition: 'transform 1.2s cubic-bezier(0.25, 1, 0.5, 1)',
                     }}
                     referrerPolicy="no-referrer"
                     fetchPriority="high"
