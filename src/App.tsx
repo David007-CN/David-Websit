@@ -638,19 +638,36 @@ const Hero = () => {
       type: 'content',
       bg: "https://raw.githubusercontent.com/David007-CN/DW/refs/heads/main/David2_3840x2160_middle.jpg",
       content: (
-        <div className={`relative z-10 text-center px-6 transform ${isLandscape ? 'translate-y-[1.8vw]' : 'translate-y-[11vw]'}`}>
+        <div 
+          className="relative z-10 text-center w-full"
+          style={{
+            paddingLeft: '3vw',
+            paddingRight: '3vw',
+            transform: isLandscape ? 'translateY(1.8vw)' : 'translateY(11vw)',
+          }}
+        >
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1 }}
           >
-            <h1 className={`flex flex-col items-center ${isLandscape ? 'mb-[5vw]' : 'mb-[13vw]'}`}>
+            <h1 
+              className="flex flex-col items-center"
+              style={{
+                marginBottom: isLandscape ? '5vw' : '13vw',
+              }}
+            >
               <div className="relative inline-block max-w-full">
-                <span className={`font-teko font-semibold leading-none tracking-normal text-white ${isLandscape ? 'text-[7vw]' : 'text-[9vw]'}`}>
+                <span 
+                  className="font-teko font-semibold leading-none tracking-normal text-white"
+                  style={{
+                    fontSize: isLandscape ? '7vw' : '9vw',
+                  }}
+                >
                   Hello, Welcome
                 </span>
                 <span 
-                  className={`absolute left-1/2 -translate-x-1/2 top-full opacity-60 flex justify-center whitespace-nowrap text-white/60 font-display font-normal`}
+                  className="absolute left-1/2 -translate-x-1/2 top-full opacity-60 flex justify-center whitespace-nowrap text-white/60 font-display font-normal"
                   style={{
                     fontSize: isLandscape ? '0.85vw' : '1.8vw',
                     letterSpacing: isLandscape ? '0.35em' : '0.15em',
@@ -704,19 +721,36 @@ const Hero = () => {
       mobile: "https://github.com/David007-CN/DW/blob/main/Banner/Studio_1080x1920.jpg?raw=true",
       alt: "Featured Work 2",
       content: (
-        <div className={`relative z-10 text-center px-6 transform ${isLandscape ? 'translate-y-[1.8vw]' : 'translate-y-[11vw]'}`}>
+        <div 
+          className="relative z-10 text-center w-full"
+          style={{
+            paddingLeft: '3vw',
+            paddingRight: '3vw',
+            transform: isLandscape ? 'translateY(1.8vw)' : 'translateY(11vw)',
+          }}
+        >
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1 }}
           >
-            <h1 className={`flex flex-col items-center ${isLandscape ? 'mb-[5vw]' : 'mb-[13vw]'}`}>
+            <h1 
+              className="flex flex-col items-center"
+              style={{
+                marginBottom: isLandscape ? '5vw' : '13vw',
+              }}
+            >
               <div className="relative inline-block max-w-full">
-                <span className={`font-teko font-semibold leading-none tracking-normal text-white ${isLandscape ? 'text-[7vw]' : 'text-[9vw]'}`}>
+                <span 
+                  className="font-teko font-semibold leading-none tracking-normal text-white"
+                  style={{
+                    fontSize: isLandscape ? '7vw' : '9vw',
+                  }}
+                >
                   SEE THE POWER
                 </span>
                 <span 
-                  className={`absolute left-1/2 -translate-x-1/2 top-full opacity-100 flex justify-center whitespace-nowrap text-[#a3a3a3] font-display font-normal`}
+                  className="absolute left-1/2 -translate-x-1/2 top-full opacity-100 flex justify-center whitespace-nowrap text-[#a3a3a3] font-display font-normal"
                   style={{
                     fontSize: isLandscape ? '0.85vw' : '1.8vw',
                     letterSpacing: isLandscape ? '0.3em' : '0.15em',
@@ -730,7 +764,7 @@ const Hero = () => {
               </div>
             </h1>
             
-            <div className={`flex items-center justify-center ${isLandscape ? 'flex-row gap-[24px]' : 'flex-col gap-[32px]'}`}>
+            <div className={`flex items-center justify-center ${isLandscape ? 'flex-row gap-[1.25vw]' : 'flex-col gap-[3vw]'}`}>
               <a 
                 href="https://osight.com" 
                 target="_blank" 
@@ -785,7 +819,7 @@ const Hero = () => {
   return (
     <section 
       id="home" 
-      className={`relative w-full ${isLandscape ? 'aspect-[16/9]' : 'aspect-[9/16]'} h-auto flex items-center justify-center overflow-hidden bg-brand-dark pt-[56px] md:pt-[64px]`}
+      className={`relative w-full ${isLandscape ? 'aspect-[16/9]' : 'aspect-[9/16]'} h-auto flex items-center justify-center overflow-hidden bg-brand-dark`}
     >
       <AnimatePresence initial={false}>
         <motion.div
@@ -807,39 +841,41 @@ const Hero = () => {
         >
           {(() => {
             const slide = slides[currentSlide];
-            if (slide.type === 'content') {
-              return (
-                <>
-                  <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-                    <img 
-                      src={getOptimizedUrl(slide.bg, isLandscape ? 2560 : 1080, isLandscape ? 1440 : 1920)} 
-                      alt="Background" 
-                      className="absolute inset-0 w-full h-full object-cover brightness-[0.4] contrast-110"
-                      referrerPolicy="no-referrer"
-                      fetchPriority="high"
-                      loading="eager"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-b from-brand-dark/50 via-transparent to-brand-dark/75" />
-                  </div>
-                  {slide.content}
-                </>
-              );
-            } else {
-              return (
-                <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+            const bgUrl = slide.type === 'content' 
+              ? slide.bg 
+              : (isLandscape ? slide.desktop! : slide.mobile!);
+            const overlayClass = slide.type === 'content'
+              ? 'bg-gradient-to-b from-brand-dark/50 via-transparent to-brand-dark/75'
+              : (slide.overlayClassName || 'bg-black/60');
+
+            return (
+              <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+                {/* Background Image Container */}
+                <div className="absolute inset-0 z-0 pointer-events-none select-none">
                   <img 
-                    src={getOptimizedUrl(isLandscape ? slide.desktop! : slide.mobile!, isLandscape ? 2560 : 1080, isLandscape ? 1440 : 1800)} 
-                    alt={slide.alt || 'Featured'}
-                    className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                    src={getOptimizedUrl(bgUrl, isLandscape ? 2560 : 1080, isLandscape ? 1440 : 1920)} 
+                    alt={slide.type === 'image' ? (slide.alt || 'Featured') : 'Background'} 
+                    className="absolute inset-0 w-full h-full object-cover brightness-[0.4] contrast-110"
+                    style={{
+                      transform: 'scale(1.02)', // Avoid sub-pixel white gaps
+                    }}
                     referrerPolicy="no-referrer"
                     fetchPriority="high"
                     loading="eager"
                   />
-                  <div className={`absolute inset-0 ${slide.overlayClassName || 'bg-black/60'} pointer-events-none`} />
-                  {slide.content}
+                  <div className={`absolute inset-0 ${overlayClass}`} />
                 </div>
-              );
-            }
+
+                {/* Slide Content Container */}
+                {slide.content && (
+                  <div className="relative z-10 w-full h-full flex items-center justify-center pointer-events-none">
+                    <div className="pointer-events-auto w-full">
+                      {slide.content}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
           })()}
         </motion.div>
       </AnimatePresence>
