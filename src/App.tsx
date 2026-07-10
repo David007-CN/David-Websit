@@ -760,7 +760,7 @@ const Hero = () => {
                   className={`absolute left-1/2 -translate-x-1/2 top-full opacity-100 text-[#a3a3a3] font-display font-normal text-center ${isLandscape ? 'whitespace-nowrap' : 'w-[85%] text-balance'}`}
                   style={{
                     fontSize: isLandscape ? 'calc(0.525rem + 0.245vw)' : 'calc(0.53rem + 0.42vw)',
-                    letterSpacing: isLandscape ? '0.3em' : '0.02em',
+                    letterSpacing: isLandscape ? '0.39em' : '0.026em',
                     marginTop: isLandscape ? 'calc(0.2rem + 0.6vw)' : 'calc(0.33rem + 0.66vw)',
                   }}
                 >
@@ -788,7 +788,7 @@ const Hero = () => {
                   whileTap={{ scale: 0.95 }}
                   className="bg-brand-red text-white font-bold tracking-normal transition-colors duration-300 hover:bg-brand-red/90"
                   style={{
-                    width: isLandscape ? 'calc(11.5rem + 8.5vw)' : 'calc(11rem + 9vw)',
+                    width: isLandscape ? 'calc(10.35rem + 7.65vw)' : 'calc(9.9rem + 8.1vw)',
                     paddingTop: isLandscape ? 'calc(0.4rem + 0.25vw)' : 'calc(0.5rem + 0.33vw)',
                     paddingBottom: isLandscape ? 'calc(0.4rem + 0.25vw)' : 'calc(0.5rem + 0.33vw)',
                     fontSize: isLandscape ? 'calc(0.75rem + 0.35vw)' : 'calc(0.46rem + 0.42vw)',
