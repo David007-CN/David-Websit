@@ -855,7 +855,7 @@ const Hero = () => {
     >
       <div 
         ref={containerRef}
-        className={`relative w-full max-w-[1920px] mx-auto ${isLandscape ? 'aspect-[16/9]' : 'aspect-[9/16]'} h-auto overflow-hidden bg-brand-dark group`}
+        className={`relative w-full ${isLandscape ? 'aspect-[16/9]' : 'aspect-[9/16]'} h-auto overflow-hidden bg-brand-dark group`}
       >
         <AnimatePresence initial={false}>
           <motion.div
