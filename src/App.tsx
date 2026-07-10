@@ -91,11 +91,11 @@ const getOptimizedUrl = (url: string, width?: number, height?: number, avoidProx
 
   // 3. wsrv.nl Proxy for Image Optimization
   if (rawUrl.startsWith('http')) {
-    // Quality adjustment: very high for large requests
+    // Quality adjustment: optimized for fast loading and high resolution (webp)
     let finalQuality = 85;
     if (width) {
-      if (width >= 2500) finalQuality = 98;
-      else if (width >= 1200) finalQuality = 92;
+      if (width >= 2500) finalQuality = 88; // 88% is the sweet spot for maximum visual fidelity without bloated file size
+      else if (width >= 1200) finalQuality = 85;
     }
     
     // We remove the hard isMobile capping to allow high-res on zoom
@@ -828,6 +828,20 @@ const Hero = () => {
     const timer = setTimeout(handleNext, delay);
     return () => clearTimeout(timer);
   }, [currentSlide, slides.length]);
+
+  // Preload all slides background images to eliminate any visual delays during transition
+  useEffect(() => {
+    slides.forEach((slide) => {
+      const bgUrl = slide.type === 'content' 
+        ? slide.bg 
+        : (isLandscape ? slide.desktop! : slide.mobile!);
+      if (bgUrl) {
+        const optimizedUrl = getOptimizedUrl(bgUrl, isLandscape ? 2560 : 1080, isLandscape ? 1440 : 1920);
+        const img = new Image();
+        img.src = optimizedUrl;
+      }
+    });
+  }, [slides, isLandscape]);
 
   return (
     <section 
