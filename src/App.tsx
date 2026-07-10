@@ -639,15 +639,12 @@ const Hero = () => {
       type: 'content',
       bg: "https://raw.githubusercontent.com/David007-CN/DW/refs/heads/main/David2_3840x2160_middle.jpg",
       content: (
-        <motion.div 
-          className="relative z-10 text-center w-full px-[3vw]"
-          animate={{
-            y: isLandscape 
-              ? (isBannerHovered ? '1.2vw' : '1.66vw') 
-              : (isBannerHovered ? '10vw' : '11.11vw'),
-            scale: isBannerHovered ? 1.03 : 1
-          }}
-          transition={{ duration: 1.2, ease: [0.25, 1, 0.5, 1] }}
+        <div 
+          className={`relative z-10 text-center w-full px-[3vw] transition-all duration-[1200ms] ease-[cubic-bezier(0.25,1,0.5,1)] group-hover/banner:scale-[1.03] ${
+            isLandscape 
+              ? 'translate-y-[1.66vw] group-hover/banner:translate-y-[1.20vw]' 
+              : 'translate-y-[11.11vw] group-hover/banner:translate-y-[10.00vw]'
+          }`}
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
@@ -718,7 +715,7 @@ const Hero = () => {
               </motion.button>
             </div>
           </motion.div>
-        </motion.div>
+        </div>
       )
     },
     {
@@ -727,15 +724,12 @@ const Hero = () => {
       mobile: "https://github.com/David007-CN/DW/blob/main/Banner/Studio_1080x1920.jpg?raw=true",
       alt: "Featured Work 2",
       content: (
-        <motion.div 
-          className="relative z-10 text-center w-full px-[3vw]"
-          animate={{
-            y: isLandscape 
-              ? (isBannerHovered ? '1.2vw' : '1.66vw') 
-              : (isBannerHovered ? '10vw' : '11.11vw'),
-            scale: isBannerHovered ? 1.03 : 1
-          }}
-          transition={{ duration: 1.2, ease: [0.25, 1, 0.5, 1] }}
+        <div 
+          className={`relative z-10 text-center w-full px-[3vw] transition-all duration-[1200ms] ease-[cubic-bezier(0.25,1,0.5,1)] group-hover/banner:scale-[1.03] ${
+            isLandscape 
+              ? 'translate-y-[1.66vw] group-hover/banner:translate-y-[1.20vw]' 
+              : 'translate-y-[11.11vw] group-hover/banner:translate-y-[10.00vw]'
+          }`}
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
@@ -799,7 +793,7 @@ const Hero = () => {
               </a>
             </div>
           </motion.div>
-        </motion.div>
+        </div>
       )
     },
     {
@@ -830,7 +824,7 @@ const Hero = () => {
   return (
     <section 
       id="home" 
-      className={`relative w-full ${isLandscape ? 'aspect-[16/9]' : 'aspect-[9/16]'} h-auto overflow-hidden bg-brand-dark`}
+      className={`relative w-full ${isLandscape ? 'aspect-[16/9]' : 'aspect-[9/16]'} h-auto overflow-hidden bg-brand-dark group/banner`}
       onMouseEnter={() => setIsBannerHovered(true)}
       onMouseLeave={() => setIsBannerHovered(false)}
     >
@@ -866,17 +860,10 @@ const Hero = () => {
               <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
                 {/* Background Image Container */}
                 <div className="absolute inset-0 z-0 pointer-events-none select-none">
-                  <motion.img 
+                  <img 
                     src={getOptimizedUrl(bgUrl, isLandscape ? 2560 : 1080, isLandscape ? 1440 : 1920)} 
                     alt={slide.type === 'image' ? (slide.alt || 'Featured') : 'Background'} 
-                    className="absolute inset-0 w-full h-full object-cover brightness-[0.4] contrast-110"
-                    animate={{
-                      scale: isBannerHovered ? 1.08 : 1.02
-                    }}
-                    transition={{
-                      duration: 1.2,
-                      ease: [0.25, 1, 0.5, 1]
-                    }}
+                    className="absolute inset-0 w-full h-full object-cover brightness-[0.4] contrast-110 scale-[1.02] group-hover/banner:scale-[1.08] transition-transform duration-[1200ms] ease-[cubic-bezier(0.25,1,0.5,1)]"
                     referrerPolicy="no-referrer"
                     fetchPriority="high"
                     loading="eager"
