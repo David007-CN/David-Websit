@@ -629,8 +629,8 @@ const Hero = () => {
   }, []);
 
   type HeroSlide = 
-    | { type: 'content'; bg: string; content: React.ReactNode }
-    | { type: 'image'; desktop: string; mobile: string; alt?: string; content?: React.ReactNode; overlayClassName?: string };
+    | { type: 'content'; bg: string; content: React.ReactNode; imgClassName?: string }
+    | { type: 'image'; desktop: string; mobile: string; alt?: string; content?: React.ReactNode; overlayClassName?: string; imgClassName?: string };
 
   const slides: HeroSlide[] = useMemo(() => [
     {
@@ -727,6 +727,8 @@ const Hero = () => {
       desktop: "https://github.com/David007-CN/DW/blob/main/Banner/Studio_1920x1080.jpg?raw=true",
       mobile: "https://github.com/David007-CN/DW/blob/main/Banner/Studio_1080x1920.jpg?raw=true",
       alt: "Featured Work 2",
+      imgClassName: "brightness-[0.55] contrast-110",
+      overlayClassName: "bg-black/45",
       content: (
         <div 
           className="relative z-10 text-center w-full"
@@ -806,12 +808,13 @@ const Hero = () => {
       )
     },
     {
-      type: 'image',
-      desktop: "https://raw.githubusercontent.com/David007-CN/DW/main/Banner/Personal%20Profile/David2_1920x1080.jpg?v=5",
-      mobile: "https://raw.githubusercontent.com/David007-CN/DW/main/Banner/Personal%20Profile/David2_1080x1920.jpg?v=5",
-      alt: "David Personal Profile",
-      overlayClassName: "bg-black/10"
-    }
+       type: 'image',
+       desktop: "https://raw.githubusercontent.com/David007-CN/DW/main/Banner/Personal%20Profile/David2_1920x1080.jpg?v=5",
+       mobile: "https://raw.githubusercontent.com/David007-CN/DW/main/Banner/Personal%20Profile/David2_1080x1920.jpg?v=5",
+       alt: "David Personal Profile",
+       imgClassName: "brightness-100",
+       overlayClassName: "bg-transparent"
+     }
   ], [isLandscape]);
 
   const isFirstPlayRef = useRef(true);
@@ -873,7 +876,7 @@ const Hero = () => {
                     <img 
                       src={getOptimizedUrl(bgUrl, isLandscape ? 2560 : 1080, isLandscape ? 1440 : 1920)} 
                       alt={slide.type === 'image' ? (slide.alt || 'Featured') : 'Background'} 
-                      className="absolute inset-0 w-full h-full object-cover brightness-[0.4] contrast-110"
+                      className={`absolute inset-0 w-full h-full object-cover ${slide.imgClassName || 'brightness-[0.4] contrast-110'}`}
                       referrerPolicy="no-referrer"
                       fetchPriority="high"
                       loading="eager"
