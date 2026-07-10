@@ -851,11 +851,11 @@ const Hero = () => {
   return (
     <section 
       id="home" 
-      className="w-full bg-brand-dark py-6 md:py-10"
+      className="w-full bg-brand-dark overflow-hidden"
     >
       <div 
         ref={containerRef}
-        className={`relative w-full max-w-7xl mx-auto px-4 md:px-6 ${isLandscape ? 'aspect-[16/9]' : 'aspect-[9/16]'} h-auto overflow-hidden rounded-2xl md:rounded-3xl bg-brand-dark group shadow-2xl`}
+        className={`relative w-full max-w-[1920px] mx-auto ${isLandscape ? 'aspect-[16/9]' : 'aspect-[9/16]'} h-auto overflow-hidden bg-brand-dark group`}
       >
         <AnimatePresence initial={false}>
           <motion.div
