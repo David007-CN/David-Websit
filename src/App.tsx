@@ -848,17 +848,16 @@ const Hero = () => {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -100 }}
             transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-            drag={isMobile ? "x" : false}
-            dragDirectionLock={isMobile}
+            drag="x"
+            dragDirectionLock
             dragConstraints={{ left: 0, right: 0 }}
             dragElastic={0.7}
             onDragEnd={(_, info) => {
-              if (!isMobile) return;
-              const threshold = 30;
+              const threshold = 40;
               if (info.offset.x > threshold) handlePrev();
               else if (info.offset.x < -threshold) handleNext();
             }}
-            className={`absolute inset-0 flex items-center justify-center pointer-events-auto ${isMobile ? "cursor-grab active:cursor-grabbing touch-pan-y" : "cursor-default"}`}
+            className="absolute inset-0 flex items-center justify-center pointer-events-auto cursor-grab active:cursor-grabbing select-none touch-pan-y"
           >
             {(() => {
               const slide = slides[currentSlide];
