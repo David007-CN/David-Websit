@@ -614,9 +614,6 @@ const Hero = () => {
     return window.innerWidth > window.innerHeight;
   });
 
-  const [containerWidth, setContainerWidth] = useState(1200);
-  const containerRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     if (typeof window === 'undefined') return;
     
@@ -631,21 +628,6 @@ const Hero = () => {
     };
   }, []);
 
-  useEffect(() => {
-    if (typeof window === 'undefined' || !containerRef.current) return;
-    
-    const resizeObserver = new ResizeObserver((entries) => {
-      for (let entry of entries) {
-        setContainerWidth(entry.contentRect.width);
-      }
-    });
-    
-    resizeObserver.observe(containerRef.current);
-    setContainerWidth(containerRef.current.getBoundingClientRect().width || 1200);
-    
-    return () => resizeObserver.disconnect();
-  }, []);
-
   type HeroSlide = 
     | { type: 'content'; bg: string; content: React.ReactNode }
     | { type: 'image'; desktop: string; mobile: string; alt?: string; content?: React.ReactNode; overlayClassName?: string };
@@ -658,9 +640,9 @@ const Hero = () => {
         <div 
           className="relative z-10 text-center w-full"
           style={{
-            paddingLeft: `${containerWidth * 0.03}px`,
-            paddingRight: `${containerWidth * 0.03}px`,
-            transform: `translateY(${isLandscape ? containerWidth * 0.0166 : containerWidth * 0.1111}px)`
+            paddingLeft: '3%',
+            paddingRight: '3%',
+            transform: `translateY(${isLandscape ? '1.66vw' : '11.11vw'})`
           }}
         >
           <motion.div
@@ -671,14 +653,14 @@ const Hero = () => {
             <h1 
               className="flex flex-col items-center"
               style={{
-                marginBottom: isLandscape ? `${containerWidth * 0.052}px` : `${containerWidth * 0.1296}px`
+                marginBottom: isLandscape ? 'calc(1rem + 3.5vw)' : 'calc(2rem + 8vw)'
               }}
             >
               <div className="relative inline-block max-w-full">
                 <span 
                   className="font-teko font-semibold leading-none tracking-normal text-white"
                   style={{
-                    fontSize: isLandscape ? `${containerWidth * 0.0708}px` : `${containerWidth * 0.0888}px`,
+                    fontSize: isLandscape ? 'calc(2.5rem + 4.8vw)' : 'calc(2rem + 5.5vw)',
                   }}
                 >
                   Hello, Welcome
@@ -686,9 +668,9 @@ const Hero = () => {
                 <span 
                   className="absolute left-1/2 -translate-x-1/2 top-full opacity-60 flex justify-center whitespace-nowrap text-white/60 font-display font-normal"
                   style={{
-                    fontSize: isLandscape ? `${containerWidth * 0.0083}px` : `${containerWidth * 0.0185}px`,
+                    fontSize: isLandscape ? 'calc(0.75rem + 0.35vw)' : 'calc(0.875rem + 0.8vw)',
                     letterSpacing: isLandscape ? '0.35em' : '0.15em',
-                    marginTop: isLandscape ? `${containerWidth * 0.0083}px` : `${containerWidth * 0.0222}px`,
+                    marginTop: isLandscape ? 'calc(0.2rem + 0.6vw)' : 'calc(0.5rem + 1vw)',
                   }}
                 >
                   {"An unknown designer. More than just a designer.".split("").map((char, i) => (
@@ -701,7 +683,7 @@ const Hero = () => {
             <div 
               className="flex items-center justify-center"
               style={{
-                gap: isLandscape ? `${containerWidth * 0.0125}px` : `${containerWidth * 0.0296}px`,
+                gap: isLandscape ? 'calc(0.5rem + 0.8vw)' : 'calc(1rem + 1.5vw)',
                 flexDirection: isLandscape ? 'row' : 'column',
               }}
             >
@@ -711,11 +693,11 @@ const Hero = () => {
                 onClick={() => document.getElementById('works')?.scrollIntoView({ behavior: 'smooth' })}
                 className="border border-white/20 bg-white/5 backdrop-blur-sm text-white font-bold tracking-normal transition-colors duration-300 hover:bg-white/10 hover:border-white/40"
                 style={{
-                  width: isLandscape ? `${containerWidth * 0.10}px` : `${containerWidth * 0.2592}px`,
-                  paddingTop: isLandscape ? `${containerWidth * 0.00625}px` : `${containerWidth * 0.0166}px`,
-                  paddingBottom: isLandscape ? `${containerWidth * 0.00625}px` : `${containerWidth * 0.0166}px`,
-                  fontSize: isLandscape ? `${containerWidth * 0.0083}px` : `${containerWidth * 0.0222}px`,
-                  borderRadius: isLandscape ? `${containerWidth * 0.0041}px` : `${containerWidth * 0.0111}px`,
+                  width: isLandscape ? 'calc(6rem + 5vw)' : 'calc(10rem + 8vw)',
+                  paddingTop: isLandscape ? 'calc(0.4rem + 0.25vw)' : 'calc(0.75rem + 0.5vw)',
+                  paddingBottom: isLandscape ? 'calc(0.4rem + 0.25vw)' : 'calc(0.75rem + 0.5vw)',
+                  fontSize: isLandscape ? 'calc(0.75rem + 0.35vw)' : 'calc(0.875rem + 0.8vw)',
+                  borderRadius: isLandscape ? 'calc(2px + 0.2vw)' : 'calc(4px + 0.5vw)',
                 }}
               >
                 Learn More
@@ -726,11 +708,11 @@ const Hero = () => {
                 onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
                 className="bg-brand-red text-white font-bold tracking-normal transition-colors duration-300 hover:bg-brand-red/90"
                 style={{
-                  width: isLandscape ? `${containerWidth * 0.10}px` : `${containerWidth * 0.2592}px`,
-                  paddingTop: isLandscape ? `${containerWidth * 0.00625}px` : `${containerWidth * 0.0166}px`,
-                  paddingBottom: isLandscape ? `${containerWidth * 0.00625}px` : `${containerWidth * 0.0166}px`,
-                  fontSize: isLandscape ? `${containerWidth * 0.0083}px` : `${containerWidth * 0.0222}px`,
-                  borderRadius: isLandscape ? `${containerWidth * 0.0041}px` : `${containerWidth * 0.0111}px`,
+                  width: isLandscape ? 'calc(6rem + 5vw)' : 'calc(10rem + 8vw)',
+                  paddingTop: isLandscape ? 'calc(0.4rem + 0.25vw)' : 'calc(0.75rem + 0.5vw)',
+                  paddingBottom: isLandscape ? 'calc(0.4rem + 0.25vw)' : 'calc(0.75rem + 0.5vw)',
+                  fontSize: isLandscape ? 'calc(0.75rem + 0.35vw)' : 'calc(0.875rem + 0.8vw)',
+                  borderRadius: isLandscape ? 'calc(2px + 0.2vw)' : 'calc(4px + 0.5vw)',
                 }}
               >
                 Contact Now
@@ -749,9 +731,9 @@ const Hero = () => {
         <div 
           className="relative z-10 text-center w-full"
           style={{
-            paddingLeft: `${containerWidth * 0.03}px`,
-            paddingRight: `${containerWidth * 0.03}px`,
-            transform: `translateY(${isLandscape ? containerWidth * 0.0166 : containerWidth * 0.1111}px)`
+            paddingLeft: '3%',
+            paddingRight: '3%',
+            transform: `translateY(${isLandscape ? '1.66vw' : '11.11vw'})`
           }}
         >
           <motion.div
@@ -762,14 +744,14 @@ const Hero = () => {
             <h1 
               className="flex flex-col items-center"
               style={{
-                marginBottom: isLandscape ? `${containerWidth * 0.052}px` : `${containerWidth * 0.1296}px`
+                marginBottom: isLandscape ? 'calc(1rem + 3.5vw)' : 'calc(2rem + 8vw)'
               }}
             >
               <div className="relative inline-block max-w-full">
                 <span 
                   className="font-teko font-semibold leading-none tracking-normal text-white"
                   style={{
-                    fontSize: isLandscape ? `${containerWidth * 0.0708}px` : `${containerWidth * 0.0888}px`,
+                    fontSize: isLandscape ? 'calc(2.5rem + 4.8vw)' : 'calc(2rem + 5.5vw)',
                   }}
                 >
                   SEE THE POWER
@@ -777,9 +759,9 @@ const Hero = () => {
                 <span 
                   className="absolute left-1/2 -translate-x-1/2 top-full opacity-100 flex justify-center whitespace-nowrap text-[#a3a3a3] font-display font-normal"
                   style={{
-                    fontSize: isLandscape ? `${containerWidth * 0.0083}px` : `${containerWidth * 0.0185}px`,
+                    fontSize: isLandscape ? 'calc(0.75rem + 0.35vw)' : 'calc(0.875rem + 0.8vw)',
                     letterSpacing: isLandscape ? '0.3em' : '0.15em',
-                    marginTop: isLandscape ? `${containerWidth * 0.0083}px` : `${containerWidth * 0.0222}px`,
+                    marginTop: isLandscape ? 'calc(0.2rem + 0.6vw)' : 'calc(0.5rem + 1vw)',
                   }}
                 >
                   {"Trusted by IPSC Champions Worldwide".split("").map((char, i) => (
@@ -792,7 +774,7 @@ const Hero = () => {
             <div 
               className="flex items-center justify-center"
               style={{
-                gap: isLandscape ? `${containerWidth * 0.0125}px` : `${containerWidth * 0.0296}px`,
+                gap: isLandscape ? 'calc(0.5rem + 0.8vw)' : 'calc(1rem + 1.5vw)',
                 flexDirection: isLandscape ? 'row' : 'column',
               }}
             >
@@ -808,11 +790,11 @@ const Hero = () => {
                   whileTap={{ scale: 0.95 }}
                   className="bg-brand-red text-white font-bold tracking-normal transition-colors duration-300 hover:bg-brand-red/90"
                   style={{
-                    width: isLandscape ? `${containerWidth * 0.125}px` : `${containerWidth * 0.2963}px`,
-                    paddingTop: isLandscape ? `${containerWidth * 0.00625}px` : `${containerWidth * 0.0166}px`,
-                    paddingBottom: isLandscape ? `${containerWidth * 0.00625}px` : `${containerWidth * 0.0166}px`,
-                    fontSize: isLandscape ? `${containerWidth * 0.0083}px` : `${containerWidth * 0.0222}px`,
-                    borderRadius: isLandscape ? `${containerWidth * 0.0041}px` : `${containerWidth * 0.0111}px`,
+                    width: isLandscape ? 'calc(7.5rem + 6.5vw)' : 'calc(11rem + 10vw)',
+                    paddingTop: isLandscape ? 'calc(0.4rem + 0.25vw)' : 'calc(0.75rem + 0.5vw)',
+                    paddingBottom: isLandscape ? 'calc(0.4rem + 0.25vw)' : 'calc(0.75rem + 0.5vw)',
+                    fontSize: isLandscape ? 'calc(0.75rem + 0.35vw)' : 'calc(0.875rem + 0.8vw)',
+                    borderRadius: isLandscape ? 'calc(2px + 0.2vw)' : 'calc(4px + 0.5vw)',
                   }}
                 >
                   Experience the Power →
@@ -830,7 +812,7 @@ const Hero = () => {
       alt: "David Personal Profile",
       overlayClassName: "bg-black/10"
     }
-  ], [isLandscape, containerWidth]);
+  ], [isLandscape]);
 
   const isFirstPlayRef = useRef(true);
 
@@ -854,7 +836,6 @@ const Hero = () => {
       className="w-full bg-brand-dark overflow-hidden"
     >
       <div 
-        ref={containerRef}
         className={`relative w-full ${isLandscape ? 'aspect-[16/9]' : 'aspect-[9/16]'} h-auto overflow-hidden bg-brand-dark group`}
       >
         <AnimatePresence initial={false}>
