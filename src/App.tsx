@@ -638,10 +638,10 @@ const Hero = () => {
       bg: "https://raw.githubusercontent.com/David007-CN/DW/refs/heads/main/David2_3840x2160_middle.jpg",
       content: (
         <div 
-          className={`relative z-10 text-center w-full px-[3vw] transition-all duration-[1200ms] ease-[cubic-bezier(0.25,1,0.5,1)] group-hover/banner:scale-[1.03] ${
+          className={`relative z-10 text-center w-full px-[3vw] transition-transform duration-[1500ms] ease-[cubic-bezier(0.25,1,0.5,1)] group-hover:scale-105 ${
             isLandscape 
-              ? 'translate-y-[1.66vw] group-hover/banner:translate-y-[1.20vw]' 
-              : 'translate-y-[11.11vw] group-hover/banner:translate-y-[10.00vw]'
+              ? 'translate-y-[1.66vw]' 
+              : 'translate-y-[11.11vw]'
           }`}
         >
           <motion.div
@@ -687,7 +687,7 @@ const Hero = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => document.getElementById('works')?.scrollIntoView({ behavior: 'smooth' })}
-                className="border border-white/20 bg-white/5 backdrop-blur-sm text-white font-bold tracking-normal transition-all"
+                className="border border-white/20 bg-white/5 backdrop-blur-sm text-white font-bold tracking-normal transition-colors duration-300 hover:bg-white/10 hover:border-white/40"
                 style={{
                   width: isLandscape ? '10vw' : '25.92vw',
                   paddingTop: isLandscape ? '0.625vw' : '1.66vw',
@@ -701,7 +701,7 @@ const Hero = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
-                className="bg-brand-red text-white font-bold tracking-normal transition-all"
+                className="bg-brand-red text-white font-bold tracking-normal transition-colors duration-300 hover:bg-brand-red/90"
                 style={{
                   width: isLandscape ? '10vw' : '25.92vw',
                   paddingTop: isLandscape ? '0.625vw' : '1.66vw',
@@ -723,10 +723,10 @@ const Hero = () => {
       alt: "Featured Work 2",
       content: (
         <div 
-          className={`relative z-10 text-center w-full px-[3vw] transition-all duration-[1200ms] ease-[cubic-bezier(0.25,1,0.5,1)] group-hover/banner:scale-[1.03] ${
+          className={`relative z-10 text-center w-full px-[3vw] transition-transform duration-[1500ms] ease-[cubic-bezier(0.25,1,0.5,1)] group-hover:scale-105 ${
             isLandscape 
-              ? 'translate-y-[1.66vw] group-hover/banner:translate-y-[1.20vw]' 
-              : 'translate-y-[11.11vw] group-hover/banner:translate-y-[10.00vw]'
+              ? 'translate-y-[1.66vw]' 
+              : 'translate-y-[11.11vw]'
           }`}
         >
           <motion.div
@@ -778,7 +778,7 @@ const Hero = () => {
                 <motion.button 
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="bg-brand-red text-white font-bold tracking-normal transition-all"
+                  className="bg-brand-red text-white font-bold tracking-normal transition-colors duration-300 hover:bg-brand-red/90"
                   style={{
                     width: isLandscape ? '12.5vw' : '29.63vw',
                     paddingTop: isLandscape ? '0.625vw' : '1.66vw',
@@ -822,7 +822,7 @@ const Hero = () => {
   return (
     <section 
       id="home" 
-      className={`relative w-full ${isLandscape ? 'aspect-[16/9]' : 'aspect-[9/16]'} h-auto overflow-hidden bg-brand-dark group/banner`}
+      className={`relative w-full ${isLandscape ? 'aspect-[16/9]' : 'aspect-[9/16]'} h-auto overflow-hidden bg-brand-dark group`}
     >
       <AnimatePresence initial={false}>
         <motion.div
@@ -859,7 +859,7 @@ const Hero = () => {
                   <img 
                     src={getOptimizedUrl(bgUrl, isLandscape ? 2560 : 1080, isLandscape ? 1440 : 1920)} 
                     alt={slide.type === 'image' ? (slide.alt || 'Featured') : 'Background'} 
-                    className="absolute inset-0 w-full h-full object-cover brightness-[0.4] contrast-110 scale-[1.02] group-hover/banner:scale-[1.08] transition-transform duration-[1200ms] ease-[cubic-bezier(0.25,1,0.5,1)]"
+                    className="absolute inset-0 w-full h-full object-cover brightness-[0.4] contrast-110 scale-100 group-hover:scale-105 transition-transform duration-[1500ms] ease-[cubic-bezier(0.25,1,0.5,1)]"
                     referrerPolicy="no-referrer"
                     fetchPriority="high"
                     loading="eager"
