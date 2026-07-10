@@ -697,7 +697,7 @@ const Hero = () => {
                   paddingTop: isLandscape ? 'calc(0.4rem + 0.25vw)' : 'calc(0.75rem + 0.5vw)',
                   paddingBottom: isLandscape ? 'calc(0.4rem + 0.25vw)' : 'calc(0.75rem + 0.5vw)',
                   fontSize: isLandscape ? 'calc(0.75rem + 0.35vw)' : 'calc(0.875rem + 0.8vw)',
-                  borderRadius: isLandscape ? 'calc(2px + 0.2vw)' : 'calc(4px + 0.5vw)',
+                  borderRadius: '0px',
                 }}
               >
                 Learn More
@@ -712,7 +712,7 @@ const Hero = () => {
                   paddingTop: isLandscape ? 'calc(0.4rem + 0.25vw)' : 'calc(0.75rem + 0.5vw)',
                   paddingBottom: isLandscape ? 'calc(0.4rem + 0.25vw)' : 'calc(0.75rem + 0.5vw)',
                   fontSize: isLandscape ? 'calc(0.75rem + 0.35vw)' : 'calc(0.875rem + 0.8vw)',
-                  borderRadius: isLandscape ? 'calc(2px + 0.2vw)' : 'calc(4px + 0.5vw)',
+                  borderRadius: '0px',
                 }}
               >
                 Contact Now
@@ -796,7 +796,7 @@ const Hero = () => {
                     paddingTop: isLandscape ? 'calc(0.4rem + 0.25vw)' : 'calc(0.75rem + 0.5vw)',
                     paddingBottom: isLandscape ? 'calc(0.4rem + 0.25vw)' : 'calc(0.75rem + 0.5vw)',
                     fontSize: isLandscape ? 'calc(0.75rem + 0.35vw)' : 'calc(0.875rem + 0.8vw)',
-                    borderRadius: isLandscape ? 'calc(2px + 0.2vw)' : 'calc(4px + 0.5vw)',
+                    borderRadius: '0px',
                   }}
                 >
                   Experience the Power →
@@ -809,8 +809,8 @@ const Hero = () => {
     },
     {
        type: 'image',
-       desktop: "https://raw.githubusercontent.com/David007-CN/DW/main/Banner/Personal%20Profile/David2_1920x1080.jpg?v=5",
-       mobile: "https://raw.githubusercontent.com/David007-CN/DW/main/Banner/Personal%20Profile/David2_1080x1920.jpg?v=5",
+       desktop: "https://github.com/David007-CN/DW/blob/main/Banner/Personal%20Profile/David2_1920x1080.jpg?raw=true",
+       mobile: "https://github.com/David007-CN/DW/blob/main/Banner/Personal%20Profile/David2_1080x1920.jpg?raw=true",
        alt: "David Personal Profile",
        imgClassName: "brightness-100",
        overlayClassName: "bg-transparent"
@@ -900,14 +900,14 @@ const Hero = () => {
         {/* Navigation Arrows */}
         <button 
           onClick={(e) => { e.stopPropagation(); handlePrev(); }}
-          className="hidden md:flex absolute left-8 top-1/2 -translate-y-1/2 w-12 h-12 items-center justify-center rounded-full bg-black/20 border border-white/10 text-white/40 hover:text-white hover:bg-black/40 hover:border-white/30 transition-all duration-300 z-30 group/arrow"
+          className="hidden md:flex absolute left-8 top-1/2 -translate-y-1/2 w-12 h-12 items-center justify-center rounded-none bg-black/20 border border-white/10 text-white/40 hover:text-white hover:bg-black/40 hover:border-white/30 transition-all duration-300 z-30 group/arrow"
           aria-label="Previous Slide"
         >
           <ChevronLeft size={24} className="group-hover/arrow:-translate-x-0.5 transition-transform" />
         </button>
         <button 
           onClick={(e) => { e.stopPropagation(); handleNext(); }}
-          className="hidden md:flex absolute right-8 top-1/2 -translate-y-1/2 w-12 h-12 items-center justify-center rounded-full bg-black/20 border border-white/10 text-white/40 hover:text-white hover:bg-black/40 hover:border-white/30 transition-all duration-300 z-30 group/arrow"
+          className="hidden md:flex absolute right-8 top-1/2 -translate-y-1/2 w-12 h-12 items-center justify-center rounded-none bg-black/20 border border-white/10 text-white/40 hover:text-white hover:bg-black/40 hover:border-white/30 transition-all duration-300 z-30 group/arrow"
           aria-label="Next Slide"
         >
           <ChevronRight size={24} className="group-hover/arrow:translate-x-0.5 transition-transform" />
@@ -922,7 +922,7 @@ const Hero = () => {
                 e.stopPropagation();
                 setCurrentSlide(i);
               }}
-              className={`w-3 h-3 transition-all duration-500 rounded-full border-2 ${
+              className={`w-3 h-3 transition-all duration-500 rounded-none border-2 ${
                 currentSlide === i 
                   ? 'bg-brand-red border-brand-red scale-125' 
                   : 'bg-transparent border-white/30 hover:border-white/60'
@@ -1194,7 +1194,7 @@ const Spotlight = () => {
                 {/* Desktop Navigation Arrows - Centered in the 8% gap */}
                 <button 
                   onClick={handlePrev}
-                  className="hidden lg:flex absolute top-1/2 -translate-y-1/2 w-10 h-10 items-center justify-center rounded-full bg-black/40 backdrop-blur-md border border-white/10 text-white/40 hover:text-white hover:border-white/40 hover:bg-white/10 transition-all duration-300 z-20"
+                  className="hidden lg:flex absolute top-1/2 -translate-y-1/2 w-10 h-10 items-center justify-center rounded-none bg-black/40 backdrop-blur-md border border-white/10 text-white/40 hover:text-white hover:border-white/40 hover:bg-white/10 transition-all duration-300 z-20"
                   style={{ left: '-6.5%' }}
                   aria-label="Previous Project"
                 >
@@ -1202,7 +1202,7 @@ const Spotlight = () => {
                 </button>
                 <button 
                   onClick={handleNext}
-                  className="hidden lg:flex absolute top-1/2 -translate-y-1/2 w-10 h-10 items-center justify-center rounded-full bg-black/40 backdrop-blur-md border border-white/10 text-white/40 hover:text-white hover:border-white/40 hover:bg-white/10 transition-all duration-300 z-20"
+                  className="hidden lg:flex absolute top-1/2 -translate-y-1/2 w-10 h-10 items-center justify-center rounded-none bg-black/40 backdrop-blur-md border border-white/10 text-white/40 hover:text-white hover:border-white/40 hover:bg-white/10 transition-all duration-300 z-20"
                   style={{ right: '-6.5%' }}
                   aria-label="Next Project"
                 >
@@ -1212,14 +1212,14 @@ const Spotlight = () => {
                 {/* Mobile Navigation Arrows */}
                 <button 
                   onClick={handlePrev}
-                  className="lg:hidden absolute top-2 left-1/2 -translate-x-1/2 w-8 h-8 flex items-center justify-center rounded-full bg-black/40 backdrop-blur-md border border-white/10 text-white/60 hover:text-white z-20"
+                  className="lg:hidden absolute top-2 left-1/2 -translate-x-1/2 w-8 h-8 flex items-center justify-center rounded-none bg-black/40 backdrop-blur-md border border-white/10 text-white/60 hover:text-white z-20"
                   aria-label="Previous Project"
                 >
                   <ChevronUp size={18} />
                 </button>
                 <button 
                   onClick={handleNext}
-                  className="lg:hidden absolute bottom-2 left-1/2 -translate-x-1/2 w-8 h-8 flex items-center justify-center rounded-full bg-black/40 backdrop-blur-md border border-white/10 text-white/60 hover:text-white z-20"
+                  className="lg:hidden absolute bottom-2 left-1/2 -translate-x-1/2 w-8 h-8 flex items-center justify-center rounded-none bg-black/40 backdrop-blur-md border border-white/10 text-white/60 hover:text-white z-20"
                   aria-label="Next Project"
                 >
                   <ChevronDown size={18} />
@@ -1239,7 +1239,7 @@ const Spotlight = () => {
                   
                   {/* Zoom Icon Hint */}
                   <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 pointer-events-none">
-                    <div className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white border border-white/20">
+                    <div className="w-12 h-12 rounded-none bg-white/10 backdrop-blur-md flex items-center justify-center text-white border border-white/20">
                       <Maximize size={20} />
                     </div>
                   </div>
@@ -1287,13 +1287,13 @@ const Spotlight = () => {
             </button>
 
             <button 
-              className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-full bg-white/5 border border-white/10 text-white/40 hover:text-white hover:bg-white/10 transition-all z-[210]"
+              className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-none bg-white/5 border border-white/10 text-white/40 hover:text-white hover:bg-white/10 transition-all z-[210]"
               onClick={handlePrev}
             >
               <ChevronLeft size={32} />
             </button>
             <button 
-              className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-full bg-white/5 border border-white/10 text-white/40 hover:text-white hover:bg-white/10 transition-all z-[210]"
+              className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-none bg-white/5 border border-white/10 text-white/40 hover:text-white hover:bg-white/10 transition-all z-[210]"
               onClick={handleNext}
             >
               <ChevronRight size={32} />
@@ -1795,7 +1795,7 @@ const Featured = () => {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => fetchGitHubImages(true)}
-            className="inline-flex items-center px-10 py-3 bg-white/5 border border-white/10 text-white/50 hover:text-white hover:bg-white/10 hover:border-white/20 rounded-full transition-all duration-300 font-display text-base tracking-normal group"
+            className="inline-flex items-center px-10 py-3 bg-white/5 border border-white/10 text-white/50 hover:text-white hover:bg-white/10 hover:border-white/20 rounded-none transition-all duration-300 font-display text-base tracking-normal group"
           >
             <div className="relative mr-3">
               <RefreshCw className={`w-5 h-5 transition-transform duration-700 ${isLoading ? 'animate-spin' : 'group-hover:rotate-180'}`} />
@@ -1825,13 +1825,13 @@ const Featured = () => {
             </button>
 
             <button 
-              className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-full bg-white/5 border border-white/10 text-white/40 hover:text-white hover:bg-white/10 transition-all z-[110]"
+              className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-none bg-white/5 border border-white/10 text-white/40 hover:text-white hover:bg-white/10 transition-all z-[110]"
               onClick={handlePrev}
             >
               <ChevronLeft size={32} />
             </button>
             <button 
-              className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-full bg-white/5 border border-white/10 text-white/40 hover:text-white hover:bg-white/10 transition-all z-[110]"
+              className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-none bg-white/5 border border-white/10 text-white/40 hover:text-white hover:bg-white/10 transition-all z-[110]"
               onClick={handleNext}
             >
               <ChevronRight size={32} />
@@ -2472,7 +2472,7 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
 
               <button 
                 onClick={() => setRefreshSeed(s => s + 1)}
-                className="px-8 py-3 bg-brand-red text-white rounded-full font-medium hover:bg-red-600 transition-all active:scale-95 shadow-lg shadow-brand-red/20"
+                className="px-8 py-3 bg-brand-red text-white rounded-none font-medium hover:bg-red-600 transition-all active:scale-95 shadow-lg shadow-brand-red/20"
               >
                 Retry Connection
               </button>
@@ -2630,13 +2630,13 @@ const GalleryPage = ({ archiveProjects }: { archiveProjects: Project[] }) => {
 
             {/* Navigation Arrows */}
             <button 
-              className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-full bg-white/5 border border-white/10 text-white/40 hover:text-white hover:bg-white/10 transition-all z-[110]"
+              className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-none bg-white/5 border border-white/10 text-white/40 hover:text-white hover:bg-white/10 transition-all z-[110]"
               onClick={handlePrev}
             >
               <ChevronLeft size={32} />
             </button>
             <button 
-              className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-full bg-white/5 border border-white/10 text-white/40 hover:text-white hover:bg-white/10 transition-all z-[110]"
+              className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-none bg-white/5 border border-white/10 text-white/40 hover:text-white hover:bg-white/10 transition-all z-[110]"
               onClick={handleNext}
             >
               <ChevronRight size={32} />
