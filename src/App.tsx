@@ -614,6 +614,9 @@ const Hero = () => {
     return window.innerWidth > window.innerHeight;
   });
 
+  const [containerWidth, setContainerWidth] = useState(1200);
+  const containerRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
     
@@ -628,6 +631,21 @@ const Hero = () => {
     };
   }, []);
 
+  useEffect(() => {
+    if (typeof window === 'undefined' || !containerRef.current) return;
+    
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (let entry of entries) {
+        setContainerWidth(entry.contentRect.width);
+      }
+    });
+    
+    resizeObserver.observe(containerRef.current);
+    setContainerWidth(containerRef.current.getBoundingClientRect().width || 1200);
+    
+    return () => resizeObserver.disconnect();
+  }, []);
+
   type HeroSlide = 
     | { type: 'content'; bg: string; content: React.ReactNode }
     | { type: 'image'; desktop: string; mobile: string; alt?: string; content?: React.ReactNode; overlayClassName?: string };
@@ -638,11 +656,12 @@ const Hero = () => {
       bg: "https://raw.githubusercontent.com/David007-CN/DW/refs/heads/main/David2_3840x2160_middle.jpg",
       content: (
         <div 
-          className={`relative z-10 text-center w-full px-[3vw] transition-transform duration-[1500ms] ease-[cubic-bezier(0.25,1,0.5,1)] group-hover:scale-105 ${
-            isLandscape 
-              ? 'translate-y-[1.66vw]' 
-              : 'translate-y-[11.11vw]'
-          }`}
+          className="relative z-10 text-center w-full"
+          style={{
+            paddingLeft: `${containerWidth * 0.03}px`,
+            paddingRight: `${containerWidth * 0.03}px`,
+            transform: `translateY(${isLandscape ? containerWidth * 0.0166 : containerWidth * 0.1111}px)`
+          }}
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
@@ -650,13 +669,16 @@ const Hero = () => {
             transition={{ duration: 1 }}
           >
             <h1 
-              className={`flex flex-col items-center ${isLandscape ? 'mb-[5.2vw]' : 'mb-[12.96vw]'}`}
+              className="flex flex-col items-center"
+              style={{
+                marginBottom: isLandscape ? `${containerWidth * 0.052}px` : `${containerWidth * 0.1296}px`
+              }}
             >
               <div className="relative inline-block max-w-full">
                 <span 
                   className="font-teko font-semibold leading-none tracking-normal text-white"
                   style={{
-                    fontSize: isLandscape ? '7.08vw' : '8.88vw',
+                    fontSize: isLandscape ? `${containerWidth * 0.0708}px` : `${containerWidth * 0.0888}px`,
                   }}
                 >
                   Hello, Welcome
@@ -664,9 +686,9 @@ const Hero = () => {
                 <span 
                   className="absolute left-1/2 -translate-x-1/2 top-full opacity-60 flex justify-center whitespace-nowrap text-white/60 font-display font-normal"
                   style={{
-                    fontSize: isLandscape ? '0.83vw' : '1.85vw',
+                    fontSize: isLandscape ? `${containerWidth * 0.0083}px` : `${containerWidth * 0.0185}px`,
                     letterSpacing: isLandscape ? '0.35em' : '0.15em',
-                    marginTop: isLandscape ? '0.83vw' : '2.22vw',
+                    marginTop: isLandscape ? `${containerWidth * 0.0083}px` : `${containerWidth * 0.0222}px`,
                   }}
                 >
                   {"An unknown designer. More than just a designer.".split("").map((char, i) => (
@@ -679,7 +701,7 @@ const Hero = () => {
             <div 
               className="flex items-center justify-center"
               style={{
-                gap: isLandscape ? '1.25vw' : '2.96vw',
+                gap: isLandscape ? `${containerWidth * 0.0125}px` : `${containerWidth * 0.0296}px`,
                 flexDirection: isLandscape ? 'row' : 'column',
               }}
             >
@@ -689,10 +711,11 @@ const Hero = () => {
                 onClick={() => document.getElementById('works')?.scrollIntoView({ behavior: 'smooth' })}
                 className="border border-white/20 bg-white/5 backdrop-blur-sm text-white font-bold tracking-normal transition-colors duration-300 hover:bg-white/10 hover:border-white/40"
                 style={{
-                  width: isLandscape ? '10vw' : '25.92vw',
-                  paddingTop: isLandscape ? '0.625vw' : '1.66vw',
-                  paddingBottom: isLandscape ? '0.625vw' : '1.66vw',
-                  fontSize: isLandscape ? '0.83vw' : '2.22vw',
+                  width: isLandscape ? `${containerWidth * 0.10}px` : `${containerWidth * 0.2592}px`,
+                  paddingTop: isLandscape ? `${containerWidth * 0.00625}px` : `${containerWidth * 0.0166}px`,
+                  paddingBottom: isLandscape ? `${containerWidth * 0.00625}px` : `${containerWidth * 0.0166}px`,
+                  fontSize: isLandscape ? `${containerWidth * 0.0083}px` : `${containerWidth * 0.0222}px`,
+                  borderRadius: isLandscape ? `${containerWidth * 0.0041}px` : `${containerWidth * 0.0111}px`,
                 }}
               >
                 Learn More
@@ -703,10 +726,11 @@ const Hero = () => {
                 onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
                 className="bg-brand-red text-white font-bold tracking-normal transition-colors duration-300 hover:bg-brand-red/90"
                 style={{
-                  width: isLandscape ? '10vw' : '25.92vw',
-                  paddingTop: isLandscape ? '0.625vw' : '1.66vw',
-                  paddingBottom: isLandscape ? '0.625vw' : '1.66vw',
-                  fontSize: isLandscape ? '0.83vw' : '2.22vw',
+                  width: isLandscape ? `${containerWidth * 0.10}px` : `${containerWidth * 0.2592}px`,
+                  paddingTop: isLandscape ? `${containerWidth * 0.00625}px` : `${containerWidth * 0.0166}px`,
+                  paddingBottom: isLandscape ? `${containerWidth * 0.00625}px` : `${containerWidth * 0.0166}px`,
+                  fontSize: isLandscape ? `${containerWidth * 0.0083}px` : `${containerWidth * 0.0222}px`,
+                  borderRadius: isLandscape ? `${containerWidth * 0.0041}px` : `${containerWidth * 0.0111}px`,
                 }}
               >
                 Contact Now
@@ -723,11 +747,12 @@ const Hero = () => {
       alt: "Featured Work 2",
       content: (
         <div 
-          className={`relative z-10 text-center w-full px-[3vw] transition-transform duration-[1500ms] ease-[cubic-bezier(0.25,1,0.5,1)] group-hover:scale-105 ${
-            isLandscape 
-              ? 'translate-y-[1.66vw]' 
-              : 'translate-y-[11.11vw]'
-          }`}
+          className="relative z-10 text-center w-full"
+          style={{
+            paddingLeft: `${containerWidth * 0.03}px`,
+            paddingRight: `${containerWidth * 0.03}px`,
+            transform: `translateY(${isLandscape ? containerWidth * 0.0166 : containerWidth * 0.1111}px)`
+          }}
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
@@ -735,13 +760,16 @@ const Hero = () => {
             transition={{ duration: 1 }}
           >
             <h1 
-              className={`flex flex-col items-center ${isLandscape ? 'mb-[5.2vw]' : 'mb-[12.96vw]'}`}
+              className="flex flex-col items-center"
+              style={{
+                marginBottom: isLandscape ? `${containerWidth * 0.052}px` : `${containerWidth * 0.1296}px`
+              }}
             >
               <div className="relative inline-block max-w-full">
                 <span 
                   className="font-teko font-semibold leading-none tracking-normal text-white"
                   style={{
-                    fontSize: isLandscape ? '7.08vw' : '8.88vw',
+                    fontSize: isLandscape ? `${containerWidth * 0.0708}px` : `${containerWidth * 0.0888}px`,
                   }}
                 >
                   SEE THE POWER
@@ -749,9 +777,9 @@ const Hero = () => {
                 <span 
                   className="absolute left-1/2 -translate-x-1/2 top-full opacity-100 flex justify-center whitespace-nowrap text-[#a3a3a3] font-display font-normal"
                   style={{
-                    fontSize: isLandscape ? '0.83vw' : '1.85vw',
+                    fontSize: isLandscape ? `${containerWidth * 0.0083}px` : `${containerWidth * 0.0185}px`,
                     letterSpacing: isLandscape ? '0.3em' : '0.15em',
-                    marginTop: isLandscape ? '0.83vw' : '2.22vw',
+                    marginTop: isLandscape ? `${containerWidth * 0.0083}px` : `${containerWidth * 0.0222}px`,
                   }}
                 >
                   {"Trusted by IPSC Champions Worldwide".split("").map((char, i) => (
@@ -764,7 +792,7 @@ const Hero = () => {
             <div 
               className="flex items-center justify-center"
               style={{
-                gap: isLandscape ? '1.25vw' : '2.96vw',
+                gap: isLandscape ? `${containerWidth * 0.0125}px` : `${containerWidth * 0.0296}px`,
                 flexDirection: isLandscape ? 'row' : 'column',
               }}
             >
@@ -780,10 +808,11 @@ const Hero = () => {
                   whileTap={{ scale: 0.95 }}
                   className="bg-brand-red text-white font-bold tracking-normal transition-colors duration-300 hover:bg-brand-red/90"
                   style={{
-                    width: isLandscape ? '12.5vw' : '29.63vw',
-                    paddingTop: isLandscape ? '0.625vw' : '1.66vw',
-                    paddingBottom: isLandscape ? '0.625vw' : '1.66vw',
-                    fontSize: isLandscape ? '0.83vw' : '2.22vw',
+                    width: isLandscape ? `${containerWidth * 0.125}px` : `${containerWidth * 0.2963}px`,
+                    paddingTop: isLandscape ? `${containerWidth * 0.00625}px` : `${containerWidth * 0.0166}px`,
+                    paddingBottom: isLandscape ? `${containerWidth * 0.00625}px` : `${containerWidth * 0.0166}px`,
+                    fontSize: isLandscape ? `${containerWidth * 0.0083}px` : `${containerWidth * 0.0222}px`,
+                    borderRadius: isLandscape ? `${containerWidth * 0.0041}px` : `${containerWidth * 0.0111}px`,
                   }}
                 >
                   Experience the Power →
@@ -801,7 +830,7 @@ const Hero = () => {
       alt: "David Personal Profile",
       overlayClassName: "bg-black/10"
     }
-  ], [isLandscape]);
+  ], [isLandscape, containerWidth]);
 
   const isFirstPlayRef = useRef(true);
 
@@ -822,98 +851,103 @@ const Hero = () => {
   return (
     <section 
       id="home" 
-      className={`relative w-full ${isLandscape ? 'aspect-[16/9]' : 'aspect-[9/16]'} h-auto overflow-hidden bg-brand-dark group`}
+      className="w-full bg-brand-dark py-6 md:py-10"
     >
-      <AnimatePresence initial={false}>
-        <motion.div
-          key={currentSlide}
-          initial={{ opacity: 0, x: 100 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -100 }}
-          transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-          drag={isMobile ? "x" : false}
-          dragDirectionLock={isMobile}
-          dragConstraints={{ left: 0, right: 0 }}
-          dragElastic={0.7}
-          onDragEnd={(_, info) => {
-            if (!isMobile) return;
-            const threshold = 30;
-            if (info.offset.x > threshold) handlePrev();
-            else if (info.offset.x < -threshold) handleNext();
-          }}
-          className={`absolute inset-0 flex items-center justify-center pointer-events-auto ${isMobile ? "cursor-grab active:cursor-grabbing touch-pan-y" : "cursor-default"}`}
-        >
-          {(() => {
-            const slide = slides[currentSlide];
-            const bgUrl = slide.type === 'content' 
-              ? slide.bg 
-              : (isLandscape ? slide.desktop! : slide.mobile!);
-            const overlayClass = slide.type === 'content'
-              ? 'bg-gradient-to-b from-brand-dark/50 via-transparent to-brand-dark/75'
-              : (slide.overlayClassName || 'bg-black/60');
-
-            return (
-              <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
-                {/* Background Image Container */}
-                <div className="absolute inset-0 z-0 pointer-events-none select-none">
-                  <img 
-                    src={getOptimizedUrl(bgUrl, isLandscape ? 2560 : 1080, isLandscape ? 1440 : 1920)} 
-                    alt={slide.type === 'image' ? (slide.alt || 'Featured') : 'Background'} 
-                    className="absolute inset-0 w-full h-full object-cover brightness-[0.4] contrast-110 scale-100 group-hover:scale-105 transition-transform duration-[1500ms] ease-[cubic-bezier(0.25,1,0.5,1)]"
-                    referrerPolicy="no-referrer"
-                    fetchPriority="high"
-                    loading="eager"
-                  />
-                  <div className={`absolute inset-0 ${overlayClass}`} />
-                </div>
-
-                {/* Slide Content Container */}
-                {slide.content && (
-                  <div className="relative z-10 w-full h-full flex items-center justify-center pointer-events-none">
-                    <div className="pointer-events-auto w-full">
-                      {slide.content}
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })()}
-        </motion.div>
-      </AnimatePresence>
-
-      {/* Navigation Arrows */}
-      <button 
-        onClick={(e) => { e.stopPropagation(); handlePrev(); }}
-        className="hidden md:flex absolute left-8 top-1/2 -translate-y-1/2 w-12 h-12 items-center justify-center rounded-full bg-black/20 border border-white/10 text-white/40 hover:text-white hover:bg-black/40 hover:border-white/30 transition-all duration-300 z-30 group"
-        aria-label="Previous Slide"
+      <div 
+        ref={containerRef}
+        className={`relative w-full max-w-7xl mx-auto px-4 md:px-6 ${isLandscape ? 'aspect-[16/9]' : 'aspect-[9/16]'} h-auto overflow-hidden rounded-2xl md:rounded-3xl bg-brand-dark group shadow-2xl`}
       >
-        <ChevronLeft size={24} className="group-hover:-translate-x-0.5 transition-transform" />
-      </button>
-      <button 
-        onClick={(e) => { e.stopPropagation(); handleNext(); }}
-        className="hidden md:flex absolute right-8 top-1/2 -translate-y-1/2 w-12 h-12 items-center justify-center rounded-full bg-black/20 border border-white/10 text-white/40 hover:text-white hover:bg-black/40 hover:border-white/30 transition-all duration-300 z-30 group"
-        aria-label="Next Slide"
-      >
-        <ChevronRight size={24} className="group-hover:translate-x-0.5 transition-transform" />
-      </button>
-
-      {/* Slide Indicators */}
-      <div className="absolute bottom-5 md:bottom-12 left-1/2 -translate-x-1/2 flex gap-4 z-20">
-        {slides.map((_, i) => (
-          <button
-            key={i}
-            onClick={(e) => {
-              e.stopPropagation();
-              setCurrentSlide(i);
+        <AnimatePresence initial={false}>
+          <motion.div
+            key={currentSlide}
+            initial={{ opacity: 0, x: 100 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -100 }}
+            transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+            drag={isMobile ? "x" : false}
+            dragDirectionLock={isMobile}
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={0.7}
+            onDragEnd={(_, info) => {
+              if (!isMobile) return;
+              const threshold = 30;
+              if (info.offset.x > threshold) handlePrev();
+              else if (info.offset.x < -threshold) handleNext();
             }}
-            className={`w-3 h-3 transition-all duration-500 rounded-full border-2 ${
-              currentSlide === i 
-                ? 'bg-brand-red border-brand-red scale-125' 
-                : 'bg-transparent border-white/30 hover:border-white/60'
-            }`}
-            aria-label={`Go to slide ${i + 1}`}
-          />
-        ))}
+            className={`absolute inset-0 flex items-center justify-center pointer-events-auto ${isMobile ? "cursor-grab active:cursor-grabbing touch-pan-y" : "cursor-default"}`}
+          >
+            {(() => {
+              const slide = slides[currentSlide];
+              const bgUrl = slide.type === 'content' 
+                ? slide.bg 
+                : (isLandscape ? slide.desktop! : slide.mobile!);
+              const overlayClass = slide.type === 'content'
+                ? 'bg-gradient-to-b from-brand-dark/50 via-transparent to-brand-dark/75'
+                : (slide.overlayClassName || 'bg-black/60');
+
+              return (
+                <div className="absolute inset-0 flex items-center justify-center overflow-hidden transition-transform duration-[1500ms] ease-[cubic-bezier(0.25,1,0.5,1)] group-hover:scale-105">
+                  {/* Background Image Container */}
+                  <div className="absolute inset-0 z-0 pointer-events-none select-none">
+                    <img 
+                      src={getOptimizedUrl(bgUrl, isLandscape ? 2560 : 1080, isLandscape ? 1440 : 1920)} 
+                      alt={slide.type === 'image' ? (slide.alt || 'Featured') : 'Background'} 
+                      className="absolute inset-0 w-full h-full object-cover brightness-[0.4] contrast-110"
+                      referrerPolicy="no-referrer"
+                      fetchPriority="high"
+                      loading="eager"
+                    />
+                    <div className={`absolute inset-0 ${overlayClass}`} />
+                  </div>
+
+                  {/* Slide Content Container */}
+                  {slide.content && (
+                    <div className="relative z-10 w-full h-full flex items-center justify-center pointer-events-none">
+                      <div className="pointer-events-auto w-full">
+                        {slide.content}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Navigation Arrows */}
+        <button 
+          onClick={(e) => { e.stopPropagation(); handlePrev(); }}
+          className="hidden md:flex absolute left-8 top-1/2 -translate-y-1/2 w-12 h-12 items-center justify-center rounded-full bg-black/20 border border-white/10 text-white/40 hover:text-white hover:bg-black/40 hover:border-white/30 transition-all duration-300 z-30 group/arrow"
+          aria-label="Previous Slide"
+        >
+          <ChevronLeft size={24} className="group-hover/arrow:-translate-x-0.5 transition-transform" />
+        </button>
+        <button 
+          onClick={(e) => { e.stopPropagation(); handleNext(); }}
+          className="hidden md:flex absolute right-8 top-1/2 -translate-y-1/2 w-12 h-12 items-center justify-center rounded-full bg-black/20 border border-white/10 text-white/40 hover:text-white hover:bg-black/40 hover:border-white/30 transition-all duration-300 z-30 group/arrow"
+          aria-label="Next Slide"
+        >
+          <ChevronRight size={24} className="group-hover/arrow:translate-x-0.5 transition-transform" />
+        </button>
+
+        {/* Slide Indicators */}
+        <div className="absolute bottom-5 md:bottom-12 left-1/2 -translate-x-1/2 flex gap-4 z-20">
+          {slides.map((_, i) => (
+            <button
+              key={i}
+              onClick={(e) => {
+                e.stopPropagation();
+                setCurrentSlide(i);
+              }}
+              className={`w-3 h-3 transition-all duration-500 rounded-full border-2 ${
+                currentSlide === i 
+                  ? 'bg-brand-red border-brand-red scale-125' 
+                  : 'bg-transparent border-white/30 hover:border-white/60'
+              }`}
+              aria-label={`Go to slide ${i + 1}`}
+            />
+          ))}
+        </div>
       </div>
     </section>
   );
