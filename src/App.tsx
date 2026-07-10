@@ -614,8 +614,6 @@ const Hero = () => {
     return window.innerWidth > window.innerHeight;
   });
 
-  const [isBannerHovered, setIsBannerHovered] = useState(false);
-
   useEffect(() => {
     if (typeof window === 'undefined') return;
     
@@ -634,7 +632,7 @@ const Hero = () => {
     | { type: 'content'; bg: string; content: React.ReactNode }
     | { type: 'image'; desktop: string; mobile: string; alt?: string; content?: React.ReactNode; overlayClassName?: string };
 
-  const slides: HeroSlide[] = [
+  const slides: HeroSlide[] = useMemo(() => [
     {
       type: 'content',
       bg: "https://raw.githubusercontent.com/David007-CN/DW/refs/heads/main/David2_3840x2160_middle.jpg",
@@ -803,7 +801,7 @@ const Hero = () => {
       alt: "David Personal Profile",
       overlayClassName: "bg-black/10"
     }
-  ];
+  ], [isLandscape]);
 
   const isFirstPlayRef = useRef(true);
 
@@ -825,8 +823,6 @@ const Hero = () => {
     <section 
       id="home" 
       className={`relative w-full ${isLandscape ? 'aspect-[16/9]' : 'aspect-[9/16]'} h-auto overflow-hidden bg-brand-dark group/banner`}
-      onMouseEnter={() => setIsBannerHovered(true)}
-      onMouseLeave={() => setIsBannerHovered(false)}
     >
       <AnimatePresence initial={false}>
         <motion.div
