@@ -814,14 +814,14 @@ const Hero = () => {
   ], [isLandscape]);
 
   const isFirstPlayRef = useRef(true);
+  const currentDuration = (currentSlide === 0 && isFirstPlayRef.current) ? 2000 : 6000;
 
   const handleNext = () => setCurrentSlide((prev) => (prev + 1) % slides.length);
   const handlePrev = () => setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
 
   useEffect(() => {
-    let delay = 6000;
+    const delay = currentDuration;
     if (currentSlide === 0 && isFirstPlayRef.current) {
-      delay = 2000;
       isFirstPlayRef.current = false;
     }
 
@@ -923,23 +923,36 @@ const Hero = () => {
           <ChevronRight size={24} className="group-hover/arrow:translate-x-0.5 transition-transform" />
         </button>
 
-        {/* Slide Indicators */}
-        <div className="absolute bottom-5 md:bottom-12 left-1/2 -translate-x-1/2 flex gap-4 z-20">
-          {slides.map((_, i) => (
-            <button
-              key={i}
-              onClick={(e) => {
-                e.stopPropagation();
-                setCurrentSlide(i);
-              }}
-              className={`w-3 h-3 transition-all duration-500 rounded-none border-2 ${
-                currentSlide === i 
-                  ? 'bg-brand-red border-brand-red scale-125' 
-                  : 'bg-transparent border-white/30 hover:border-white/60'
-              }`}
-              aria-label={`Go to slide ${i + 1}`}
-            />
-          ))}
+        {/* Slide Progress Line Indicators (Osight style) */}
+        <div className="absolute bottom-5 md:bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-1 md:gap-2 z-30">
+          {slides.map((_, i) => {
+            const isActive = currentSlide === i;
+
+            return (
+              <button
+                key={i}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCurrentSlide(i);
+                }}
+                className="group relative py-3 px-0.5 cursor-pointer focus:outline-none"
+                aria-label={`Go to slide ${i + 1}`}
+              >
+                {/* Background Line Track */}
+                <div className="w-12 sm:w-20 md:w-28 lg:w-36 h-[1.5px] md:h-[2px] bg-white/12 overflow-hidden transition-all duration-300 group-hover:bg-white/30">
+                  {isActive && (
+                    <motion.div
+                      key={`progress-${currentSlide}`}
+                      initial={{ width: "0%" }}
+                      animate={{ width: "100%" }}
+                      transition={{ duration: currentDuration / 1000, ease: "linear" }}
+                      className="h-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]"
+                    />
+                  )}
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
     </section>
