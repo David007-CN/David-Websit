@@ -924,7 +924,7 @@ const Hero = () => {
         </button>
 
         {/* Slide Progress Line Indicators (Osight style) */}
-        <div className="absolute bottom-16 md:bottom-28 left-1/2 -translate-x-1/2 flex items-center gap-1 md:gap-2 z-30">
+        <div className="absolute bottom-2 md:bottom-28 left-1/2 -translate-x-1/2 flex items-center gap-1 md:gap-2 z-30">
           {slides.map((_, i) => {
             const isActive = currentSlide === i;
 
