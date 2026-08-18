@@ -1429,13 +1429,13 @@ const Archive = ({ archiveProjects }: { archiveProjects: Project[] }) => {
               ) : (
                 <img 
                   src={getOptimizedUrl(project.image, window.innerWidth > 768 ? 1200 : 800, window.innerWidth > 768 ? 675 : 450)} 
-                  className={`w-full h-full object-cover ${activeTouchId === project.id ? 'grayscale-0 brightness-100' : `grayscale group-hover:grayscale-0 ${project.title === 'Retouching' ? 'brightness-[0.35]' : 'brightness-[0.45]'} group-hover:brightness-100`} transition-all duration-700`} 
+                  className={`w-full h-full object-cover ${activeTouchId === project.id ? 'grayscale-0 brightness-100' : `grayscale group-hover:grayscale-0 ${project.title === 'Rendering' ? 'brightness-[0.20]' : 'brightness-[0.35]'} group-hover:brightness-100`} transition-all duration-700`} 
                   referrerPolicy="no-referrer"
                   loading="lazy"
                   decoding="async"
                 />
               )}
-              <div className={`absolute inset-0 flex flex-col justify-center items-center text-center p-4 sm:p-6 md:p-12 ${project.title === 'Retouching' ? 'bg-black/45' : 'bg-black/25'} group-hover:bg-transparent transition-colors duration-500`}>
+              <div className={`absolute inset-0 flex flex-col justify-center items-center text-center p-4 sm:p-6 md:p-12 ${project.title === 'Rendering' ? 'bg-black/40' : 'bg-black/15'} group-hover:bg-transparent transition-colors duration-500`}>
                 <p className="text-[5px] sm:text-[11px] font-bold tracking-[0.1em] opacity-60 mb-0.5 sm:mb-2">{project.subtitle}</p>
                 <h3 className="text-base sm:text-2xl md:text-3xl lg:text-4xl font-display font-bold mb-1 sm:mb-4 group-hover:scale-110 transition-transform duration-500">{project.title}</h3>
                 <div className="flex flex-col items-center">
@@ -2854,7 +2854,7 @@ const INITIAL_ARCHIVE: Project[] = [
     title: "Retouching",
     subtitle: "Nothing left unnoticed.",
     category: "Retouching",
-    image: "https://raw.githubusercontent.com/David007-CN/DW/main/Cover/SE%20White%20background_2.jpg",
+    image: "https://github.com/David007-CN/DW/blob/main/Cover/SE%20Black%20background_2.jpg?raw=true",
     galleryImages: []
   },
   {
@@ -2862,7 +2862,7 @@ const INITIAL_ARCHIVE: Project[] = [
     title: "Rendering",
     subtitle: "Visualized in detail.",
     category: "Rendering",
-    image: "https://raw.githubusercontent.com/David007-CN/DW/main/Cover/Scene%20and%20White%20model_2560x1440.jpg",
+    image: "https://github.com/David007-CN/DW/blob/main/Cover/White%20model_2560x1440.jpg?raw=true",
     galleryImages: []
   },
   {
