@@ -1156,43 +1156,43 @@ const Spotlight = () => {
     rushProgress: 0
   });
 
-  // Measure container and slide sizes dynamically (Doubled cinematic sizing on desktop)
+  // Measure container and slide sizes dynamically (Proportionally scaled down by 1/4)
   const updateMetrics = useCallback(() => {
     if (containerRef.current) {
       const cWidth = containerRef.current.offsetWidth;
-      let sWidth = cWidth * 0.88;
+      let sWidth = cWidth * 0.68;
       let gap = 16;
       let tWidth = 76;
       let tGap = 8;
       
       if (cWidth >= 1536) {
-        // 2xl Ultra-wide desktop: full doubled cinematic width (~1680px max)
-        sWidth = Math.min(cWidth * 0.86, 1680);
-        gap = 40;
-        tWidth = 130;
-        tGap = 14;
-      } else if (cWidth >= 1280) {
-        // xl Desktop: doubled width (~1420px max)
-        sWidth = Math.min(cWidth * 0.84, 1420);
-        gap = 36;
+        // 2xl Ultra-wide desktop: scaled down by 25% from 1680px -> ~1260px max
+        sWidth = Math.min(cWidth * 0.65, 1260);
+        gap = 32;
         tWidth = 120;
         tGap = 12;
+      } else if (cWidth >= 1280) {
+        // xl Desktop: scaled down by 25% from 1420px -> ~1060px max
+        sWidth = Math.min(cWidth * 0.63, 1060);
+        gap = 28;
+        tWidth = 110;
+        tGap = 10;
       } else if (cWidth >= 1024) {
-        // lg Desktop: doubled width (~1180px max)
-        sWidth = Math.min(cWidth * 0.82, 1180);
-        gap = 32;
-        tWidth = 114;
-        tGap = 12;
+        // lg Desktop: scaled down by 25% from 1180px -> ~880px max
+        sWidth = Math.min(cWidth * 0.61, 880);
+        gap = 24;
+        tWidth = 100;
+        tGap = 10;
       } else if (cWidth >= 768) {
         // md Tablet
-        sWidth = cWidth * 0.78;
-        gap = 24;
-        tWidth = 96;
-        tGap = 10;
-      } else if (cWidth >= 640) {
-        sWidth = cWidth * 0.82;
+        sWidth = cWidth * 0.58;
         gap = 20;
-        tWidth = 84;
+        tWidth = 88;
+        tGap = 8;
+      } else if (cWidth >= 640) {
+        sWidth = cWidth * 0.62;
+        gap = 16;
+        tWidth = 80;
         tGap = 8;
       }
       setMetrics({ slideWidth: sWidth, gap, thumbWidth: tWidth, thumbGap: tGap, containerWidth: cWidth });
@@ -1532,8 +1532,8 @@ const Spotlight = () => {
           })}
         </div>
 
-        {/* 2. Bottom Continuous Slow-Gliding Marquee Carousel (Doubled Cinematic Artwork Presentation) */}
-        <div className="relative w-full h-[240px] sm:h-[380px] md:h-[540px] lg:h-[720px] xl:h-[860px] 2xl:h-[960px] flex items-center overflow-hidden">
+        {/* 2. Bottom Continuous Slow-Gliding Marquee Carousel (Artwork Presentation) */}
+        <div className="relative w-full h-[180px] sm:h-[285px] md:h-[405px] lg:h-[540px] xl:h-[645px] 2xl:h-[720px] flex items-center overflow-hidden">
           {/* Desktop Left / Right Navigation Chevrons Vertically Centered on Big Stage */}
           <button 
             onClick={handlePrev}
