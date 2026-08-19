@@ -1110,12 +1110,205 @@ const ExperienceAndServices = () => (
 );
 
 const Spotlight = () => {
-  const [selectedIndex, setSelectedIndex] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  
+  const [isHovered, setIsHovered] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
   const [rotation, setRotation] = useState(0);
   const [zoomScale, setZoomScale] = useState(1);
   const [pinchStartDistance, setPinchStartDistance] = useState<number | null>(null);
   const [pinchStartScale, setPinchStartScale] = useState(1);
+  
+  const [activeRealIndex, setActiveRealIndex] = useState(0);
+  const [offsetState, setOffsetState] = useState(0);
+  
+  // Responsive slide & thumbnail sizing
+  const [metrics, setMetrics] = useState({
+    slideWidth: 640,
+    gap: 24,
+    thumbWidth: 110,
+    thumbGap: 12,
+    containerWidth: 1200
+  });
+
+  const xOffsetRef = useRef(0);
+  const targetOffsetRef = useRef<number | null>(null);
+  const lastTimeRef = useRef<number>(performance.now());
+  const dragStartRef = useRef<{ startX: number; startOffset: number; moved: boolean } | null>(null);
+
+  // Dynamic rhythmic animation state: alternates between high-speed warp rush (~1s) and slow showcase (~3.5s)
+  const kineticStateRef = useRef<{
+    phase: 'SLOW' | 'RUSH';
+    phaseTimer: number;
+    slowDuration: number;
+    rushStartOffset: number;
+    rushTargetOffset: number;
+    rushDuration: number;
+    rushProgress: number;
+  }>({
+    phase: 'SLOW',
+    phaseTimer: 0,
+    slowDuration: 3.5,
+    rushStartOffset: 0,
+    rushTargetOffset: 0,
+    rushDuration: 1.0,
+    rushProgress: 0
+  });
+
+  // Measure container and slide sizes dynamically
+  const updateMetrics = useCallback(() => {
+    if (containerRef.current) {
+      const cWidth = containerRef.current.offsetWidth;
+      let sWidth = cWidth * 0.82;
+      let gap = 16;
+      let tWidth = 76;
+      let tGap = 8;
+      
+      if (cWidth >= 1024) {
+        sWidth = Math.min(cWidth * 0.48, 860);
+        gap = 32;
+        tWidth = 114;
+        tGap = 12;
+      } else if (cWidth >= 768) {
+        sWidth = cWidth * 0.58;
+        gap = 24;
+        tWidth = 96;
+        tGap = 10;
+      } else if (cWidth >= 640) {
+        sWidth = cWidth * 0.68;
+        gap = 20;
+        tWidth = 84;
+        tGap = 8;
+      }
+      setMetrics({ slideWidth: sWidth, gap, thumbWidth: tWidth, thumbGap: tGap, containerWidth: cWidth });
+    }
+  }, []);
+
+  useEffect(() => {
+    updateMetrics();
+    window.addEventListener('resize', updateMetrics);
+    return () => window.removeEventListener('resize', updateMetrics);
+  }, [updateMetrics]);
+
+  // Total loop width of 1 full cycle of PROJECTS for main carousel
+  const totalMainItemWidth = metrics.slideWidth + metrics.gap;
+  const mainLoopWidth = PROJECTS.length * totalMainItemWidth;
+
+  // Total item width for top thumbnail strip
+  const totalThumbItemWidth = metrics.thumbWidth + metrics.thumbGap;
+
+  // Synchronized offset for top thumbnail strip
+  const thumbOffsetState = totalMainItemWidth > 0 
+    ? (offsetState / totalMainItemWidth) * totalThumbItemWidth 
+    : 0;
+
+  // Initialize offset so initial item is centered
+  useEffect(() => {
+    if (mainLoopWidth > 0 && xOffsetRef.current === 0) {
+      const initialOffset = -mainLoopWidth * 2 - metrics.slideWidth / 2;
+      xOffsetRef.current = initialOffset;
+      setOffsetState(initialOffset);
+    }
+  }, [mainLoopWidth, metrics.slideWidth]);
+
+  // Dynamic Marquee Loop with alternating 1-second hyper-rush and slow showcase
+  useEffect(() => {
+    let animId: number;
+    
+    const tick = (now: number) => {
+      const dt = Math.min((now - lastTimeRef.current) / 1000, 0.1);
+      lastTimeRef.current = now;
+      
+      const ks = kineticStateRef.current;
+
+      if (targetOffsetRef.current !== null) {
+        // Smoothly glide towards user-requested offset (from arrow buttons or thumbnail click)
+        const diff = targetOffsetRef.current - xOffsetRef.current;
+        if (Math.abs(diff) < 0.5) {
+          xOffsetRef.current = targetOffsetRef.current;
+          targetOffsetRef.current = null;
+          ks.phase = 'SLOW';
+          ks.phaseTimer = 0;
+        } else {
+          xOffsetRef.current += diff * Math.min(dt * 7.5, 0.25);
+        }
+      } else if (!isHovered && !isDragging && !isZoomed && totalMainItemWidth > 0) {
+        ks.phaseTimer += dt;
+
+        if (ks.phase === 'SLOW') {
+          // Slow showcase speed: gentle slow crawl (~22px per second)
+          xOffsetRef.current -= 22 * dt;
+
+          // When slow showcase period completes (~3.5s): suddenly accelerate very fast!
+          if (ks.phaseTimer >= ks.slowDuration) {
+            // Randomly jump ahead by 2, 3, or 4 slides to discover a new surprise artwork
+            const jumpSteps = Math.floor(Math.random() * 3) + 2;
+            const currentSlot = Math.round((-xOffsetRef.current - metrics.slideWidth / 2) / totalMainItemWidth);
+            const targetSlot = currentSlot + jumpSteps;
+
+            ks.phase = 'RUSH';
+            ks.phaseTimer = 0;
+            ks.rushStartOffset = xOffsetRef.current;
+            ks.rushTargetOffset = -targetSlot * totalMainItemWidth - metrics.slideWidth / 2;
+            ks.rushDuration = 0.95 + Math.random() * 0.15; // ~1.0 second dynamic fast rush
+            ks.rushProgress = 0;
+          }
+        } else if (ks.phase === 'RUSH') {
+          ks.rushProgress = Math.min(1.0, ks.phaseTimer / ks.rushDuration);
+          const p = ks.rushProgress;
+          // Quintic ease-in-out curve for sudden intense acceleration and cinematic brake snap
+          const ease = p < 0.5 
+            ? 16 * p * p * p * p * p 
+            : 1 - Math.pow(-2 * p + 2, 5) / 2;
+
+          xOffsetRef.current = ks.rushStartOffset + (ks.rushTargetOffset - ks.rushStartOffset) * ease;
+
+          // When fast rush completes: lock onto the newly determined artwork and switch back to slow showcase
+          if (ks.rushProgress >= 1.0) {
+            xOffsetRef.current = ks.rushTargetOffset;
+            ks.phase = 'SLOW';
+            ks.phaseTimer = 0;
+            ks.slowDuration = 3.2 + Math.random() * 1.2; // ~3.2s to 4.4s slow showcase
+          }
+        }
+      }
+      
+      // Infinite wrapping boundary check with generous multi-loop buffer
+      if (mainLoopWidth > 0) {
+        if (xOffsetRef.current < -mainLoopWidth * 3.5) {
+          xOffsetRef.current += mainLoopWidth;
+          if (targetOffsetRef.current !== null) targetOffsetRef.current += mainLoopWidth;
+          if (ks.phase === 'RUSH') {
+            ks.rushStartOffset += mainLoopWidth;
+            ks.rushTargetOffset += mainLoopWidth;
+          }
+        } else if (xOffsetRef.current > -mainLoopWidth * 1.5) {
+          xOffsetRef.current -= mainLoopWidth;
+          if (targetOffsetRef.current !== null) targetOffsetRef.current -= mainLoopWidth;
+          if (ks.phase === 'RUSH') {
+            ks.rushStartOffset -= mainLoopWidth;
+            ks.rushTargetOffset -= mainLoopWidth;
+          }
+        }
+      }
+      
+      setOffsetState(xOffsetRef.current);
+      
+      // Compute active project: the slide closest to true screen center
+      if (totalMainItemWidth > 0) {
+        const centerSlot = Math.round((-xOffsetRef.current - metrics.slideWidth / 2) / totalMainItemWidth);
+        const real = ((centerSlot % PROJECTS.length) + PROJECTS.length) % PROJECTS.length;
+        setActiveRealIndex((prev) => (prev !== real ? real : prev));
+      }
+      
+      animId = requestAnimationFrame(tick);
+    };
+    
+    lastTimeRef.current = performance.now();
+    animId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(animId);
+  }, [isHovered, isDragging, isZoomed, mainLoopWidth, totalMainItemWidth, metrics.slideWidth]);
 
   // Modal scroll locking for Spotlight
   useEffect(() => {
@@ -1129,17 +1322,60 @@ const Spotlight = () => {
     };
   }, [isZoomed]);
 
-  const project = PROJECTS[selectedIndex % PROJECTS.length];
-  const currentImage = project.image;
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isZoomed) setIsZoomed(false);
+      if (e.key === 'ArrowLeft') handlePrev();
+      if (e.key === 'ArrowRight') handleNext();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isZoomed, totalMainItemWidth, metrics.slideWidth]);
 
   const handlePrev = (e?: React.MouseEvent) => {
     e?.stopPropagation();
-    setSelectedIndex((prev) => (prev - 1 + PROJECTS.length) % PROJECTS.length);
+    if (totalMainItemWidth > 0) {
+      const currentSlot = Math.round((-xOffsetRef.current - metrics.slideWidth / 2) / totalMainItemWidth);
+      targetOffsetRef.current = -(currentSlot - 1) * totalMainItemWidth - metrics.slideWidth / 2;
+    }
   };
 
   const handleNext = (e?: React.MouseEvent) => {
     e?.stopPropagation();
-    setSelectedIndex((prev) => (prev + 1) % PROJECTS.length);
+    if (totalMainItemWidth > 0) {
+      const currentSlot = Math.round((-xOffsetRef.current - metrics.slideWidth / 2) / totalMainItemWidth);
+      targetOffsetRef.current = -(currentSlot + 1) * totalMainItemWidth - metrics.slideWidth / 2;
+    }
+  };
+
+  // Drag interaction handlers
+  const handlePointerDown = (e: React.PointerEvent) => {
+    dragStartRef.current = {
+      startX: e.clientX,
+      startOffset: xOffsetRef.current,
+      moved: false
+    };
+    setIsDragging(true);
+    targetOffsetRef.current = null;
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (dragStartRef.current) {
+      const deltaX = e.clientX - dragStartRef.current.startX;
+      if (Math.abs(deltaX) > 4) {
+        dragStartRef.current.moved = true;
+      }
+      xOffsetRef.current = dragStartRef.current.startOffset + deltaX;
+      setOffsetState(xOffsetRef.current);
+    }
+  };
+
+  const handlePointerUp = () => {
+    setIsDragging(false);
+    setTimeout(() => {
+      dragStartRef.current = null;
+    }, 50);
   };
 
   const toggleRotation = (e?: React.MouseEvent) => {
@@ -1178,119 +1414,221 @@ const Spotlight = () => {
   const handleTouchEnd = () => {
     setPinchStartDistance(null);
   };
-  
+
+  // Generate extended loop items for rendering visible buffer
+  const REPEAT_COUNT = 6;
+  const loopItems: Array<{ globalIndex: number; project: Project; originalIndex: number; key: string }> = [];
+  for (let r = 0; r < REPEAT_COUNT; r++) {
+    PROJECTS.forEach((p, idx) => {
+      const globalIdx = r * PROJECTS.length + idx;
+      loopItems.push({
+        globalIndex: globalIdx,
+        project: p,
+        originalIndex: idx,
+        key: `loop-${r}-${idx}`
+      });
+    });
+  }
+
+  const currentProject = PROJECTS[activeRealIndex] || PROJECTS[0];
+  const containerCenter = metrics.containerWidth / 2;
+
   return (
     <section id="expertise" className="relative py-10 md:py-16 lg:py-20 overflow-hidden bg-[#0a0a0a]">
-      <div className="max-w-7xl mx-auto px-6 relative z-10">
-        <div className="text-center mb-10 md:mb-16 lg:mb-20">
-          <h2 className="text-3xl md:text-5xl font-display font-bold mb-4 max-w-md md:max-w-none mx-auto leading-tight">Selected Work</h2>
-          <p className="text-white/40 text-xs md:text-sm font-medium tracking-wide mb-6">Only a selection is shown here. Browse full projects by category below.</p>
-          <div className="w-24 h-[1px] bg-brand-red mx-auto" />
+      {/* Section Header */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10 text-center mb-6 md:mb-8">
+        <h2 className="text-3xl md:text-5xl font-display font-bold mb-3 max-w-md md:max-w-none mx-auto leading-tight">
+          Selected Work
+        </h2>
+        <p className="text-white/40 text-xs md:text-sm font-medium tracking-wide mb-4">
+          Only a selection is shown here. Browse full projects by category below.
+        </p>
+        <div className="w-24 h-[1px] bg-brand-red mx-auto" />
+      </div>
+
+      {/* Main Interactive Stage for Both Top Thumbnails & Bottom Carousel */}
+      <div 
+        ref={containerRef}
+        className="relative w-full overflow-hidden select-none cursor-grab active:cursor-grabbing"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => {
+          setIsHovered(false);
+          setIsDragging(false);
+        }}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+      >
+        {/* 1. Top Full-Width Synchronously Scrolling Small Thumbnails Strip (100% Center -> 80% Sides Transition) */}
+        <div className="relative w-full h-[52px] sm:h-[68px] md:h-[80px] flex items-center mb-4 sm:mb-6 overflow-hidden">
+          {/* Synchronously Gliding Thumbnail Items */}
+          {loopItems.map((item) => {
+            const itemLeft = containerCenter + item.globalIndex * totalThumbItemWidth + thumbOffsetState;
+            const itemCenterX = itemLeft + metrics.thumbWidth / 2;
+            const distFromCenter = Math.abs(itemCenterX - containerCenter);
+
+            // Generous render buffer: never pop in/out
+            if (distFromCenter > metrics.containerWidth * 2.5 + metrics.thumbWidth * 4) {
+              return null;
+            }
+
+            // Thumbnail matching currently active center item is 100% bright, sides maintain 80% brightness
+            const isThumbActive = item.originalIndex === activeRealIndex;
+            const brightness = isThumbActive ? 1.0 : 0.80;
+            const opacity = isThumbActive ? 1.0 : 0.85;
+
+            return (
+              <div
+                key={`thumb-${item.key}`}
+                style={{
+                  position: 'absolute',
+                  left: `${itemLeft}px`,
+                  width: `${metrics.thumbWidth}px`,
+                  opacity,
+                  filter: `brightness(${brightness})`,
+                  zIndex: isThumbActive ? 30 : 20,
+                  willChange: 'left, opacity, filter',
+                  transition: isDragging ? 'none' : 'opacity 0.2s ease-out, filter 0.2s ease-out'
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (dragStartRef.current?.moved) return;
+                  targetOffsetRef.current = -item.globalIndex * totalMainItemWidth - metrics.slideWidth / 2;
+                  setActiveRealIndex(item.originalIndex);
+                }}
+                className={`aspect-video shrink-0 rounded-sm overflow-hidden bg-white/5 cursor-pointer transition-all duration-200 ${
+                  isThumbActive 
+                    ? 'border-2 border-white/90 ring-1 ring-white/30 shadow-lg' 
+                    : 'border border-white/15 hover:border-white/60 hover:opacity-100 hover:brightness-100'
+                }`}
+                title={item.project.title}
+              >
+                <img
+                  src={getOptimizedUrl(item.project.image, 240, 135)}
+                  alt={item.project.title}
+                  className="w-full h-full object-cover pointer-events-none"
+                  referrerPolicy="no-referrer"
+                  loading="lazy"
+                  decoding="async"
+                  draggable={false}
+                />
+              </div>
+            );
+          })}
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-8 lg:gap-[8%] items-start">
-          {/* Left Thumbnails - 20% width (Smaller to ensure height is within preview) */}
-          <div className="w-full lg:w-[20%] shrink-0">
-            <div className="grid grid-cols-4 lg:grid-cols-2 gap-1.5">
-              {PROJECTS.map((p, i) => {
-                return (
-                  <div 
-                    key={i} 
-                    onClick={() => setSelectedIndex(i)}
-                    className={`aspect-video border cursor-pointer transition-all duration-300 ${selectedIndex === i ? 'border-brand-red ring-1 ring-brand-red' : 'border-white/10 hover:border-white/40'} bg-white/5`}
-                  >
-                    <img 
-                      src={getOptimizedUrl(p.image, window.innerWidth > 768 ? 600 : 400, window.innerWidth > 768 ? 338 : 225)} 
-                      className="w-full h-full object-cover transition-all duration-500" 
-                      referrerPolicy="no-referrer" 
-                      loading={i < 4 ? "eager" : "lazy"}
-                      fetchPriority={i < 4 ? "high" : "auto"}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-          
-          {/* Right Preview - 72% width (Larger to provide vertical containment) */}
-          <div className="w-full lg:w-[72%] flex flex-col justify-start items-center lg:items-end text-center lg:text-right mt-0 lg:mt-0">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={selectedIndex}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="flex flex-col items-center lg:items-end w-full"
-            >
-              <div className="relative w-full group">
-                {/* Desktop Navigation Arrows - Centered in the 8% gap */}
-                <button 
-                  onClick={handlePrev}
-                  className="hidden lg:flex absolute top-1/2 -translate-y-1/2 w-10 h-10 items-center justify-center rounded-none bg-black/40 backdrop-blur-md border border-white/10 text-white/40 hover:text-white hover:border-white/40 hover:bg-white/10 transition-all duration-300 z-20"
-                  style={{ left: '-6.5%' }}
-                  aria-label="Previous Project"
-                >
-                  <ChevronLeft size={24} />
-                </button>
-                <button 
-                  onClick={handleNext}
-                  className="hidden lg:flex absolute top-1/2 -translate-y-1/2 w-10 h-10 items-center justify-center rounded-none bg-black/40 backdrop-blur-md border border-white/10 text-white/40 hover:text-white hover:border-white/40 hover:bg-white/10 transition-all duration-300 z-20"
-                  style={{ right: '-6.5%' }}
-                  aria-label="Next Project"
-                >
-                  <ChevronRight size={24} />
-                </button>
+        {/* Desktop Left / Right Navigation Chevrons */}
+        <button 
+          onClick={handlePrev}
+          className="absolute left-3 sm:left-6 md:left-12 top-[62%] -translate-y-1/2 w-10 h-10 sm:w-13 sm:h-13 flex items-center justify-center rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white/70 hover:text-white hover:border-white/50 hover:bg-black/90 transition-all duration-300 z-50 shadow-2xl group pointer-events-auto"
+          aria-label="Previous Slide"
+        >
+          <ChevronLeft size={26} className="group-hover:-translate-x-0.5 transition-transform" />
+        </button>
 
-                {/* Mobile Navigation Arrows */}
-                <button 
-                  onClick={handlePrev}
-                  className="lg:hidden absolute top-2 left-1/2 -translate-x-1/2 w-8 h-8 flex items-center justify-center rounded-none bg-black/40 backdrop-blur-md border border-white/10 text-white/60 hover:text-white z-20"
-                  aria-label="Previous Project"
-                >
-                  <ChevronUp size={18} />
-                </button>
-                <button 
-                  onClick={handleNext}
-                  className="lg:hidden absolute bottom-2 left-1/2 -translate-x-1/2 w-8 h-8 flex items-center justify-center rounded-none bg-black/40 backdrop-blur-md border border-white/10 text-white/60 hover:text-white z-20"
-                  aria-label="Next Project"
-                >
-                  <ChevronDown size={18} />
-                </button>
+        <button 
+          onClick={handleNext}
+          className="absolute right-3 sm:right-6 md:right-12 top-[62%] -translate-y-1/2 w-10 h-10 sm:w-13 sm:h-13 flex items-center justify-center rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white/70 hover:text-white hover:border-white/50 hover:bg-black/90 transition-all duration-300 z-50 shadow-2xl group pointer-events-auto"
+          aria-label="Next Slide"
+        >
+          <ChevronRight size={26} className="group-hover:translate-x-0.5 transition-transform" />
+        </button>
 
-                <div 
-                  className="w-full aspect-video mt-14 mb-14 lg:mt-0 lg:mb-0 border border-white/10 p-1 bg-white/5 backdrop-blur-sm cursor-zoom-in group-hover:border-white/30 transition-colors overflow-hidden"
-                  onClick={() => setIsZoomed(true)}
-                >
-                  <img 
-                    src={getOptimizedUrl(currentImage, window.innerWidth > 768 ? 1280 : 800, window.innerWidth > 768 ? 720 : 450)} 
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
-                    referrerPolicy="no-referrer" 
-                    loading={selectedIndex === 0 ? "eager" : "lazy"}
-                    fetchPriority={selectedIndex === 0 ? "high" : "auto"}
-                  />
-                  
-                  {/* Zoom Icon Hint */}
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 pointer-events-none">
-                    <div className="w-12 h-12 rounded-none bg-white/10 backdrop-blur-md flex items-center justify-center text-white border border-white/20">
-                      <Maximize size={20} />
-                    </div>
+        {/* 2. Bottom Continuous Slow-Gliding Marquee Carousel (Gradual smooth dimming maintaining 20% brightness to edges, borderless artwork) */}
+        <div className="relative w-full h-[210px] sm:h-[340px] md:h-[420px] lg:h-[480px] flex items-center overflow-hidden">
+          {loopItems.map((item) => {
+            const itemLeft = containerCenter + item.globalIndex * totalMainItemWidth + offsetState;
+            const itemCenterX = itemLeft + metrics.slideWidth / 2;
+            const distFromCenter = Math.abs(itemCenterX - containerCenter);
+            
+            // Generous render buffer: never pop in or out suddenly
+            if (distFromCenter > metrics.containerWidth * 2.5 + metrics.slideWidth * 2) {
+              return null;
+            }
+
+            // Smooth continuous focus calculation (smoothstep curve - no sudden jumps in scale or brightness)
+            const focusRadius = metrics.slideWidth * 0.85;
+            const rawFocus = Math.max(0, 1 - Math.min(distFromCenter / focusRadius, 1));
+            const smoothFocus = rawFocus * rawFocus * (3 - 2 * rawFocus);
+
+            // Scale: smoothly expands from 0.90 to 1.04 as it enters center (no sudden resize)
+            const scale = 0.90 + smoothFocus * 0.14;
+
+            // Gradual slow dimming: transitions smoothly from 1.0 in center down to 0.20 at outer edge,
+            // strictly maintaining 20% brightness as it moves completely off screen (no sudden blackouts)
+            const normalizedDist = distFromCenter / (metrics.containerWidth * 0.52);
+            const dimProgress = Math.min(1.0, normalizedDist);
+            const brightness = Math.max(0.20, 1.0 - dimProgress * 0.80);
+
+            // Opacity stays clearly visible (0.70 - 1.0) until it naturally exits the container boundaries
+            const opacity = Math.max(0.70, 1.0 - dimProgress * 0.30);
+            const zIndex = Math.round(50 + smoothFocus * 50);
+            const isCenterFocus = distFromCenter < metrics.slideWidth * 0.35;
+
+            return (
+              <div
+                key={item.key}
+                style={{
+                  position: 'absolute',
+                  left: `${itemLeft}px`,
+                  width: `${metrics.slideWidth}px`,
+                  transform: `scale(${scale})`,
+                  opacity,
+                  filter: `brightness(${brightness})`,
+                  zIndex,
+                  transformOrigin: 'center center',
+                  transition: isDragging ? 'none' : 'transform 0.15s ease-out, opacity 0.15s ease-out, filter 0.15s ease-out',
+                  willChange: 'transform, opacity, filter, left'
+                }}
+                onClick={() => {
+                  if (dragStartRef.current?.moved) return;
+                  setActiveRealIndex(item.originalIndex);
+                  setIsZoomed(true);
+                }}
+                className="aspect-video shrink-0 rounded-sm overflow-hidden bg-black/80 cursor-zoom-in shadow-2xl"
+              >
+                {/* Large Clean Artwork Image without borders or on-image text */}
+                <img 
+                  src={getOptimizedUrl(item.project.image, window.innerWidth > 768 ? 1600 : 960, window.innerWidth > 768 ? 900 : 540)} 
+                  alt={item.project.title}
+                  className="w-full h-full object-cover pointer-events-none" 
+                  referrerPolicy="no-referrer" 
+                  loading="lazy"
+                  decoding="async"
+                  draggable={false}
+                />
+
+                {/* Subtle Hover Zoom Hint on Center Item */}
+                {isCenterFocus && (
+                  <div className="absolute top-3 right-3 sm:top-4 sm:right-4 flex items-center gap-1.5 px-2.5 py-1 bg-black/60 backdrop-blur-md border border-white/20 text-white/80 rounded-none text-[10px] sm:text-xs font-medium uppercase tracking-wider opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                    <Maximize size={13} />
+                    <span>Zoom</span>
                   </div>
-                </div>
+                )}
               </div>
-              
-              <div className="w-full mt-4 text-center lg:text-right">
-                <h4 className="text-sm font-bold text-white/90 mb-1">{project.title}</h4>
-                <p className="text-sm text-white/60 leading-relaxed">
-                  {project.description}
-                </p>
-              </div>
-            </motion.div>
-          </AnimatePresence>
+            );
+          })}
         </div>
       </div>
-    </div>
 
-      {/* Spotlight Lightbox */}
+      {/* 3. Small Descriptive Text Centered Directly Underneath the Large Image (No number counter) */}
+      <div className="max-w-2xl mx-auto text-center px-4 mt-3 sm:mt-4 min-h-[40px] flex items-center justify-center">
+        <AnimatePresence mode="wait">
+          <motion.p 
+            key={activeRealIndex}
+            initial={{ opacity: 0, y: 3 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -3 }}
+            transition={{ duration: 0.22, ease: 'easeOut' }}
+            className="text-xs sm:text-sm text-white/65 font-light leading-relaxed"
+          >
+            {currentProject.description}
+          </motion.p>
+        </AnimatePresence>
+      </div>
+
+      {/* 4. Fullscreen Lightbox Modal (Non-overlapping, snug responsive caption directly below image) */}
       <AnimatePresence>
         {isZoomed && (
           <motion.div 
@@ -1298,98 +1636,103 @@ const Spotlight = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setIsZoomed(false)}
-            className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-2xl flex items-center justify-center p-0 cursor-zoom-out"
+            className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-2xl flex items-center justify-center p-3 sm:p-6 cursor-zoom-out select-none"
           >
+            {/* Top Close Button */}
             <button 
-              className="absolute top-6 right-6 text-white/60 hover:text-white transition-colors z-[210] p-4"
+              className="absolute top-4 sm:top-6 right-4 sm:right-6 text-white/60 hover:text-white transition-colors z-[230] p-3 rounded-full hover:bg-white/10"
               onClick={(e) => { e.stopPropagation(); setIsZoomed(false); }}
               aria-label="Close"
             >
-              <X size={32} />
+              <X size={28} />
             </button>
 
-            {/* Rotation Button */}
+            {/* Top Rotate Button */}
             <button 
-              className="absolute top-6 left-6 text-white/60 hover:text-white transition-colors z-[210] p-4 flex flex-col items-center gap-1"
+              className="absolute top-4 sm:top-6 left-4 sm:left-6 text-white/60 hover:text-white transition-colors z-[230] p-3 rounded-full hover:bg-white/10 flex items-center gap-1.5"
               onClick={toggleRotation}
               aria-label="Rotate"
             >
-              <RotateCcw size={28} />
-              <span className="text-[12px] font-bold tracking-normal opacity-60">Rotate</span>
+              <RotateCcw size={22} />
+              <span className="text-xs font-medium tracking-wide hidden sm:inline">Rotate</span>
             </button>
 
+            {/* Left / Right Nav Arrows */}
             <button 
-              className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-none bg-white/5 border border-white/10 text-white/40 hover:text-white hover:bg-white/10 transition-all z-[210]"
+              className="absolute left-3 sm:left-6 md:left-8 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full bg-black/60 border border-white/20 text-white/60 hover:text-white hover:bg-black/90 transition-all z-[230]"
               onClick={handlePrev}
             >
-              <ChevronLeft size={32} />
+              <ChevronLeft size={28} />
             </button>
             <button 
-              className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-none bg-white/5 border border-white/10 text-white/40 hover:text-white hover:bg-white/10 transition-all z-[210]"
+              className="absolute right-3 sm:right-6 md:right-8 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full bg-black/60 border border-white/20 text-white/60 hover:text-white hover:bg-black/90 transition-all z-[230]"
               onClick={handleNext}
             >
-              <ChevronRight size={32} />
+              <ChevronRight size={28} />
             </button>
             
-            <motion.div 
-              key={`${selectedIndex}-${rotation}`}
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ 
-                scale: 1, 
-                opacity: 1,
-              }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="relative w-full h-full flex items-center justify-center p-4 overflow-hidden touch-none"
-              onDoubleClick={toggleZoom}
-              onTouchStart={handleTouchStart}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={handleTouchEnd}
+            {/* Unified Center Content Stage: Image + Snug Caption directly underneath */}
+            <div 
+              className="relative w-full max-w-5xl flex flex-col items-center justify-center"
               onClick={() => {
-                // If not zoomed, single click background to close
                 if (zoomScale <= 1) setIsZoomed(false);
               }}
             >
+              {/* Image Container */}
               <motion.div 
-                drag={zoomScale > 1}
-                dragConstraints={{ left: -1500, right: 1500, top: -1500, bottom: 1500 }} // Allow free drag when zoomed
-                animate={{ 
-                  scale: zoomScale, 
-                  rotate: rotation,
-                }}
-                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                className={`relative flex items-center justify-center pointer-events-auto shadow-2xl ${zoomScale > 1 ? 'cursor-move' : 'cursor-zoom-in'}`}
-                style={{ 
-                  width: (rotation !== 0) ? '90vh' : 'auto',
-                  height: (rotation !== 0) ? '90vw' : 'auto',
-                  maxWidth: (rotation !== 0 || zoomScale > 1) ? 'none' : '90vw',
-                  maxHeight: (rotation !== 0 || zoomScale > 1) ? 'none' : '85vh',
-                }}
-                onClick={(e) => e.stopPropagation()} // Prevent closing when clicking the image
+                key={`${activeRealIndex}-${rotation}`}
+                initial={{ scale: 0.94, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.94, opacity: 0 }}
+                className="relative flex items-center justify-center overflow-hidden touch-none"
+                onDoubleClick={toggleZoom}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
               >
-                <img 
-                  src={getOptimizedUrl(currentImage, undefined, undefined, true)} 
-                  className="w-full h-full object-contain"
-                  referrerPolicy="no-referrer"
-                  crossOrigin="anonymous"
-                  draggable={false}
-                />
-              </motion.div>
-            </motion.div>
-
-            {/* Title Overlay in Lightbox - hidden when zoomed */}
-            <AnimatePresence>
-              {zoomScale <= 1.1 && (
                 <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 20 }}
-                  className="absolute bottom-10 left-0 w-full text-center px-6 pointer-events-none z-[220]"
+                  drag={zoomScale > 1}
+                  dragConstraints={{ left: -1500, right: 1500, top: -1500, bottom: 1500 }}
+                  animate={{ 
+                    scale: zoomScale, 
+                    rotate: rotation,
+                  }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                  className={`relative flex items-center justify-center pointer-events-auto ${zoomScale > 1 ? 'cursor-move' : 'cursor-zoom-in'}`}
+                  style={{ 
+                    width: (rotation !== 0) ? '70vh' : 'auto',
+                    height: (rotation !== 0) ? '70vw' : 'auto',
+                    maxWidth: (rotation !== 0 || zoomScale > 1) ? 'none' : '92vw',
+                    maxHeight: (rotation !== 0 || zoomScale > 1) ? 'none' : '72vh',
+                  }}
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  <h4 className="text-xl font-bold text-white mb-2">{project.title}</h4>
-                  <p className="text-sm text-white/40">{project.description}</p>
+                  <img 
+                    src={getOptimizedUrl(currentProject.image, undefined, undefined, true)} 
+                    alt={currentProject.title}
+                    className="max-h-[70vh] max-w-[92vw] w-auto h-auto object-contain rounded-sm shadow-2xl"
+                    referrerPolicy="no-referrer"
+                    crossOrigin="anonymous"
+                    draggable={false}
+                  />
                 </motion.div>
-              )}
-            </AnimatePresence>
+              </motion.div>
+
+              {/* Snug Caption: Directly Underneath Image with one text height extra spacing */}
+              <AnimatePresence>
+                {zoomScale <= 1.1 && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 6 }}
+                    className="w-full max-w-xl text-center px-4 mt-5 sm:mt-4 pointer-events-none z-[220]"
+                  >
+                    <h4 className="text-sm sm:text-base font-bold text-white mb-1 tracking-tight">{currentProject.title}</h4>
+                    <p className="text-xs sm:text-sm text-white/55 font-light leading-relaxed">{currentProject.description}</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
