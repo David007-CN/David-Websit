@@ -68,12 +68,21 @@ const getOptimizedUrl = (url: string, width?: number, height?: number, avoidProx
   const isGithub = decodedUrl.includes('github.com') || decodedUrl.includes('raw.githubusercontent.com') || decodedUrl.includes('jsdelivr.net');
   
   if (decodedUrl.includes('github.com') && !decodedUrl.includes('raw.githubusercontent.com')) {
+    let vParam = '';
+    try {
+      const parsedUrl = new URL(decodedUrl.startsWith('http') ? decodedUrl : `https://${decodedUrl}`);
+      vParam = parsedUrl.searchParams.get('v') || parsedUrl.searchParams.get('t') || parsedUrl.searchParams.get('ver') || '';
+    } catch (e) {}
+
     rawUrl = decodedUrl.replace('github.com', 'raw.githubusercontent.com')
                 .replace('/blob/', '/')
                 .replace('/refs/heads/', '/');
-    // Strip query only if it's a blob URL being converted
+    // Strip blob query params, but preserve cache-busting version if present
     if (decodedUrl.includes('/blob/')) {
       rawUrl = rawUrl.split('?')[0];
+      if (vParam) {
+        rawUrl += `?v=${vParam}`;
+      }
     }
   }
 
@@ -1429,13 +1438,13 @@ const Archive = ({ archiveProjects }: { archiveProjects: Project[] }) => {
               ) : (
                 <img 
                   src={getOptimizedUrl(project.image, window.innerWidth > 768 ? 1200 : 800, window.innerWidth > 768 ? 675 : 450)} 
-                  className={`w-full h-full object-cover ${activeTouchId === project.id ? 'grayscale-0 brightness-100' : `grayscale group-hover:grayscale-0 ${project.title === 'Rendering' ? 'brightness-[0.20]' : 'brightness-[0.35]'} group-hover:brightness-100`} transition-all duration-700`} 
+                  className={`w-full h-full object-cover ${activeTouchId === project.id ? 'grayscale-0 brightness-100' : 'grayscale group-hover:grayscale-0 brightness-[0.35] group-hover:brightness-100'} transition-all duration-700`} 
                   referrerPolicy="no-referrer"
                   loading="lazy"
                   decoding="async"
                 />
               )}
-              <div className={`absolute inset-0 flex flex-col justify-center items-center text-center p-4 sm:p-6 md:p-12 ${project.title === 'Rendering' ? 'bg-black/40' : 'bg-black/15'} group-hover:bg-transparent transition-colors duration-500`}>
+              <div className="absolute inset-0 flex flex-col justify-center items-center text-center p-4 sm:p-6 md:p-12 bg-black/15 group-hover:bg-transparent transition-colors duration-500">
                 <p className="text-[5px] sm:text-[11px] font-bold tracking-[0.1em] opacity-60 mb-0.5 sm:mb-2">{project.subtitle}</p>
                 <h3 className="text-base sm:text-2xl md:text-3xl lg:text-4xl font-display font-bold mb-1 sm:mb-4 group-hover:scale-110 transition-transform duration-500">{project.title}</h3>
                 <div className="flex flex-col items-center">
@@ -2862,7 +2871,7 @@ const INITIAL_ARCHIVE: Project[] = [
     title: "Rendering",
     subtitle: "Visualized in detail.",
     category: "Rendering",
-    image: "https://github.com/David007-CN/DW/blob/main/Cover/White%20model_2560x1440.jpg?raw=true",
+    image: "https://github.com/David007-CN/DW/blob/main/Cover/White%20model-black2_2560x1440.jpg?raw=true&v=2",
     galleryImages: []
   },
   {
