@@ -814,8 +814,8 @@ const Hero = () => {
     },
     {
        type: 'image',
-       desktop: "https://github.com/David007-CN/DW/blob/main/Banner/Personal%20Profile/David2_1920x1080.jpg?raw=true",
-       mobile: "https://github.com/David007-CN/DW/blob/main/Banner/Personal%20Profile/David2_1080x1920.jpg?raw=true",
+       desktop: "https://github.com/David007-CN/DW/blob/main/Banner/Personal%20Profile/David3_1920x1080.jpg?raw=true",
+       mobile: "https://github.com/David007-CN/DW/blob/main/Banner/Personal%20Profile/David3_1080x1920.jpg?raw=true",
        alt: "David Personal Profile",
        imgClassName: "brightness-100",
        overlayClassName: "bg-transparent"
@@ -1156,27 +1156,41 @@ const Spotlight = () => {
     rushProgress: 0
   });
 
-  // Measure container and slide sizes dynamically
+  // Measure container and slide sizes dynamically (Doubled cinematic sizing on desktop)
   const updateMetrics = useCallback(() => {
     if (containerRef.current) {
       const cWidth = containerRef.current.offsetWidth;
-      let sWidth = cWidth * 0.82;
+      let sWidth = cWidth * 0.88;
       let gap = 16;
       let tWidth = 76;
       let tGap = 8;
       
-      if (cWidth >= 1024) {
-        sWidth = Math.min(cWidth * 0.48, 860);
+      if (cWidth >= 1536) {
+        // 2xl Ultra-wide desktop: full doubled cinematic width (~1680px max)
+        sWidth = Math.min(cWidth * 0.86, 1680);
+        gap = 40;
+        tWidth = 130;
+        tGap = 14;
+      } else if (cWidth >= 1280) {
+        // xl Desktop: doubled width (~1420px max)
+        sWidth = Math.min(cWidth * 0.84, 1420);
+        gap = 36;
+        tWidth = 120;
+        tGap = 12;
+      } else if (cWidth >= 1024) {
+        // lg Desktop: doubled width (~1180px max)
+        sWidth = Math.min(cWidth * 0.82, 1180);
         gap = 32;
         tWidth = 114;
         tGap = 12;
       } else if (cWidth >= 768) {
-        sWidth = cWidth * 0.58;
+        // md Tablet
+        sWidth = cWidth * 0.78;
         gap = 24;
         tWidth = 96;
         tGap = 10;
       } else if (cWidth >= 640) {
-        sWidth = cWidth * 0.68;
+        sWidth = cWidth * 0.82;
         gap = 20;
         tWidth = 84;
         tGap = 8;
@@ -1518,25 +1532,25 @@ const Spotlight = () => {
           })}
         </div>
 
-        {/* Desktop Left / Right Navigation Chevrons */}
-        <button 
-          onClick={handlePrev}
-          className="absolute left-3 sm:left-6 md:left-12 top-[62%] -translate-y-1/2 w-10 h-10 sm:w-13 sm:h-13 flex items-center justify-center rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white/70 hover:text-white hover:border-white/50 hover:bg-black/90 transition-all duration-300 z-50 shadow-2xl group pointer-events-auto"
-          aria-label="Previous Slide"
-        >
-          <ChevronLeft size={26} className="group-hover:-translate-x-0.5 transition-transform" />
-        </button>
+        {/* 2. Bottom Continuous Slow-Gliding Marquee Carousel (Doubled Cinematic Artwork Presentation) */}
+        <div className="relative w-full h-[240px] sm:h-[380px] md:h-[540px] lg:h-[720px] xl:h-[860px] 2xl:h-[960px] flex items-center overflow-hidden">
+          {/* Desktop Left / Right Navigation Chevrons Vertically Centered on Big Stage */}
+          <button 
+            onClick={handlePrev}
+            className="absolute left-3 sm:left-6 md:left-12 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-13 sm:h-13 flex items-center justify-center rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white/70 hover:text-white hover:border-white/50 hover:bg-black/90 transition-all duration-300 z-50 shadow-2xl group pointer-events-auto"
+            aria-label="Previous Slide"
+          >
+            <ChevronLeft size={26} className="group-hover:-translate-x-0.5 transition-transform" />
+          </button>
 
-        <button 
-          onClick={handleNext}
-          className="absolute right-3 sm:right-6 md:right-12 top-[62%] -translate-y-1/2 w-10 h-10 sm:w-13 sm:h-13 flex items-center justify-center rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white/70 hover:text-white hover:border-white/50 hover:bg-black/90 transition-all duration-300 z-50 shadow-2xl group pointer-events-auto"
-          aria-label="Next Slide"
-        >
-          <ChevronRight size={26} className="group-hover:translate-x-0.5 transition-transform" />
-        </button>
+          <button 
+            onClick={handleNext}
+            className="absolute right-3 sm:right-6 md:right-12 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-13 sm:h-13 flex items-center justify-center rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white/70 hover:text-white hover:border-white/50 hover:bg-black/90 transition-all duration-300 z-50 shadow-2xl group pointer-events-auto"
+            aria-label="Next Slide"
+          >
+            <ChevronRight size={26} className="group-hover:translate-x-0.5 transition-transform" />
+          </button>
 
-        {/* 2. Bottom Continuous Slow-Gliding Marquee Carousel (Gradual smooth dimming maintaining 20% brightness to edges, borderless artwork) */}
-        <div className="relative w-full h-[210px] sm:h-[340px] md:h-[420px] lg:h-[480px] flex items-center overflow-hidden">
           {loopItems.map((item) => {
             const itemLeft = containerCenter + item.globalIndex * totalMainItemWidth + offsetState;
             const itemCenterX = itemLeft + metrics.slideWidth / 2;
@@ -1588,9 +1602,9 @@ const Spotlight = () => {
                 }}
                 className="aspect-video shrink-0 rounded-sm overflow-hidden bg-black/80 cursor-zoom-in shadow-2xl"
               >
-                {/* Large Clean Artwork Image without borders or on-image text */}
+                {/* Large Clean Artwork Image without borders or on-image text (Ultra High Res) */}
                 <img 
-                  src={getOptimizedUrl(item.project.image, window.innerWidth > 768 ? 1600 : 960, window.innerWidth > 768 ? 900 : 540)} 
+                  src={getOptimizedUrl(item.project.image, window.innerWidth > 1280 ? 2560 : window.innerWidth > 768 ? 1920 : 960, window.innerWidth > 1280 ? 1440 : window.innerWidth > 768 ? 1080 : 540)} 
                   alt={item.project.title}
                   className="w-full h-full object-cover pointer-events-none" 
                   referrerPolicy="no-referrer" 
