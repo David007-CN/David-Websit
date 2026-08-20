@@ -814,8 +814,8 @@ const Hero = () => {
     },
     {
        type: 'image',
-       desktop: "https://github.com/David007-CN/DW/blob/main/Banner/Personal%20Profile/David3_1920x1080.jpg?raw=true",
-       mobile: "https://github.com/David007-CN/DW/blob/main/Banner/Personal%20Profile/David3_1080x1920.jpg?raw=true",
+       desktop: "https://raw.githubusercontent.com/David007-CN/DW/main/Banner/Personal%20Profile/David3_1920x1080.jpg?v=20260820_1",
+       mobile: "https://raw.githubusercontent.com/David007-CN/DW/main/Banner/Personal%20Profile/David3_1080x1920.jpg?v=20260820_1",
        alt: "David Personal Profile",
        imgClassName: "brightness-100",
        overlayClassName: "bg-transparent"
