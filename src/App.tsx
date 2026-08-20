@@ -1626,19 +1626,24 @@ const Spotlight = () => {
         </div>
       </div>
 
-      {/* 3. Small Descriptive Text Centered Directly Underneath the Large Image (No number counter) */}
-      <div className="max-w-2xl mx-auto text-center px-4 mt-3 sm:mt-4 min-h-[40px] flex items-center justify-center">
+      {/* 3. Title & Descriptive Text Centered Directly Underneath the Large Image */}
+      <div className="max-w-2xl mx-auto text-center px-4 mt-4 sm:mt-5 min-h-[58px] flex flex-col items-center justify-center">
         <AnimatePresence mode="wait">
-          <motion.p 
+          <motion.div 
             key={activeRealIndex}
-            initial={{ opacity: 0, y: 3 }}
+            initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -3 }}
+            exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.22, ease: 'easeOut' }}
-            className="text-xs sm:text-sm text-white/65 font-light leading-relaxed"
+            className="flex flex-col items-center"
           >
-            {currentProject.description}
-          </motion.p>
+            <h4 className="text-sm sm:text-base md:text-lg font-bold text-white mb-1 tracking-tight">
+              {currentProject.title}
+            </h4>
+            <p className="text-xs sm:text-sm text-white/65 font-light leading-relaxed">
+              {currentProject.description}
+            </p>
+          </motion.div>
         </AnimatePresence>
       </div>
 
